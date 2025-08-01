@@ -53,11 +53,11 @@ body {
     min-height: 100vh; /* Ajout pour couvrir toute la hauteur */
 }
 
-/* Container adaptatif */
+/* Container sans marges parasites */
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 15px; /* Ajout du padding */
+    padding: 15px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -67,16 +67,14 @@ body {
     width: 100%;
 }
 
+/* Header sans position sticky qui peut causer des problèmes */
 .header {
-    position: relative; /* Changé de sticky à relative temporairement */
-    top: 0;
-    z-index: 100;
     background: white;
     box-shadow: var(--box-shadow);
     padding: var(--spacing-md);
-    text-align: center; /* Centrer le header */
-    border-radius: 15px; /* Arrondir les coins */
-    margin-bottom: 20px; /* Espace en bas */
+    text-align: center;
+    border-radius: 15px;
+    margin-bottom: 20px;
 }
 
 .header h1 {
@@ -137,15 +135,17 @@ body {
 /* Contenu principal */
 .tab-content {
     display: none;
-    background: white; /* Ajout du fond blanc */
-    border-radius: 15px; /* Arrondir */
+    background: white;
+    border-radius: 15px;
     padding: 25px;
     box-shadow: var(--box-shadow);
     margin-bottom: 20px;
+    flex: 1;
 }
 
 .tab-content.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Boutons tactiles */
@@ -187,6 +187,13 @@ main.content {
     flex: 1;
 }
 
+/* Content principal */
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 /* Correction pour les inputs number sur mobile */
 input[type="number"] {
     -moz-appearance: textfield;
@@ -220,21 +227,34 @@ input:focus, select:focus, textarea:focus {
 
 /* Cards responsives */
 .team-card {
-    background: white;
-    border-radius: var(--border-radius);
-    padding: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #dee2e6;
     box-shadow: var(--box-shadow);
 }
 
-/* Grilles adaptatives */
+.team-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Grilles adaptatives - CORRECTION */
 .teams-setup {
+    display: grid;
+    gap: var(--spacing-md);
+    grid-template-columns: 1fr; /* Par défaut sur mobile */
     margin-bottom: 25px;
 }
 
+/* Sur desktop, mettre côte à côte */
 @media (min-width: 768px) {
     .teams-setup {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr; /* Deux colonnes sur desktop */
     }
 }
 
@@ -419,13 +439,16 @@ input:focus, select:focus, textarea:focus {
     z-index: 9999;
 }
 
-/* Progress indicator */
+/* Progress indicator compact */
 .progress-indicator {
     display: flex;
-    justify-content: space-between;
-    padding: var(--spacing-md);
+    justify-content: center;
+    gap: 10px;
+    padding: var(--spacing-sm);
     background: white;
     box-shadow: var(--box-shadow);
+    border-radius: 10px;
+    margin-bottom: 15px;
 }
 
 .progress-step {

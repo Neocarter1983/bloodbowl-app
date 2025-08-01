@@ -21,19 +21,6 @@
 </head>
 <body>
     <div id="app" class="container">
-        <!-- Le HTML de votre application ici -->
-        <!-- Je vais le restructurer ci-dessous -->
-    </div>
-
-    <!-- Scripts -->
-    <script src="cordova.js"></script> <!-- Sera injecté par Cordova -->
-    <script src="js/cordova-init.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/app.js"></script>
-
-    <!-- Dans le body de index.html -->
-    <div id="app" class="container">
         <!-- Header -->
         <header class="header">
             <h1>🏈 Ligue des Rava'Jeux</h1>
@@ -61,13 +48,8 @@
 
         <!-- Content -->
         <main class="content" id="main-content">
-            <!-- Les contenus des onglets seront chargés dynamiquement -->
+            <!-- Le contenu sera chargé ici -->
         </main>
-
-        <!-- Navigation mobile (optionnel) -->
-        <nav class="mobile-nav" id="mobile-nav" style="display: none;">
-            <!-- Sera généré selon les besoins -->
-        </nav>
 
         <!-- Loading -->
         <div id="loading" class="loading" style="display: none;">
@@ -88,9 +70,7 @@
         </tr>
     </template>
 
-
-
-
+    <!-- Scripts -->
     <script src="cordova.js"></script>
     <script src="js/cordova-init.js"></script>
     <script src="js/config.js"></script>
@@ -103,6 +83,5 @@
             window.app = new BloodBowlApp();
         });
     </script>
-
 </body>
 </html>
