@@ -113,6 +113,7 @@
 }
 
 /* Support du mode sombre */
+/*
 @media (prefers-color-scheme: dark) {
     :root {
         --light-gray: #1a1a1a;
@@ -137,6 +138,7 @@
         border-color: #444;
     }
 }
+*/
 
 /* Optimisations performances */
 @media (prefers-reduced-motion: reduce) {

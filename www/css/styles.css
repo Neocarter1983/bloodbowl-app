@@ -44,22 +44,50 @@ html {
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: var(--light-gray);
-    color: var(--dark-gray);
+    background: linear-gradient(135deg, #1a5f3f 0%, #2d8f5f 100%); /* Retrouver le fond vert */
+    color: #333;
     line-height: 1.6;
     overflow-x: hidden;
     padding-top: var(--top-safe-area);
     padding-bottom: var(--bottom-safe-area);
+    min-height: 100vh; /* Ajout pour couvrir toute la hauteur */
 }
 
 /* Container adaptatif */
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0;
+    padding: 15px; /* Ajout du padding */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+#app {
+    width: 100%;
+}
+
+.header {
+    position: relative; /* Changé de sticky à relative temporairement */
+    top: 0;
+    z-index: 100;
+    background: white;
+    box-shadow: var(--box-shadow);
+    padding: var(--spacing-md);
+    text-align: center; /* Centrer le header */
+    border-radius: 15px; /* Arrondir les coins */
+    margin-bottom: 20px; /* Espace en bas */
+}
+
+.header h1 {
+    color: var(--primary-color);
+    font-size: 2.2em;
+    margin-bottom: 10px;
+}
+
+.header p {
+    color: #666;
+    font-size: 1.1em;
 }
 
 /* Header fixe */
@@ -76,13 +104,14 @@ body {
 .tabs {
     display: flex;
     background: white;
-    padding: var(--spacing-xs);
+    padding: 5px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    position: sticky;
-    top: var(--header-height);
-    z-index: 90;
+    position: relative; /* Changé de sticky */
+    border-radius: 15px; /* Arrondir */
+    margin-bottom: 20px; /* Espace en bas */
+    box-shadow: var(--box-shadow);
 }
 
 .tabs::-webkit-scrollbar {
@@ -91,12 +120,13 @@ body {
 
 .tab {
     flex: 0 0 auto;
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 12px 15px;
     white-space: nowrap;
     cursor: pointer;
-    border-radius: var(--border-radius);
+    border-radius: 10px;
     transition: var(--transition);
     user-select: none;
+    font-size: 14px;
 }
 
 .tab.active {
@@ -107,10 +137,11 @@ body {
 /* Contenu principal */
 .tab-content {
     display: none;
-    flex: 1;
-    padding: var(--spacing-md);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    background: white; /* Ajout du fond blanc */
+    border-radius: 15px; /* Arrondir */
+    padding: 25px;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 20px;
 }
 
 .tab-content.active {
@@ -137,6 +168,34 @@ body {
 .btn-primary {
     background: var(--primary-color);
     color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: var(--secondary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* S'assurer que tout le contenu a un fond blanc */
+main.content {
+    flex: 1;
+}
+
+/* Correction pour les inputs number sur mobile */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .btn-primary:active {
@@ -170,9 +229,7 @@ input:focus, select:focus, textarea:focus {
 
 /* Grilles adaptatives */
 .teams-setup {
-    display: grid;
-    gap: var(--spacing-md);
-    grid-template-columns: 1fr;
+    margin-bottom: 25px;
 }
 
 @media (min-width: 768px) {
@@ -296,27 +353,35 @@ input:focus, select:focus, textarea:focus {
     padding: var(--spacing-md);
     margin: var(--spacing-md) 0;
     border-left: 4px solid #2196f3;
+    color: #0c5460; /* Texte visible */
 }
 
 .result-box.success {
     background: #e8f5e8;
     border-left-color: var(--success-color);
+    color: #155724; /* Texte vert foncé */
 }
 
 .result-box.warning {
     background: #fff3cd;
     border-left-color: var(--warning-color);
+    color: #856404; /* Texte marron */
 }
 
 .result-box.danger {
     background: #f8d7da;
     border-left-color: var(--danger-color);
+    color: #721c24; /* Texte rouge foncé */
+}
+
+.result-box p {
+    margin: 0;
+    font-weight: 500;
 }
 
 /* Form actions */
 .form-actions {
-    text-align: center;
-    margin-top: var(--spacing-lg);
+    padding: 20px 0;
 }
 
 /* Tooltips */

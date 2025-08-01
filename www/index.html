@@ -37,12 +37,17 @@
         <!-- Header -->
         <header class="header">
             <h1>🏈 Ligue des Rava'Jeux</h1>
-            <p>Blood Bowl Sevens</p>
+            <p>Feuille de Match Interactive - Blood Bowl Sevens</p>
+            <small style="color: #888;">Suivez les étapes pour gérer votre match de façon simple et efficace</small>
         </header>
 
         <!-- Progress indicator -->
         <div class="progress-indicator" id="progress-indicator">
-            <!-- Sera généré dynamiquement -->
+            <div class="progress-step current">1</div>
+            <div class="progress-step">2</div>
+            <div class="progress-step">3</div>
+            <div class="progress-step">4</div>
+            <div class="progress-step">5</div>
         </div>
 
         <!-- Tabs -->
@@ -86,7 +91,18 @@
 
 
 
+    <script src="cordova.js"></script>
+    <script src="js/cordova-init.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
 
+    <script>
+        // Initialiser l'app après le chargement du DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            window.app = new BloodBowlApp();
+        });
+    </script>
 
 </body>
 </html>
