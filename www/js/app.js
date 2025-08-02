@@ -168,7 +168,9 @@ class BloodBowlApp {
         Utils.vibrate(10);
     }
 
+    // Modification temporaire de la méthode loadTab pour voir où ça bloque :
 //    async loadTab(tabId) {
+//        console.log('Loading tab:', tabId);
 //        const content = document.getElementById('main-content');
 //
 //        // Afficher le loading
@@ -176,10 +178,14 @@ class BloodBowlApp {
 //
 //        try {
 //            // Charger le contenu de l'onglet
+//            console.log('Getting tab content...');
 //            const tabContent = await this.getTabContent(tabId);
+//            console.log('Tab content length:', tabContent.length);
+//
 //            content.innerHTML = tabContent;
 //
 //            // Initialiser les éléments spécifiques à l'onglet
+//            console.log('Initializing tab...');
 //            this.initializeTab(tabId);
 //
 //            this.currentTab = tabId;
@@ -187,15 +193,17 @@ class BloodBowlApp {
 //            // Mettre à jour la progression
 //            this.updateProgress(tabId);
 //
+//            console.log('Tab loaded successfully');
+//
 //        } catch (error) {
 //            console.error('Erreur chargement onglet:', error);
-//            content.innerHTML = '<p class="error">Erreur de chargement</p>';
+//            console.error('Stack trace:', error.stack);
+//            content.innerHTML = '<p class="error">Erreur de chargement: ' + error.message + '</p>';
 //        } finally {
 //            this.hideLoading();
 //        }
 //    }
 
-    // Modification temporaire de la méthode loadTab pour voir où ça bloque :
     async loadTab(tabId) {
         console.log('Loading tab:', tabId);
         const content = document.getElementById('main-content');
@@ -208,6 +216,14 @@ class BloodBowlApp {
             console.log('Getting tab content...');
             const tabContent = await this.getTabContent(tabId);
             console.log('Tab content length:', tabContent.length);
+
+            // DEBUG: Afficher les 500 premiers caractères
+            console.log('First 500 chars:', tabContent.substring(0, 500));
+
+            // DEBUG: Vérifier s'il y a des erreurs évidentes
+            if (tabContent.includes('undefined')) {
+                console.warn('Le HTML contient "undefined"');
+            }
 
             content.innerHTML = tabContent;
 
@@ -656,7 +672,7 @@ class BloodBowlApp {
     }
 
     getPrematchTabHTML() {
-        return `
+        let html = `
             <div class="tab-content" id="prematch">
                 <h2 class="section-title">⚡ Séquence d'Avant-Match</h2>
 
@@ -668,19 +684,52 @@ class BloodBowlApp {
                     <p><strong>4.</strong> L'outsider peut invoquer Nuffle</p>
                     <p><strong>5.</strong> Déterminez qui engage en premier</p>
                 </div>
+        `;
 
-                ${this.getPopularitySection()}
-                ${this.getWeatherSection()}
-                ${this.getPetiteMonnaieSection()}
-                ${this.getPrayerSection()}
-                ${this.getCoinFlipSection()}
+        try {
+            html += this.getPopularitySection();
+        } catch (e) {
+            console.error('Erreur dans getPopularitySection:', e);
+            html += '<div class="error">Erreur section popularité</div>';
+        }
 
+        try {
+            html += this.getWeatherSection();
+        } catch (e) {
+            console.error('Erreur dans getWeatherSection:', e);
+            html += '<div class="error">Erreur section météo</div>';
+        }
+
+        try {
+            html += this.getPetiteMonnaieSection();
+        } catch (e) {
+            console.error('Erreur dans getPetiteMonnaieSection:', e);
+            html += '<div class="error">Erreur section petite monnaie</div>';
+        }
+
+        try {
+            html += this.getPrayerSection();
+        } catch (e) {
+            console.error('Erreur dans getPrayerSection:', e);
+            html += '<div class="error">Erreur section prière</div>';
+        }
+
+        try {
+            html += this.getCoinFlipSection();
+        } catch (e) {
+            console.error('Erreur dans getCoinFlipSection:', e);
+            html += '<div class="error">Erreur section pile ou face</div>';
+        }
+
+        html += `
                 <div style="text-align: center; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="app.switchTab('setup')">⬅️ Retour Configuration</button>
                     <button class="btn btn-primary" onclick="app.switchTab('match')">➡️ Commencer le Match</button>
                 </div>
             </div>
         `;
+
+        return html;
     }
 
 //    // version simplifiée de getPrematchTabHTML pour tester
@@ -707,8 +756,8 @@ class BloodBowlApp {
 //    }
 
     getPopularitySection() {
-        const team1 = this.matchData.team1;
-        const team2 = this.matchData.team2;
+        const team1 = this.matchData.team1 || {};
+        const team2 = this.matchData.team2 || {};
 
         return `
             <div class="step-section">
@@ -726,7 +775,7 @@ class BloodBowlApp {
                     <input type="number" class="dice-result" id="team1-pop-dice"
                         value="${team1.popularityDice || ''}" min="1" max="3"
                         data-team="1" data-field="popularityDice">
-                    <span>+ ${team1.fans} fans =</span>
+                    <span>+ ${team1.fans || 1} fans =</span>
                     <input type="number" class="dice-result" id="team1-pop-total"
                         value="${team1.popularity || ''}" readonly>
                 </div>
@@ -736,7 +785,7 @@ class BloodBowlApp {
                     <input type="number" class="dice-result" id="team2-pop-dice"
                         value="${team2.popularityDice || ''}" min="1" max="3"
                         data-team="2" data-field="popularityDice">
-                    <span>+ ${team2.fans} fans =</span>
+                    <span>+ ${team2.fans || 1} fans =</span>
                     <input type="number" class="dice-result" id="team2-pop-total"
                         value="${team2.popularity || ''}" readonly>
                 </div>
