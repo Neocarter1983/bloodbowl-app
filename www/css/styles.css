@@ -671,3 +671,133 @@ input:focus, select:focus, textarea:focus {
     border: 1px solid #dee2e6;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
+
+/* Modal des coups de pouce */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.modal-body {
+    padding: 20px 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+.inducement-selection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .inducement-selection {
+        grid-template-columns: 1fr;
+    }
+}
+
+.team-inducements {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #dee2e6;
+}
+
+.team-inducements h4 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.treasury-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.treasury-input input {
+    flex: 1;
+    max-width: 150px;
+}
+
+.inducement-item {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.inducement-info {
+    flex: 1;
+}
+
+.inducement-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.inducement-cost {
+    color: #666;
+    font-size: 13px;
+}
+
+.inducement-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qty-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qty-btn:hover {
+    background: var(--secondary-color);
+}
+
+.qty-display {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 4px 8px;
+    min-width: 30px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.inducement-total {
+    background: var(--primary-color);
+    color: white;
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}

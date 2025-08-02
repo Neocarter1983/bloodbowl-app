@@ -1,4 +1,101 @@
 // js/app.js
+
+// Vérification de la disponibilité d'AppConfig
+if (typeof AppConfig === 'undefined') {
+    console.error('AppConfig non défini ! Chargement avec config par défaut...');
+    window.AppConfig = {
+        gameData: {
+            teamRosters: [
+                "Alliance du Vieux Monde",
+                "Amazones",
+                "Bas-Fonds",
+                "Elfes Noirs",
+                "Gobelins",
+                "Humains",
+                "Nains",
+                "Noblesse Impériale",
+                "Nordiques",
+                "Nurgle",
+                "Ogres",
+                "Orcs",
+                "Orques Noirs",
+                "Skavens",
+                "Snotlings",
+                "Elus du Chaos",
+                "Elfes Sylvains",
+                "Halflings",
+                "Gnomes",
+                "Hauts Elfes",
+                "Hommes-Lézards",
+                "Démons de Khorne",
+                "Horreurs Nécromantiques",
+                "Morts-vivants",
+                "Nain du Chaos",
+                "Renégats du Chaos",
+                "Rois des Tombes de Khemri",
+                "Slanns",
+                "Union Elfique",
+                "Vampires"
+            ],
+            inducements: [
+                {
+                    name: "Cheerleaders intérimaires",
+                    cost: 30000,
+                    max: 2,
+                    description: "S'ajoutent aux cheerleaders pour le match"
+                },
+                {
+                    name: "Coachs assistants à temps partiels",
+                    cost: 30000,
+                    max: 1,
+                    description: "S'ajoutent aux coachs assistants pour le match"
+                },
+                {
+                    name: "Entraînements supplémentaires",
+                    cost: 100000,
+                    max: 6,
+                    description: "1 relance d'équipe supplémentaire à chaque mi-temps"
+                },
+                {
+                    name: "Apothicaire ambulant",
+                    cost: 100000,
+                    max: 2,
+                    description: "Vous louez les services d'un apothicaire"
+                }
+            ],
+            weatherEffects: {
+                2: "🌡️ Chaleur Accablante",
+                3: "☀️ Très ensoleillé",
+                4: "⛅ Conditions idéales",
+                5: "⛅ Conditions idéales",
+                6: "⛅ Conditions idéales",
+                7: "⛅ Conditions idéales",
+                8: "⛅ Conditions idéales",
+                9: "⛅ Conditions idéales",
+                10: "⛅ Conditions idéales",
+                11: "⚡ Pluie Battante",
+                12: "❄️ Blizzard"
+            }
+        },
+        limits: {
+            minFans: 1,
+            maxFans: 6
+        },
+        mobile: {
+            autoSaveInterval: 30000
+        },
+        storage: {
+            prefix: 'bloodbowl_',
+            keys: {
+                matchState: 'match_state',
+                settings: 'settings',
+                teams: 'teams'
+            }
+        },
+        version: '1.0.0'
+    };
+}
+
 class BloodBowlApp {
     constructor() {
         this.currentTab = 'setup';
@@ -49,12 +146,16 @@ class BloodBowlApp {
             };
         }
 
-        // S'assurer que les items sont initialisés
-        if (!this.matchData.inducements.team1Items) {
-            this.matchData.inducements.team1Items = {};
-        }
-        if (!this.matchData.inducements.team2Items) {
-            this.matchData.inducements.team2Items = {};
+        // Initialiser les items pour chaque inducement
+        if (AppConfig && AppConfig.gameData && AppConfig.gameData.inducements) {
+            AppConfig.gameData.inducements.forEach(inducement => {
+                if (!this.matchData.inducements.team1Items[inducement.name]) {
+                    this.matchData.inducements.team1Items[inducement.name] = 0;
+                }
+                if (!this.matchData.inducements.team2Items[inducement.name]) {
+                    this.matchData.inducements.team2Items[inducement.name] = 0;
+                }
+            });
         }
     }
 
@@ -1179,9 +1280,229 @@ class BloodBowlApp {
         }
     }
 
-    // Placeholder pour la modal des coups de pouce
     showInducementsModal() {
-        alert('La gestion des coups de pouce sera implémentée dans la prochaine étape !');
+        // Créer le HTML de la modal
+        const modalHTML = `
+            <div id="inducements-modal" class="modal" style="display: block;">
+                <div class="modal-content" style="max-width: 900px;">
+                    <div class="modal-header">
+                        <h2>💰 Gestion des Coups de Pouce</h2>
+                        <span class="close" onclick="app.closeInducementsModal()">&times;</span>
+                    </div>
+
+                    <div class="modal-body">
+                        ${this.getInducementsModalContent()}
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" onclick="app.validateInducements()">
+                            ✅ Valider les Coups de Pouce
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.closeInducementsModal()">
+                            ❌ Annuler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Ajouter la modal au DOM
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = modalHTML;
+        document.body.appendChild(modalContainer);
+    }
+
+    closeInducementsModal() {
+        const modal = document.getElementById('inducements-modal');
+        if (modal && modal.parentElement) {
+            modal.parentElement.remove();
+        }
+    }
+
+    getInducementsModalContent() {
+        const { team1PetiteMonnaie, team2PetiteMonnaie } = this.calculatePetiteMonnaie();
+
+        return `
+            <div class="inducement-selection">
+                <div class="team-inducements">
+                    <h4>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h4>
+
+                    <div class="treasury-input">
+                        <label>Trésorerie disponible :</label>
+                        <input type="number" id="team1-treasury"
+                            placeholder="0" min="0" step="1000"
+                            value="${this.matchData.inducements.team1Treasury}"
+                            onchange="app.updateInducementBudget(1)">
+                        <span>PO</span>
+                    </div>
+
+                    <div class="budget-display">
+                        <div class="budget-item ${team1PetiteMonnaie > 0 ? 'warning' : ''}">
+                            <div class="label">Petite Monnaie</div>
+                            <div class="value">${Utils.formatNumber(team1PetiteMonnaie)} PO</div>
+                        </div>
+                        <div class="budget-item">
+                            <div class="label">Budget Total</div>
+                            <div class="value" id="team1-total-budget">
+                                ${Utils.formatNumber(team1PetiteMonnaie + this.matchData.inducements.team1Treasury)} PO
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="team1-inducements-list">
+                        ${this.getInducementsListHTML(1)}
+                    </div>
+
+                    <div class="inducement-total">
+                        <div>Total dépensé : <span id="team1-total-cost">0</span> PO</div>
+                        <div>Budget restant : <span id="team1-remaining-budget">
+                            ${Utils.formatNumber(team1PetiteMonnaie + this.matchData.inducements.team1Treasury)}
+                        </span> PO</div>
+                    </div>
+                </div>
+
+                <div class="team-inducements">
+                    <h4>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h4>
+
+                    <div class="treasury-input">
+                        <label>Trésorerie disponible :</label>
+                        <input type="number" id="team2-treasury"
+                            placeholder="0" min="0" step="1000"
+                            value="${this.matchData.inducements.team2Treasury}"
+                            onchange="app.updateInducementBudget(2)">
+                        <span>PO</span>
+                    </div>
+
+                    <div class="budget-display">
+                        <div class="budget-item ${team2PetiteMonnaie > 0 ? 'warning' : ''}">
+                            <div class="label">Petite Monnaie</div>
+                            <div class="value">${Utils.formatNumber(team2PetiteMonnaie)} PO</div>
+                        </div>
+                        <div class="budget-item">
+                            <div class="label">Budget Total</div>
+                            <div class="value" id="team2-total-budget">
+                                ${Utils.formatNumber(team2PetiteMonnaie + this.matchData.inducements.team2Treasury)} PO
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="team2-inducements-list">
+                        ${this.getInducementsListHTML(2)}
+                    </div>
+
+                    <div class="inducement-total">
+                        <div>Total dépensé : <span id="team2-total-cost">0</span> PO</div>
+                        <div>Budget restant : <span id="team2-remaining-budget">
+                            ${Utils.formatNumber(team2PetiteMonnaie + this.matchData.inducements.team2Treasury)}
+                        </span> PO</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getInducementsListHTML(team) {
+        const inducements = AppConfig.gameData.inducements;
+        let html = '';
+
+        inducements.forEach((inducement, index) => {
+            const currentQty = this.matchData.inducements[`team${team}Items`][inducement.name] || 0;
+
+            html += `
+                <div class="inducement-item">
+                    <div class="inducement-info">
+                        <div class="inducement-name">${inducement.name}</div>
+                        <div class="inducement-cost">${Utils.formatNumber(inducement.cost)} PO (max ${inducement.max})</div>
+                    </div>
+                    <div class="inducement-controls">
+                        <button class="qty-btn" onclick="app.changeInducementQty(${team}, '${inducement.name}', -1)">-</button>
+                        <div class="qty-display">${currentQty}</div>
+                        <button class="qty-btn" onclick="app.changeInducementQty(${team}, '${inducement.name}', 1)">+</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        return html;
+    }
+
+    changeInducementQty(team, inducementName, change) {
+        const inducement = AppConfig.gameData.inducements.find(ind => ind.name === inducementName);
+        if (!inducement) return;
+
+        const items = this.matchData.inducements[`team${team}Items`];
+        const currentQty = items[inducementName] || 0;
+        const newQty = Math.max(0, Math.min(inducement.max, currentQty + change));
+
+        // Vérifier le budget
+        const totalCost = this.calculateInducementsCost(team, inducementName, newQty);
+        const budget = this.getTeamBudget(team);
+
+        if (totalCost <= budget) {
+            items[inducementName] = newQty;
+            this.updateInducementsDisplay(team);
+        }
+    }
+
+    calculateInducementsCost(team, excludeName = null, overrideQty = null) {
+        const items = this.matchData.inducements[`team${team}Items`];
+        let total = 0;
+
+        AppConfig.gameData.inducements.forEach(inducement => {
+            let qty = items[inducement.name] || 0;
+            if (inducement.name === excludeName && overrideQty !== null) {
+                qty = overrideQty;
+            }
+            total += inducement.cost * qty;
+        });
+
+        return total;
+    }
+
+    getTeamBudget(team) {
+        const petiteMonnaie = team === 1 ?
+            this.matchData.inducements.team1PetiteMonnaie :
+            this.matchData.inducements.team2PetiteMonnaie;
+        const treasury = this.matchData.inducements[`team${team}Treasury`];
+        return petiteMonnaie + treasury;
+    }
+
+    updateInducementBudget(team) {
+        const treasuryInput = document.getElementById(`team${team}-treasury`);
+        this.matchData.inducements[`team${team}Treasury`] = parseInt(treasuryInput.value) || 0;
+        this.updateInducementsDisplay(team);
+    }
+
+    updateInducementsDisplay(team) {
+        // Mettre à jour la liste
+        const listContainer = document.getElementById(`team${team}-inducements-list`);
+        if (listContainer) {
+            listContainer.innerHTML = this.getInducementsListHTML(team);
+        }
+
+        // Mettre à jour les totaux
+        const totalCost = this.calculateInducementsCost(team);
+        const budget = this.getTeamBudget(team);
+        const remaining = budget - totalCost;
+
+        const totalCostEl = document.getElementById(`team${team}-total-cost`);
+        const remainingEl = document.getElementById(`team${team}-remaining-budget`);
+        const budgetEl = document.getElementById(`team${team}-total-budget`);
+
+        if (totalCostEl) totalCostEl.textContent = Utils.formatNumber(totalCost);
+        if (remainingEl) remainingEl.textContent = Utils.formatNumber(remaining);
+        if (budgetEl) budgetEl.textContent = Utils.formatNumber(budget);
+    }
+
+    validateInducements() {
+        // Sauvegarder les données
+        this.saveState();
+
+        // Fermer la modal
+        this.closeInducementsModal();
+
+        // Rafraîchir l'affichage de l'onglet
+        this.loadTab(this.currentTab);
     }
 
 }

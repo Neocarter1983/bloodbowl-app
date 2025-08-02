@@ -98,7 +98,107 @@ const AppConfig = {
             "Slanns",
             "Union Elfique",
             "Vampires"
-        ]
+        ],
+
+        inducements: [
+            {
+                name: "Cheerleaders intérimaires",
+                cost: 30000,
+                max: 2,
+                description: "S'ajoutent aux cheerleaders pour le match (peuvent dépasser les 6 max autorisées)"
+            },
+            {
+                name: "Coachs assistants à temps partiels",
+                cost: 30000,
+                max: 1,
+                description: "S'ajoutent aux coachs assistants pour le match (peuvent dépasser les 3 max)"
+            },
+            {
+                name: "Mage météo",
+                cost: 30000,
+                max: 1,
+                description: "1/match, fait 1 jet de Météo avec modificateur de + ou - 1 ou 2 au choix, au début d'un de vos tours d'équipe pour appliquer le résultat jusqu'à la fin du prochain tour adverse (ou fin de Phase si avant)."
+            },
+            {
+                name: "Mascotte",
+                cost: 30000,
+                max: 1,
+                description: "+1 Relance utilisable après un test de 5+ avec 1D6"
+            },
+            {
+                name: "Bouteilles de gnôle",
+                cost: 40000,
+                max: 3,
+                description: "Juste avant les Coups d'Envoi, 1D3 Minus de votre équipe, présent sur le terrain et choisi au hasard reçoit Intrépide, Frénésie et Gros Débile (4+) pour la durée de la Phase. (Accessible pour les équipes tiers 3)"
+            },
+            {
+                name: "Fûts de Bloodweiser",
+                cost: 50000,
+                max: 2,
+                description: "+1 x nombre de Fût pour rentrer sur le terrain après un KO"
+            },
+            {
+                name: "Mesures désespérées",
+                cost: 50000,
+                max: 3,
+                description: "1 tirage de mesure désespérée à utiliser 1 fois par match. (la mesure reste cachée de l'adversaire)"
+            },
+            {
+                name: "Nurgling cabriolants",
+                cost: 60000,
+                max: 3,
+                description: "Au début du match, l'équipe reçoit +1D3FP et +1 Cheerleaders par Nurgling acheté (favoris de chaos universel, coût/2 favoris de Nurgle)"
+            },
+            {
+                name: "Débutants déchaînés",
+                cost: 100000,
+                max: 1,
+                description: "Bonus de 1D3+1 Journaliers additionnels à ceux enrôlés gratuitement pour le match et même au-delà de 11 joueurs. Autorisé que pour « Linemen à Vil Prix »"
+            },
+            {
+                name: "Entraînements supplémentaires",
+                cost: 100000,
+                max: 6,
+                description: "1 relance d'équipe supplémentaire à chaque mi-temps"
+            },
+            {
+                name: "Pots de vin",
+                cost: 100000,
+                max: 3,
+                description: "sur 2+ le joueur n'est pas expulsé après une agression (le coach ne doit pas être expulsé pour le faire) Coût /2 pour « chantage et corruption »"
+            },
+            {
+                name: "Apothicaire ambulant",
+                cost: 100000,
+                max: 2,
+                description: "Vous louez les services d'un apothicaire (si la liste le permet)"
+            },
+            {
+                name: "Assistant funéraire",
+                cost: 100000,
+                max: 1,
+                description: "Soutien au nécromancien qui permet de relancer une fois par match un jet de régénération. Autorisé que pour « spot sylvanien »"
+            },
+            {
+                name: "Médecin de la peste",
+                cost: 100000,
+                max: 1,
+                description: "Pour relancer un jet de régénération une fois dans le match ou transformé un KO en « sonné ». Autorisé que pour « favoris de Nurgle »"
+            },
+            {
+                name: "Arbitre partial",
+                cost: 120000,
+                max: 1,
+                description: "Si un double n'est pas obtenu sur le jet d'AR ou de Blessure lors d'une Agression par le coach adverse, jetez 1D6. Sur 5+, le joueur subit une Expulsion. Lorsque vous Contester, ajoutez +1 au jet de dé. (80K PO pour équipe chantage et corruption)"
+            },
+            {
+                name: "Chef cuistot halfling",
+                cost: 300000,
+                max: 1,
+                description: "Au moment du coup d'envoi de chaque mi-temps, offre une relance de mi-temps et vole une relance à l'adversaire pour chaque 4+ sur 3D6. Coût/3 pour « coupe du dé à coudre halfling »"
+            },
+        ],
+
     },
 
     // Configuration mobile
