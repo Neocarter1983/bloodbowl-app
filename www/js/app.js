@@ -168,7 +168,36 @@ class BloodBowlApp {
         Utils.vibrate(10);
     }
 
+//    async loadTab(tabId) {
+//        const content = document.getElementById('main-content');
+//
+//        // Afficher le loading
+//        this.showLoading();
+//
+//        try {
+//            // Charger le contenu de l'onglet
+//            const tabContent = await this.getTabContent(tabId);
+//            content.innerHTML = tabContent;
+//
+//            // Initialiser les éléments spécifiques à l'onglet
+//            this.initializeTab(tabId);
+//
+//            this.currentTab = tabId;
+//
+//            // Mettre à jour la progression
+//            this.updateProgress(tabId);
+//
+//        } catch (error) {
+//            console.error('Erreur chargement onglet:', error);
+//            content.innerHTML = '<p class="error">Erreur de chargement</p>';
+//        } finally {
+//            this.hideLoading();
+//        }
+//    }
+
+    // Modification temporaire de la méthode loadTab pour voir où ça bloque :
     async loadTab(tabId) {
+        console.log('Loading tab:', tabId);
         const content = document.getElementById('main-content');
 
         // Afficher le loading
@@ -176,10 +205,14 @@ class BloodBowlApp {
 
         try {
             // Charger le contenu de l'onglet
+            console.log('Getting tab content...');
             const tabContent = await this.getTabContent(tabId);
+            console.log('Tab content length:', tabContent.length);
+
             content.innerHTML = tabContent;
 
             // Initialiser les éléments spécifiques à l'onglet
+            console.log('Initializing tab...');
             this.initializeTab(tabId);
 
             this.currentTab = tabId;
@@ -187,18 +220,18 @@ class BloodBowlApp {
             // Mettre à jour la progression
             this.updateProgress(tabId);
 
+            console.log('Tab loaded successfully');
+
         } catch (error) {
             console.error('Erreur chargement onglet:', error);
-            content.innerHTML = '<p class="error">Erreur de chargement</p>';
+            console.error('Stack trace:', error.stack);
+            content.innerHTML = '<p class="error">Erreur de chargement: ' + error.message + '</p>';
         } finally {
             this.hideLoading();
         }
     }
 
     getTabContent(tabId) {
-        // Pour l'instant, retourner le HTML directement
-        // Plus tard, on pourra charger depuis des fichiers séparés
-
         switch(tabId) {
             case 'setup':
                 return this.getSetupTabHTML();
@@ -213,6 +246,34 @@ class BloodBowlApp {
             default:
                 return '<p>Onglet non trouvé</p>';
         }
+    }
+
+    // Méthodes temporaires pour les onglets non implémentés
+    getMatchTabHTML() {
+        return `
+            <div class="tab-content" id="match">
+                <h2 class="section-title">🎮 Match</h2>
+                <p>Cet onglet sera implémenté prochainement.</p>
+            </div>
+        `;
+    }
+
+    getPostmatchTabHTML() {
+        return `
+            <div class="tab-content" id="postmatch">
+                <h2 class="section-title">📊 Après-Match</h2>
+                <p>Cet onglet sera implémenté prochainement.</p>
+            </div>
+        `;
+    }
+
+    getSummaryTabHTML() {
+        return `
+            <div class="tab-content" id="summary">
+                <h2 class="section-title">📋 Résumé</h2>
+                <p>Cet onglet sera implémenté prochainement.</p>
+            </div>
+        `;
     }
 
     // === MÉTHODES DE SAUVEGARDE ===
@@ -622,6 +683,29 @@ class BloodBowlApp {
         `;
     }
 
+//    // version simplifiée de getPrematchTabHTML pour tester
+//    getPrematchTabHTML() {
+//        return `
+//            <div class="tab-content active" id="prematch">
+//                <h2 class="section-title">⚡ Séquence d'Avant-Match</h2>
+//
+//                <div class="explanation-box">
+//                    <h4>🎯 Déroulement de l'avant-match (dans l'ordre)</h4>
+//                    <p><strong>1.</strong> Déterminez le facteur de popularité (fans)</p>
+//                    <p><strong>2.</strong> Tirez la météo qui affectera le match</p>
+//                </div>
+//
+//                <div class="step-section">
+//                    <div class="step-header">
+//                        <div class="step-number">1</div>
+//                        <div class="step-title">Test de fonctionnement</div>
+//                    </div>
+//                    <p>Si vous voyez ce texte, l'onglet se charge correctement.</p>
+//                </div>
+//            </div>
+//        `;
+//    }
+
     getPopularitySection() {
         const team1 = this.matchData.team1;
         const team2 = this.matchData.team2;
@@ -741,7 +825,7 @@ class BloodBowlApp {
     }
 
     getPrayerSection() {
-        const prayer = this.matchData.prayer;
+        const prayer = this.matchData.prayer || { effect: '', rolled: false, dice: null };
         const prayerCount = this.calculatePrayerCount();
 
         return `
