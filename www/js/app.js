@@ -217,15 +217,14 @@ class BloodBowlApp {
             const tabContent = await this.getTabContent(tabId);
             console.log('Tab content length:', tabContent.length);
 
-            // DEBUG: Afficher les 500 premiers caractères
-            console.log('First 500 chars:', tabContent.substring(0, 500));
-
-            // DEBUG: Vérifier s'il y a des erreurs évidentes
-            if (tabContent.includes('undefined')) {
-                console.warn('Le HTML contient "undefined"');
-            }
-
+            // Injecter le contenu
             content.innerHTML = tabContent;
+
+            // IMPORTANT : Ajouter la classe active au tab-content
+            const tabContentDiv = content.querySelector('.tab-content');
+            if (tabContentDiv) {
+                tabContentDiv.classList.add('active');
+            }
 
             // Initialiser les éléments spécifiques à l'onglet
             console.log('Initializing tab...');
@@ -673,59 +672,57 @@ class BloodBowlApp {
 
     getPrematchTabHTML() {
         let html = `
-            <div class="tab-content" id="prematch">
-                <h2 class="section-title">⚡ Séquence d'Avant-Match</h2>
+            <h2 class="section-title">⚡ Séquence d'Avant-Match</h2>
 
-                <div class="explanation-box">
-                    <h4>🎯 Déroulement de l'avant-match (dans l'ordre)</h4>
-                    <p><strong>1.</strong> Déterminez le facteur de popularité (fans)</p>
-                    <p><strong>2.</strong> Tirez la météo qui affectera le match</p>
-                    <p><strong>3.</strong> Calculez la petite monnaie et les coups de pouce</p>
-                    <p><strong>4.</strong> L'outsider peut invoquer Nuffle</p>
-                    <p><strong>5.</strong> Déterminez qui engage en premier</p>
-                </div>
+            <div class="explanation-box">
+                <h4>🎯 Déroulement de l'avant-match (dans l'ordre)</h4>
+                <p><strong>1.</strong> Déterminez le facteur de popularité (fans)</p>
+                <p><strong>2.</strong> Tirez la météo qui affectera le match</p>
+                <p><strong>3.</strong> Calculez la petite monnaie et les coups de pouce</p>
+                <p><strong>4.</strong> L'outsider peut invoquer Nuffle</p>
+                <p><strong>5.</strong> Déterminez qui engage en premier</p>
+            </div>
         `;
 
         try {
             html += this.getPopularitySection();
         } catch (e) {
             console.error('Erreur dans getPopularitySection:', e);
-            html += '<div class="error">Erreur section popularité</div>';
+            html += '<div class="error">Erreur section popularité: ' + e.message + '</div>';
         }
 
         try {
             html += this.getWeatherSection();
         } catch (e) {
             console.error('Erreur dans getWeatherSection:', e);
-            html += '<div class="error">Erreur section météo</div>';
+            html += '<div class="error">Erreur section météo: ' + e.message + '</div>';
         }
 
         try {
             html += this.getPetiteMonnaieSection();
         } catch (e) {
             console.error('Erreur dans getPetiteMonnaieSection:', e);
-            html += '<div class="error">Erreur section petite monnaie</div>';
+            html += '<div class="error">Erreur section petite monnaie: ' + e.message + '</div>';
         }
 
         try {
             html += this.getPrayerSection();
         } catch (e) {
             console.error('Erreur dans getPrayerSection:', e);
-            html += '<div class="error">Erreur section prière</div>';
+            html += '<div class="error">Erreur section prière: ' + e.message + '</div>';
         }
 
         try {
             html += this.getCoinFlipSection();
         } catch (e) {
             console.error('Erreur dans getCoinFlipSection:', e);
-            html += '<div class="error">Erreur section pile ou face</div>';
+            html += '<div class="error">Erreur section pile ou face: ' + e.message + '</div>';
         }
 
         html += `
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="app.switchTab('setup')">⬅️ Retour Configuration</button>
-                    <button class="btn btn-primary" onclick="app.switchTab('match')">➡️ Commencer le Match</button>
-                </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="app.switchTab('setup')">⬅️ Retour Configuration</button>
+                <button class="btn btn-primary" onclick="app.switchTab('match')">➡️ Commencer le Match</button>
             </div>
         `;
 
@@ -1071,26 +1068,21 @@ class BloodBowlApp {
         const roll = Utils.getRandomInt(1, 8);
         this.matchData.prayer.dice = roll;
 
-        // Récupérer l'effet depuis la config
-        const prayerEffects = {
-            1: "🙏 Trappe traîtresse : Jusqu'à la fin de la mi temps, tout joueur qui termine son mouvement sur une case trappe jette 1d6. Sur un résultat de 1, il est considéré comme poussé dans le public. S'il portait le ballon, il rebondit.",
-            2: "🙏 Pote avec l'arbitre : Jusqu'à la fin de la phase, les résultats de contestation sont traités en 2-4 et 5-6 au lieu de 2-5 et 6.",
-            3: "🙏 Stylet : Choisissez 1 de vos joueur non solitaire et disponible pour cette phase, il obtient poignard jusqu'à la fin de la phase.",
-            4: "🙏 Homme de fer : Choisissez un de vos joueur non solitaire et disponible pour cette phase, il obtient +1AR (max 11) pour la durée du match.",
-            5: "🙏 Poings américains : Choisissez 1 de vos joueur non solitaire et disponible pour cette phase, il obtient châtaigne (+1) pour la durée du match.",
-            6: "🙏 Mauvaises habitudes : Désignez au hasard 1d3 joueurs adverses non solitaire et disponible pour cette phase, ils obtiennent solitaire (2+) jusqu'à la fin de la phase.",
-            7: "🙏 Crampons graisseux : Désignez au hasard 1 joueur adverse disponible pour cette phase, il obtient -1M jusqu'à la fin de la phase.",
-            8: "🙏 Statue bénie de Nuffle : Choisissez 1 de vos joueur non solitaire et disponible pour cette phase, il obtient Pro pour la durée du match."
-        };
-
-        this.matchData.prayer.effect = prayerEffects[roll] || "Effet de prière inconnu.";
+        // Utiliser la config au lieu de définir localement
+        this.matchData.prayer.effect = AppConfig.gameData.prayerEffects[roll] || "Effet de prière inconnu.";
         this.matchData.prayer.rolled = true;
 
-        document.getElementById('prayer-result').value = roll;
+        const prResult = document.getElementById('prayer-result');
+        if (prResult) {
+            prResult.value = roll;
+        }
+
         const descDiv = document.getElementById('prayer-description');
-        descDiv.style.display = 'block';
-        descDiv.className = 'result-box success';
-        descDiv.innerHTML = `<p>Résultat de la Prière (${roll}) : <strong>${this.matchData.prayer.effect}</strong></p>`;
+        if (descDiv) {
+            descDiv.style.display = 'block';
+            descDiv.className = 'result-box success';
+            descDiv.innerHTML = `<p>Résultat de la Prière (${roll}) : <strong>${this.matchData.prayer.effect}</strong></p>`;
+        }
     }
 
     flipCoin() {

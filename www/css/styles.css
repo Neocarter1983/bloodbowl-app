@@ -140,11 +140,11 @@ body {
     padding: 25px;
     box-shadow: var(--box-shadow);
     margin-bottom: 20px;
-    flex: 1;
 }
 
+
 .tab-content.active {
-    display: flex;
+    display: block;
     flex-direction: column;
 }
 
@@ -185,6 +185,7 @@ body {
 /* S'assurer que tout le contenu a un fond blanc */
 main.content {
     flex: 1;
+    display: block !important; /* Force l'affichage */
 }
 
 /* Content principal */
