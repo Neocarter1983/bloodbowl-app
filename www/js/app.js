@@ -672,7 +672,8 @@ class BloodBowlApp {
 
     getPrematchTabHTML() {
         let html = `
-            <h2 class="section-title">⚡ Séquence d'Avant-Match</h2>
+            <div class="tab-content active" id="prematch">
+                <h2 class="section-title">⚡ Séquence d'Avant-Match</h2>
 
             <div class="explanation-box">
                 <h4>🎯 Déroulement de l'avant-match (dans l'ordre)</h4>
@@ -720,9 +721,10 @@ class BloodBowlApp {
         }
 
         html += `
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="app.switchTab('setup')">⬅️ Retour Configuration</button>
-                <button class="btn btn-primary" onclick="app.switchTab('match')">➡️ Commencer le Match</button>
+            <div class="form-actions">
+                    <button class="btn btn-primary" onclick="app.switchTab('setup')">⬅️ Retour Configuration</button>
+                    <button class="btn btn-primary" onclick="app.switchTab('match')">➡️ Commencer le Match</button>
+            </div>
             </div>
         `;
 
