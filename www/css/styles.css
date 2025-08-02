@@ -472,3 +472,132 @@ input:focus, select:focus, textarea:focus {
     background: var(--primary-color);
 }
 
+/* Step sections */
+.step-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 15px 0;
+    border: 1px solid #dee2e6;
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.step-number {
+    background: var(--primary-color);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.step-title {
+    color: var(--primary-color);
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+/* Dice controls */
+.dice-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 10px 0;
+}
+
+.dice-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.3s ease;
+}
+
+.dice-btn:hover {
+    background: var(--secondary-color);
+}
+
+.dice-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.dice-result {
+    background: white;
+    border: 2px solid var(--primary-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: bold;
+    min-width: 50px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* Budget display */
+.budget-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.budget-item {
+    text-align: center;
+    padding: 15px;
+    background: #e3f2fd;
+    border-radius: 8px;
+    border: 2px solid #2196f3;
+}
+
+.budget-item.warning {
+    background: #fff3cd;
+    border-color: #ffc107;
+}
+
+.budget-item.success {
+    background: #e8f5e8;
+    border-color: #4caf50;
+}
+
+.budget-item .value {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.budget-item .label {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Secondary button */
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+

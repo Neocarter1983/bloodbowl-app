@@ -5,13 +5,57 @@ class BloodBowlApp {
         this.matchData = {
             team1: this.createTeamObject(),
             team2: this.createTeamObject(),
-            weather: { total: 0, effect: '', rolled: false },
+            weather: {
+                total: 0,
+                effect: '',
+                rolled: false,
+                dice1: null,
+                dice2: null
+            },
             kickoffEvents: [],
             matchStart: null,
-            matchEnd: null
+            matchEnd: null,
+            coinFlip: '',
+            prayer: {
+                effect: '',
+                rolled: false,
+                dice: null
+            },
+            inducements: {
+                team1Items: {},
+                team2Items: {},
+                team1PetiteMonnaie: 0,
+                team2PetiteMonnaie: 0,
+                team1Treasury: 0,
+                team2Treasury: 0
+            }
         };
 
+        // Initialiser les inducements
+        this.initializeInducementsData();
+
         this.init();
+    }
+
+    initializeInducementsData() {
+        if (!this.matchData.inducements) {
+            this.matchData.inducements = {
+                team1Items: {},
+                team2Items: {},
+                team1PetiteMonnaie: 0,
+                team2PetiteMonnaie: 0,
+                team1Treasury: 0,
+                team2Treasury: 0
+            };
+        }
+
+        // S'assurer que les items sont initialisés
+        if (!this.matchData.inducements.team1Items) {
+            this.matchData.inducements.team1Items = {};
+        }
+        if (!this.matchData.inducements.team2Items) {
+            this.matchData.inducements.team2Items = {};
+        }
     }
 
     createTeamObject() {
@@ -23,9 +67,53 @@ class BloodBowlApp {
             fans: 1,
             score: 0,
             popularity: 0,
+            popularityDice: null, // Ajouter cette ligne
             players: [],
             treasury: 0
         };
+    }
+
+    // Méthode pour réinitialiser complètement l'application
+    resetApp() {
+        if (confirm('Voulez-vous effacer toutes les données et recommencer ? Cette action est irréversible.')) {
+            // Effacer le localStorage
+            Utils.storage.remove('match_state');
+
+            // Réinitialiser matchData
+            this.matchData = {
+                team1: this.createTeamObject(),
+                team2: this.createTeamObject(),
+                weather: {
+                    total: 0,
+                    effect: '',
+                    rolled: false,
+                    dice1: null,
+                    dice2: null
+                },
+                kickoffEvents: [],
+                matchStart: null,
+                matchEnd: null,
+                coinFlip: '',
+                prayer: {
+                    effect: '',
+                    rolled: false,
+                    dice: null
+                },
+                inducements: {
+                    team1Items: {},
+                    team2Items: {},
+                    team1PetiteMonnaie: 0,
+                    team2PetiteMonnaie: 0,
+                    team1Treasury: 0,
+                    team2Treasury: 0
+                }
+            };
+
+            // Recharger l'onglet actuel
+            this.loadTab('setup');
+
+            alert('Application réinitialisée avec succès !');
+        }
     }
 
     init() {
@@ -145,11 +233,70 @@ class BloodBowlApp {
 
         if (savedState && savedState.matchData) {
             this.matchData = savedState.matchData;
+
+            // Migration des anciennes données
+            this.migrateOldData();
+
             console.log('État restauré:', savedState.saveDate);
             return true;
         }
 
         return false;
+    }
+
+    // Nouvelle méthode pour migrer les anciennes données
+    migrateOldData() {
+        // S'assurer que inducements existe
+        if (!this.matchData.inducements) {
+            this.matchData.inducements = {
+                team1Items: {},
+                team2Items: {},
+                team1PetiteMonnaie: 0,
+                team2PetiteMonnaie: 0,
+                team1Treasury: 0,
+                team2Treasury: 0
+            };
+        }
+
+        // S'assurer que weather a toutes ses propriétés
+        if (!this.matchData.weather) {
+            this.matchData.weather = {
+                total: 0,
+                effect: '',
+                rolled: false,
+                dice1: null,
+                dice2: null
+            };
+        } else {
+            if (this.matchData.weather.dice1 === undefined) {
+                this.matchData.weather.dice1 = null;
+            }
+            if (this.matchData.weather.dice2 === undefined) {
+                this.matchData.weather.dice2 = null;
+            }
+        }
+
+        // S'assurer que prayer existe
+        if (!this.matchData.prayer) {
+            this.matchData.prayer = {
+                effect: '',
+                rolled: false,
+                dice: null
+            };
+        }
+
+        // S'assurer que coinFlip existe
+        if (!this.matchData.coinFlip) {
+            this.matchData.coinFlip = '';
+        }
+
+        // S'assurer que chaque équipe a popularityDice
+        if (this.matchData.team1 && this.matchData.team1.popularityDice === undefined) {
+            this.matchData.team1.popularityDice = null;
+        }
+        if (this.matchData.team2 && this.matchData.team2.popularityDice === undefined) {
+            this.matchData.team2.popularityDice = null;
+        }
     }
 
     startAutoSave() {
@@ -445,6 +592,469 @@ class BloodBowlApp {
     updateTeamNamesDisplay() {
         // Cette fonction sera utilisée pour mettre à jour tous les endroits où les noms apparaissent
         // Pour l'instant, on ne fait rien car on n'a que l'onglet Setup
+    }
+
+    getPrematchTabHTML() {
+        return `
+            <div class="tab-content" id="prematch">
+                <h2 class="section-title">⚡ Séquence d'Avant-Match</h2>
+
+                <div class="explanation-box">
+                    <h4>🎯 Déroulement de l'avant-match (dans l'ordre)</h4>
+                    <p><strong>1.</strong> Déterminez le facteur de popularité (fans)</p>
+                    <p><strong>2.</strong> Tirez la météo qui affectera le match</p>
+                    <p><strong>3.</strong> Calculez la petite monnaie et les coups de pouce</p>
+                    <p><strong>4.</strong> L'outsider peut invoquer Nuffle</p>
+                    <p><strong>5.</strong> Déterminez qui engage en premier</p>
+                </div>
+
+                ${this.getPopularitySection()}
+                ${this.getWeatherSection()}
+                ${this.getPetiteMonnaieSection()}
+                ${this.getPrayerSection()}
+                ${this.getCoinFlipSection()}
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="app.switchTab('setup')">⬅️ Retour Configuration</button>
+                    <button class="btn btn-primary" onclick="app.switchTab('match')">➡️ Commencer le Match</button>
+                </div>
+            </div>
+        `;
+    }
+
+    getPopularitySection() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Facteur de Popularité</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> Chaque coach lance 1D3 et ajoute ses fans dévoués</p>
+                    <p>Ce facteur détermine les gains à la fin du match et peut influencer certains événements</p>
+                </div>
+                <div class="dice-controls">
+                    <span><strong>${team1.name || 'Équipe 1'}</strong> :</span>
+                    <button class="dice-btn" data-dice-type="popularity" data-team="1">🎲 Lancer D3</button>
+                    <input type="number" class="dice-result" id="team1-pop-dice"
+                        value="${team1.popularityDice || ''}" min="1" max="3"
+                        data-team="1" data-field="popularityDice">
+                    <span>+ ${team1.fans} fans =</span>
+                    <input type="number" class="dice-result" id="team1-pop-total"
+                        value="${team1.popularity || ''}" readonly>
+                </div>
+                <div class="dice-controls">
+                    <span><strong>${team2.name || 'Équipe 2'}</strong> :</span>
+                    <button class="dice-btn" data-dice-type="popularity" data-team="2">🎲 Lancer D3</button>
+                    <input type="number" class="dice-result" id="team2-pop-dice"
+                        value="${team2.popularityDice || ''}" min="1" max="3"
+                        data-team="2" data-field="popularityDice">
+                    <span>+ ${team2.fans} fans =</span>
+                    <input type="number" class="dice-result" id="team2-pop-total"
+                        value="${team2.popularity || ''}" readonly>
+                </div>
+                <div id="popularity-result" class="result-box" style="${(team1.popularity && team2.popularity) ? '' : 'display: none;'}">
+                    ${this.getPopularityResultText()}
+                </div>
+            </div>
+        `;
+    }
+
+    getWeatherSection() {
+        const weather = this.matchData.weather;
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Météo</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> Chaque coach lance 1D6, on additionne les résultats (2-12)</p>
+                    <p>La météo peut affecter les passes, la course, les tests d'armure, etc.</p>
+                </div>
+                <div class="dice-controls">
+                    <span><strong>${this.matchData.team1.name || 'Équipe 1'}</strong> :</span>
+                    <button class="dice-btn" data-dice-type="weather" data-team="1">🎲 Lancer D6</button>
+                    <input type="number" class="dice-result" id="weather1-result"
+                        value="${weather.dice1 || ''}" min="1" max="6"
+                        data-field="weatherDice1">
+                    <span><strong>${this.matchData.team2.name || 'Équipe 2'}</strong> :</span>
+                    <button class="dice-btn" data-dice-type="weather" data-team="2">🎲 Lancer D6</button>
+                    <input type="number" class="dice-result" id="weather2-result"
+                        value="${weather.dice2 || ''}" min="1" max="6"
+                        data-field="weatherDice2">
+                    <span><strong>Total :</strong></span>
+                    <input type="number" class="dice-result" id="weather-total"
+                        value="${weather.total || ''}" readonly>
+                </div>
+                <div id="weather-description" class="result-box" style="${weather.effect ? '' : 'display: none;'}">
+                    ${weather.effect ? `<p>Météo actuelle (${weather.total}) : <strong>${weather.effect}</strong></p>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getPetiteMonnaieSection() {
+        const team1Vea = this.matchData.team1.vea;
+        const team2Vea = this.matchData.team2.vea;
+        const { team1PetiteMonnaie, team2PetiteMonnaie } = this.calculatePetiteMonnaie();
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Petite Monnaie & Coups de Pouce</div>
+                </div>
+
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> L'équipe avec la VEA la plus faible reçoit la différence en "petite monnaie"</p>
+                    <p>Cette petite monnaie ne peut être utilisée QUE pour acheter des coups de pouce pour ce match</p>
+                    <p>Les deux équipes peuvent aussi dépenser de leur trésorerie pour acheter des coups de pouce</p>
+                </div>
+
+                <div id="petite-monnaie-calculation" class="result-box">
+                    ${this.getPetiteMonnaieText()}
+                </div>
+
+                <div class="budget-display">
+                    <div class="budget-item ${team1PetiteMonnaie > 0 ? 'warning' : ''}">
+                        <div class="value">${Utils.formatNumber(team1PetiteMonnaie)} PO</div>
+                        <div class="label">Petite Monnaie<br>${this.matchData.team1.name || 'Équipe 1'}</div>
+                    </div>
+                    <div class="budget-item ${team2PetiteMonnaie > 0 ? 'warning' : ''}">
+                        <div class="value">${Utils.formatNumber(team2PetiteMonnaie)} PO</div>
+                        <div class="label">Petite Monnaie<br>${this.matchData.team2.name || 'Équipe 2'}</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn btn-secondary" onclick="app.showInducementsModal()">
+                        💰 Gérer les Coups de Pouce
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    getPrayerSection() {
+        const prayer = this.matchData.prayer;
+        const prayerCount = this.calculatePrayerCount();
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Prières à Nuffle</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> L'outsider (équipe avec VEA la plus faible) peut prier Nuffle</p>
+                    <p>1 prière par tranche de 50 000 PO d'écart entre les VEA</p>
+                    <p>Les effets durent généralement jusqu'à la fin de la phase (mi-temps ou TD)</p>
+                </div>
+                <div class="dice-controls">
+                    <button class="dice-btn" data-dice-type="prayer"
+                        ${prayerCount > 0 ? '' : 'disabled'}>
+                        🙏 Prière à Nuffle (D8)
+                    </button>
+                    <input type="number" class="dice-result" id="prayer-result"
+                        value="${prayer.dice || ''}" min="1" max="8"
+                        data-field="prayerDice">
+                </div>
+                <div id="prayer-description" class="result-box" style="${prayer.effect ? '' : 'display: none;'}">
+                    ${prayer.effect ? `<p>Résultat de la Prière (${prayer.dice}) : <strong>${prayer.effect}</strong></p>` : ''}
+                </div>
+                <div id="prayer-info" class="help-text">
+                    ${this.getPrayerInfoText()}
+                </div>
+            </div>
+        `;
+    }
+
+    getCoinFlipSection() {
+        const coinFlip = this.matchData.coinFlip;
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Pile ou Face</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> Déterminez qui engage (lance le ballon) et qui reçoit</p>
+                    <p>Le gagnant du tirage choisit d'engager ou de recevoir pour la première mi-temps</p>
+                </div>
+                <div class="dice-controls">
+                    <button class="dice-btn" data-dice-type="coin">🪙 Pile ou Face</button>
+                    <input type="text" class="dice-result" id="coin-result"
+                        value="${coinFlip}" readonly
+                        data-field="coinFlip">
+                </div>
+                <div id="coin-description" class="result-box" style="${coinFlip ? '' : 'display: none;'}">
+                    ${coinFlip ? `<p>Résultat du tirage au sort : <strong>${coinFlip}</strong> !</p>
+                    <p>Le coach qui a gagné le tirage choisit d'engager ou de recevoir.</p>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Méthodes de calcul
+    calculatePetiteMonnaie() {
+        const team1Vea = this.matchData.team1.vea;
+        const team2Vea = this.matchData.team2.vea;
+        let team1PetiteMonnaie = 0;
+        let team2PetiteMonnaie = 0;
+
+        if (team1Vea > team2Vea) {
+            team2PetiteMonnaie = team1Vea - team2Vea;
+        } else if (team2Vea > team1Vea) {
+            team1PetiteMonnaie = team2Vea - team1Vea;
+        }
+
+        this.matchData.inducements.team1PetiteMonnaie = team1PetiteMonnaie;
+        this.matchData.inducements.team2PetiteMonnaie = team2PetiteMonnaie;
+
+        return { team1PetiteMonnaie, team2PetiteMonnaie };
+    }
+
+    calculatePrayerCount() {
+        const diff = Math.abs(this.matchData.team1.vea - this.matchData.team2.vea);
+        return Math.floor(diff / 50000);
+    }
+
+    getPopularityResultText() {
+        const team1Pop = this.matchData.team1.popularity;
+        const team2Pop = this.matchData.team2.popularity;
+
+        if (team1Pop && team2Pop) {
+            return `<p>Facteur de Popularité Final : <strong>${this.matchData.team1.name} ${team1Pop}</strong> vs <strong>${this.matchData.team2.name} ${team2Pop}</strong></p>`;
+        }
+        return '<p>Lancez les dés de popularité pour les deux équipes.</p>';
+    }
+
+    getPetiteMonnaieText() {
+        const team1Vea = this.matchData.team1.vea;
+        const team2Vea = this.matchData.team2.vea;
+
+        if (team1Vea === 0 || team2Vea === 0) {
+            return '<p>⚠️ Renseignez d\'abord les VEA dans l\'onglet Configuration</p>';
+        }
+
+        const { team1PetiteMonnaie, team2PetiteMonnaie } = this.calculatePetiteMonnaie();
+
+        if (team1PetiteMonnaie > 0) {
+            return `<p>${this.matchData.team1.name} reçoit <strong>${Utils.formatNumber(team1PetiteMonnaie)} PO</strong> de petite monnaie. Utilisez-la pour acheter des coups de pouce !</p>`;
+        } else if (team2PetiteMonnaie > 0) {
+            return `<p>${this.matchData.team2.name} reçoit <strong>${Utils.formatNumber(team2PetiteMonnaie)} PO</strong> de petite monnaie. Utilisez-la pour acheter des coups de pouce !</p>`;
+        } else {
+            return '<p>Pas de petite monnaie. Les VEA sont égales.</p>';
+        }
+    }
+
+    getPrayerInfoText() {
+        const prayerCount = this.calculatePrayerCount();
+
+        if (prayerCount === 0) {
+            return 'Les VEA sont égales ou trop proches, pas de prière à Nuffle.';
+        }
+
+        const outsider = this.matchData.team1.vea < this.matchData.team2.vea ?
+            this.matchData.team1.name : this.matchData.team2.name;
+
+        return `${outsider} peut faire ${prayerCount} prière(s) à Nuffle.`;
+    }
+
+    // Gestion des dés
+    handleDiceRoll(target) {
+        const diceType = target.dataset.diceType;
+        const team = target.dataset.team;
+
+        switch(diceType) {
+            case 'popularity':
+                this.rollPopularityDice(team);
+                break;
+            case 'weather':
+                this.rollWeatherDice(team);
+                break;
+            case 'prayer':
+                this.rollPrayerDice();
+                break;
+            case 'coin':
+                this.flipCoin();
+                break;
+        }
+    }
+
+    rollPopularityDice(team) {
+        const roll = Utils.getRandomInt(1, 3);
+        const teamKey = `team${team}`;
+
+        this.matchData[teamKey].popularityDice = roll;
+        this.matchData[teamKey].popularity = roll + this.matchData[teamKey].fans;
+
+        // Mettre à jour l'affichage
+        document.getElementById(`team${team}-pop-dice`).value = roll;
+        document.getElementById(`team${team}-pop-total`).value = this.matchData[teamKey].popularity;
+
+        // Afficher le résultat si les deux équipes ont lancé
+        if (this.matchData.team1.popularity && this.matchData.team2.popularity) {
+            const resultDiv = document.getElementById('popularity-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = this.getPopularityResultText();
+            resultDiv.className = 'result-box success';
+        }
+    }
+
+    rollWeatherDice(team) {
+        const roll = Utils.getRandomInt(1, 6);
+
+        if (team === '1') {
+            this.matchData.weather.dice1 = roll;
+            document.getElementById('weather1-result').value = roll;
+        } else {
+            this.matchData.weather.dice2 = roll;
+            document.getElementById('weather2-result').value = roll;
+        }
+
+        // Calculer le total si les deux dés sont lancés
+        if (this.matchData.weather.dice1 && this.matchData.weather.dice2) {
+            const total = this.matchData.weather.dice1 + this.matchData.weather.dice2;
+            this.matchData.weather.total = total;
+            this.matchData.weather.effect = AppConfig.gameData.weatherEffects[total] || "Effet météo inconnu.";
+            this.matchData.weather.rolled = true;
+
+            document.getElementById('weather-total').value = total;
+            const descDiv = document.getElementById('weather-description');
+            descDiv.style.display = 'block';
+            descDiv.className = 'result-box success';
+            descDiv.innerHTML = `<p>Météo actuelle (${total}) : <strong>${this.matchData.weather.effect}</strong></p>`;
+        }
+    }
+
+    rollPrayerDice() {
+        const roll = Utils.getRandomInt(1, 8);
+        this.matchData.prayer.dice = roll;
+
+        // Récupérer l'effet depuis la config
+        const prayerEffects = {
+            1: "🙏 Trappe traîtresse : Jusqu'à la fin de la mi temps, tout joueur qui termine son mouvement sur une case trappe jette 1d6. Sur un résultat de 1, il est considéré comme poussé dans le public. S'il portait le ballon, il rebondit.",
+            2: "🙏 Pote avec l'arbitre : Jusqu'à la fin de la phase, les résultats de contestation sont traités en 2-4 et 5-6 au lieu de 2-5 et 6.",
+            3: "🙏 Stylet : Choisissez 1 de vos joueur non solitaire et disponible pour cette phase, il obtient poignard jusqu'à la fin de la phase.",
+            4: "🙏 Homme de fer : Choisissez un de vos joueur non solitaire et disponible pour cette phase, il obtient +1AR (max 11) pour la durée du match.",
+            5: "🙏 Poings américains : Choisissez 1 de vos joueur non solitaire et disponible pour cette phase, il obtient châtaigne (+1) pour la durée du match.",
+            6: "🙏 Mauvaises habitudes : Désignez au hasard 1d3 joueurs adverses non solitaire et disponible pour cette phase, ils obtiennent solitaire (2+) jusqu'à la fin de la phase.",
+            7: "🙏 Crampons graisseux : Désignez au hasard 1 joueur adverse disponible pour cette phase, il obtient -1M jusqu'à la fin de la phase.",
+            8: "🙏 Statue bénie de Nuffle : Choisissez 1 de vos joueur non solitaire et disponible pour cette phase, il obtient Pro pour la durée du match."
+        };
+
+        this.matchData.prayer.effect = prayerEffects[roll] || "Effet de prière inconnu.";
+        this.matchData.prayer.rolled = true;
+
+        document.getElementById('prayer-result').value = roll;
+        const descDiv = document.getElementById('prayer-description');
+        descDiv.style.display = 'block';
+        descDiv.className = 'result-box success';
+        descDiv.innerHTML = `<p>Résultat de la Prière (${roll}) : <strong>${this.matchData.prayer.effect}</strong></p>`;
+    }
+
+    flipCoin() {
+        const outcomes = ['Pile', 'Face'];
+        const result = outcomes[Utils.getRandomInt(0, 1)];
+        this.matchData.coinFlip = result;
+
+        document.getElementById('coin-result').value = result;
+        const descDiv = document.getElementById('coin-description');
+        descDiv.style.display = 'block';
+        descDiv.className = 'result-box success';
+        descDiv.innerHTML = `<p>Résultat du tirage au sort : <strong>${result}</strong> !</p>
+                            <p>Le coach qui a gagné le tirage choisit d'engager ou de recevoir.</p>`;
+    }
+
+    // Initialisation de l'onglet
+    initializePrematchTab() {
+        // Écouter les changements manuels des inputs
+        const popDice1 = document.getElementById('team1-pop-dice');
+        const popDice2 = document.getElementById('team2-pop-dice');
+
+        if (popDice1) {
+            popDice1.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                if (value >= 1 && value <= 3) {
+                    this.matchData.team1.popularityDice = value;
+                    this.matchData.team1.popularity = value + this.matchData.team1.fans;
+                    document.getElementById('team1-pop-total').value = this.matchData.team1.popularity;
+                    this.updatePopularityResult();
+                }
+            });
+        }
+
+        if (popDice2) {
+            popDice2.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                if (value >= 1 && value <= 3) {
+                    this.matchData.team2.popularityDice = value;
+                    this.matchData.team2.popularity = value + this.matchData.team2.fans;
+                    document.getElementById('team2-pop-total').value = this.matchData.team2.popularity;
+                    this.updatePopularityResult();
+                }
+            });
+        }
+
+        // Idem pour la météo
+        const weather1 = document.getElementById('weather1-result');
+        const weather2 = document.getElementById('weather2-result');
+
+        if (weather1) {
+            weather1.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                if (value >= 1 && value <= 6) {
+                    this.matchData.weather.dice1 = value;
+                    this.updateWeatherResult();
+                }
+            });
+        }
+
+        if (weather2) {
+            weather2.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                if (value >= 1 && value <= 6) {
+                    this.matchData.weather.dice2 = value;
+                    this.updateWeatherResult();
+                }
+            });
+        }
+    }
+
+    updatePopularityResult() {
+        if (this.matchData.team1.popularity && this.matchData.team2.popularity) {
+            const resultDiv = document.getElementById('popularity-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = this.getPopularityResultText();
+            resultDiv.className = 'result-box success';
+        }
+    }
+
+    updateWeatherResult() {
+        if (this.matchData.weather.dice1 && this.matchData.weather.dice2) {
+            const total = this.matchData.weather.dice1 + this.matchData.weather.dice2;
+            this.matchData.weather.total = total;
+            this.matchData.weather.effect = AppConfig.gameData.weatherEffects[total] || "Effet météo inconnu.";
+            this.matchData.weather.rolled = true;
+
+            document.getElementById('weather-total').value = total;
+            const descDiv = document.getElementById('weather-description');
+            descDiv.style.display = 'block';
+            descDiv.className = 'result-box success';
+            descDiv.innerHTML = `<p>Météo actuelle (${total}) : <strong>${this.matchData.weather.effect}</strong></p>`;
+        }
+    }
+
+    // Placeholder pour la modal des coups de pouce
+    showInducementsModal() {
+        alert('La gestion des coups de pouce sera implémentée dans la prochaine étape !');
     }
 
 }
