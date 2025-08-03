@@ -964,6 +964,8 @@ class BloodBowlApp {
                     </div>
                 </div>
 
+                ${this.getSelectedInducementsDisplay()}
+
                 <div style="text-align: center; margin-top: 15px;">
                     <button class="btn btn-secondary" onclick="app.showInducementsModal()">
                         💰 Gérer les Coups de Pouce
@@ -1503,6 +1505,105 @@ class BloodBowlApp {
 
         // Rafraîchir l'affichage de l'onglet
         this.loadTab(this.currentTab);
+
+        // Message de confirmation (optionnel)
+        console.log('Coups de pouce validés !');
+    }
+
+    getSelectedInducementsDisplay() {
+        const team1Inducements = this.getTeamInducementsList(1);
+        const team2Inducements = this.getTeamInducementsList(2);
+
+        // Si aucun coup de pouce n'est sélectionné, ne rien afficher
+        if (team1Inducements.length === 0 && team2Inducements.length === 0) {
+            return '';
+        }
+
+        let html = '<div class="selected-inducements-display">';
+
+        // Équipe 1
+        if (team1Inducements.length > 0) {
+            html += `
+                <div class="team-selected-inducements">
+                    <h5>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h5>
+                    <div class="inducements-summary">
+            `;
+
+            team1Inducements.forEach(item => {
+                html += `
+                    <div class="inducement-summary-item">
+                        <span class="inducement-summary-name">${item.name}</span>
+                        <span class="inducement-summary-qty">x${item.qty}</span>
+                        <span class="inducement-summary-cost">${Utils.formatNumber(item.totalCost)} PO</span>
+                    </div>
+                `;
+            });
+
+            const total1 = team1Inducements.reduce((sum, item) => sum + item.totalCost, 0);
+            html += `
+                        <div class="inducement-summary-total">
+                            <span>Total :</span>
+                            <span>${Utils.formatNumber(total1)} PO</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Équipe 2
+        if (team2Inducements.length > 0) {
+            html += `
+                <div class="team-selected-inducements">
+                    <h5>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h5>
+                    <div class="inducements-summary">
+            `;
+
+            team2Inducements.forEach(item => {
+                html += `
+                    <div class="inducement-summary-item">
+                        <span class="inducement-summary-name">${item.name}</span>
+                        <span class="inducement-summary-qty">x${item.qty}</span>
+                        <span class="inducement-summary-cost">${Utils.formatNumber(item.totalCost)} PO</span>
+                    </div>
+                `;
+            });
+
+            const total2 = team2Inducements.reduce((sum, item) => sum + item.totalCost, 0);
+            html += `
+                        <div class="inducement-summary-total">
+                            <span>Total :</span>
+                            <span>${Utils.formatNumber(total2)} PO</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    getTeamInducementsList(team) {
+        const items = this.matchData.inducements[`team${team}Items`];
+        const list = [];
+
+        if (items) {
+            Object.keys(items).forEach(name => {
+                if (items[name] > 0) {
+                    const inducement = AppConfig.gameData.inducements.find(ind => ind.name === name);
+                    if (inducement) {
+                        list.push({
+                            name: name,
+                            qty: items[name],
+                            cost: inducement.cost,
+                            totalCost: inducement.cost * items[name]
+                        });
+                    }
+                }
+            });
+        }
+
+        return list;
     }
 
 }
