@@ -254,6 +254,11 @@ class BloodBowlApp {
     }
 
     switchTab(tabId) {
+        // Nettoyer l'onglet actuel si nécessaire
+        if (this.currentTab === 'match') {
+            this.cleanupMatchTab();
+        }
+
         // Retirer la classe active de tous les onglets
         document.querySelectorAll('.tab').forEach(tab => {
             tab.classList.remove('active');
@@ -578,10 +583,22 @@ class BloodBowlApp {
                             <span>${topScorer.name} (${topScorer.xp} XP)</span>
                         </div>
                     ` : ''}
-                    ${teamData.soldPlayers && teamData.soldPlayers.length > 0 ? `
+                    ${teamData.mvpName ? `
                         <div class="summary-row">
-                            <span>Joueurs vendus</span>
-                            <span>${teamData.soldPlayers.length}</span>
+                            <span>JDM</span>
+                            <span>${teamData.mvpName} (+4 XP)</span>
+                        </div>
+                    ` : ''}
+                    ${teamData.soldPlayers && teamData.soldPlayers.length > 0 ? `
+                        <div class="summary-row-expanded">
+                            <span>Joueurs vendus (${teamData.soldPlayers.length})</span>
+                            <div class="sold-players-list">
+                                ${teamData.soldPlayers.map(p => `
+                                    <div class="sold-player-summary">
+                                        ${p.name || 'Sans nom'} - ${Utils.formatNumber(p.value)} PO
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     ` : ''}
                 </div>
@@ -780,30 +797,188 @@ class BloodBowlApp {
     // === MÉTHODES DE SAUVEGARDE ===
 
     saveState() {
-        const stateToSave = {
-            matchData: this.matchData,
-            currentTab: this.currentTab,
-            saveDate: new Date().toISOString(),
-            version: AppConfig.version
-        };
+        try {
+            const stateToSave = {
+                matchData: this.matchData,
+                currentTab: this.currentTab,
+                saveDate: new Date().toISOString(),
+                version: AppConfig.version
+            };
 
-        return Utils.storage.set('match_state', stateToSave);
+            // Sauvegarde principale
+            const saved = Utils.storage.set('match_state', stateToSave);
+
+            // Sauvegarde de secours avec timestamp
+            if (saved) {
+                const backupKey = `match_backup_${new Date().getTime()}`;
+                Utils.storage.set(backupKey, stateToSave);
+
+                // Nettoyer les anciennes sauvegardes (garder les 5 dernières)
+                this.cleanOldBackups();
+            }
+
+            if (saved && this.hasMatchData()) {
+               this.showSaveIndicator();
+           }
+           return saved;
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde:', error);
+            this.showSaveError();
+            return false;
+        }
+    }
+
+    cleanOldBackups() {
+        try {
+            const prefix = AppConfig.storage.prefix + 'match_backup_';
+            const backups = [];
+
+            // Récupérer toutes les sauvegardes
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(prefix)) {
+                    const timestamp = parseInt(key.replace(prefix, ''));
+                    backups.push({ key, timestamp });
+                }
+            }
+
+            // Trier par date (plus récent en premier)
+            backups.sort((a, b) => b.timestamp - a.timestamp);
+
+            // Supprimer toutes sauf les 5 plus récentes
+            if (backups.length > 5) {
+                backups.slice(5).forEach(backup => {
+                    localStorage.removeItem(backup.key);
+                });
+            }
+        } catch (error) {
+            console.error('Erreur lors du nettoyage des backups:', error);
+        }
+    }
+
+    showSaveError() {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'save-error-notification';
+        errorDiv.innerHTML = `
+            <div class="save-error-content">
+                <span>⚠️ Erreur de sauvegarde ! Les données pourraient être perdues.</span>
+                <button onclick="app.tryManualSave()">Réessayer</button>
+            </div>
+        `;
+        document.body.appendChild(errorDiv);
+
+        setTimeout(() => {
+            if (errorDiv.parentElement) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    }
+
+    tryManualSave() {
+        const saved = this.saveState();
+        if (saved) {
+            alert('Sauvegarde réussie !');
+        } else {
+            alert('Échec de la sauvegarde. Essayez d\'exporter vos données.');
+        }
     }
 
     loadState() {
-        const savedState = Utils.storage.get('match_state');
+        try {
+            // Essayer de charger la sauvegarde principale
+            let savedState = Utils.storage.get('match_state');
 
-        if (savedState && savedState.matchData) {
-            this.matchData = savedState.matchData;
+            // Si pas de sauvegarde principale, chercher la plus récente des backups
+            if (!savedState || !savedState.matchData) {
+                console.log('Pas de sauvegarde principale, recherche de backup...');
+                savedState = this.loadLatestBackup();
+            }
 
-            // Migration des anciennes données
-            this.migrateOldData();
+            if (savedState && savedState.matchData) {
+                this.matchData = savedState.matchData;
 
-            console.log('État restauré:', savedState.saveDate);
-            return true;
+                // Migration des anciennes données
+                this.migrateOldData();
+
+                // Afficher les informations de récupération
+                this.showRecoveryInfo(savedState.saveDate);
+
+                console.log('État restauré:', savedState.saveDate);
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('Erreur lors du chargement:', error);
+            return false;
         }
+    }
 
-        return false;
+    loadLatestBackup() {
+        try {
+            const prefix = AppConfig.storage.prefix + 'match_backup_';
+            let latestBackup = null;
+            let latestTimestamp = 0;
+
+            // Parcourir toutes les clés pour trouver la sauvegarde la plus récente
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(prefix)) {
+                    const timestamp = parseInt(key.replace(prefix, ''));
+                    if (timestamp > latestTimestamp) {
+                        const data = localStorage.getItem(key);
+                        if (data) {
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed && parsed.matchData) {
+                                    latestBackup = parsed;
+                                    latestTimestamp = timestamp;
+                                }
+                            } catch (e) {
+                                console.error('Erreur parsing backup:', e);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return latestBackup;
+        } catch (error) {
+            console.error('Erreur lors de la récupération du backup:', error);
+            return null;
+        }
+    }
+
+    showRecoveryInfo(saveDate) {
+        if (!this.hasMatchData()) return;
+
+        const date = new Date(saveDate);
+        const timeAgo = this.getTimeAgo(date);
+
+        const recoveryDiv = document.createElement('div');
+        recoveryDiv.className = 'recovery-notification';
+        recoveryDiv.innerHTML = `
+            <div class="recovery-content">
+                <span>✅ Données récupérées (sauvegarde d'il y a ${timeAgo})</span>
+                <button onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+        document.body.appendChild(recoveryDiv);
+
+        setTimeout(() => {
+            if (recoveryDiv.parentElement) {
+                recoveryDiv.remove();
+            }
+        }, 5000);
+    }
+
+    getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+
+        if (seconds < 60) return `${seconds} secondes`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)} heures`;
+        return `${Math.floor(seconds / 86400)} jours`;
     }
 
     // Nouvelle méthode pour migrer les anciennes données
@@ -862,12 +1037,60 @@ class BloodBowlApp {
     }
 
     startAutoSave() {
-        setInterval(() => {
-            if (this.hasUnsavedChanges) {
-                this.saveState();
-                this.hasUnsavedChanges = false;
+        // Sauvegarde immédiate au démarrage
+        this.saveState();
+
+        // Sauvegarde automatique toutes les 10 secondes (au lieu de 30)
+        this.autoSaveInterval = setInterval(() => {
+            this.saveState();
+            console.log('Auto-save effectué à', new Date().toLocaleTimeString());
+        }, 10000); // 10 secondes
+
+        // Sauvegarde lors de certains événements critiques
+        this.setupCriticalSaveEvents();
+    }
+
+    setupCriticalSaveEvents() {
+        // Sauvegarde avant de quitter la page
+        window.addEventListener('beforeunload', (e) => {
+            this.saveState();
+
+            // Si des données importantes sont présentes, avertir l'utilisateur
+            if (this.hasMatchData()) {
+                e.preventDefault();
+                e.returnValue = 'Des données de match sont en cours. Êtes-vous sûr de vouloir quitter ?';
+                return e.returnValue;
             }
-        }, AppConfig.mobile.autoSaveInterval);
+        });
+
+        // Sauvegarde lorsque la page perd le focus
+        window.addEventListener('blur', () => {
+            this.saveState();
+        });
+
+        // Sauvegarde lorsque l'utilisateur change d'onglet du navigateur
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.saveState();
+            }
+        });
+
+        // Sauvegarde sur mobile lors de la mise en arrière-plan
+        window.addEventListener('pagehide', () => {
+            this.saveState();
+        });
+    }
+
+    hasMatchData() {
+        // Vérifier si des données importantes sont présentes
+        return (
+            this.matchData.team1.name ||
+            this.matchData.team2.name ||
+            this.matchData.team1.score > 0 ||
+            this.matchData.team2.score > 0 ||
+            (this.matchData.team1.players && this.matchData.team1.players.length > 0) ||
+            (this.matchData.team2.players && this.matchData.team2.players.length > 0)
+        );
     }
 
     // === GESTION DES ÉVÉNEMENTS ===
@@ -892,6 +1115,15 @@ class BloodBowlApp {
         }
 
         this.hasUnsavedChanges = true;
+
+        // Sauvegarde différée pour éviter trop d'appels
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+        this.saveTimeout = setTimeout(() => {
+            this.saveState();
+        }, 1000); // Sauvegarde 1 seconde après la fin de la saisie
+
     }
 
     handleClick(e) {
@@ -1123,6 +1355,7 @@ class BloodBowlApp {
                 this.updateVEAComparison();
             }
         }
+        this.saveState();
     }
 
     updateVEAComparison() {
@@ -1534,6 +1767,7 @@ class BloodBowlApp {
             resultDiv.innerHTML = this.getPopularityResultText();
             resultDiv.className = 'result-box success';
         }
+        this.saveState();
     }
 
     rollWeatherDice(team) {
@@ -1560,6 +1794,7 @@ class BloodBowlApp {
             descDiv.className = 'result-box success';
             descDiv.innerHTML = `<p>Météo actuelle (${total}) : <strong>${this.matchData.weather.effect}</strong></p>`;
         }
+        this.saveState();
     }
 
     rollPrayerDice() {
@@ -1581,6 +1816,7 @@ class BloodBowlApp {
             descDiv.className = 'result-box success';
             descDiv.innerHTML = `<p>Résultat de la Prière (${roll}) : <strong>${this.matchData.prayer.effect}</strong></p>`;
         }
+        this.saveState();
     }
 
     flipCoin() {
@@ -1594,6 +1830,8 @@ class BloodBowlApp {
         descDiv.className = 'result-box success';
         descDiv.innerHTML = `<p>Résultat du tirage au sort : <strong>${result}</strong> !</p>
                             <p>Le coach qui a gagné le tirage choisit d'engager ou de recevoir.</p>`;
+
+        this.saveState();
     }
 
     // Initialisation de l'onglet
@@ -1652,8 +1890,23 @@ class BloodBowlApp {
     }
 
     initializeMatchTab() {
-        // Initialiser les événements si nécessaire
+        // Restaurer l'état du chrono si nécessaire
+        if (this.matchData.timerRunning) {
+            this.startTimerInterval();
+        } else if (this.matchData.matchStart) {
+            // Afficher le temps écoulé même si le chrono est en pause
+            this.updateTimerDisplay();
+        }
+
         console.log('Match tab initialized');
+    }
+
+    cleanupMatchTab() {
+        // Arrêter l'intervalle du chrono lors du changement d'onglet
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
     }
 
     updatePopularityResult() {
@@ -1842,6 +2095,7 @@ class BloodBowlApp {
             items[inducementName] = newQty;
             this.updateInducementsDisplay(team);
         }
+        this.saveState();
     }
 
     calculateInducementsCost(team, excludeName = null, overrideQty = null) {
@@ -2268,6 +2522,7 @@ class BloodBowlApp {
         const roll = Utils.getRandomInt(2, 12);
         document.getElementById('kickoff-result').value = roll;
         this.updateKickoffEvent();
+        this.saveState();
     }
 
     updateKickoffEvent() {
@@ -2735,6 +2990,7 @@ class BloodBowlApp {
         const roll = Utils.getRandomInt(1, 6);
         document.getElementById(`fans${team}-roll`).value = roll;
         this.updateFans(team);
+        this.saveState();
     }
 
     updateFans(team) {
@@ -2788,6 +3044,7 @@ class BloodBowlApp {
         const roll = Utils.getRandomInt(1, 6);
         document.getElementById(`team${team}-errors-roll`).value = roll;
         this.updateCostlyErrors(team);
+        this.saveState();
     }
 
     updateCostlyErrors(team) {
@@ -2853,42 +3110,75 @@ class BloodBowlApp {
                     <div class="step-title">Joueur du Match (JDM)</div>
                 </div>
                 <div class="explanation-box">
-                    <p><strong>Règle :</strong> Le JDM est tiré au hasard parmi tous les joueurs (sauf morts, mercenaires et champions)</p>
+                    <p><strong>Règle :</strong> Un JDM est désigné pour chaque équipe</p>
                     <p>Le joueur sélectionné gagne automatiquement 4 XP bonus</p>
-                    <p>Vous pouvez aussi désigner manuellement le JDM si nécessaire</p>
+                    <p>Le JDM peut être n'importe quel joueur, même s'il n'est pas dans le tableau des actions</p>
                 </div>
 
-                <div class="mvp-selection">
-                    <button class="dice-btn" onclick="app.selectRandomMVP()" style="font-size: 16px; padding: 12px 25px;">
-                        🎲 Tirer le JDM au hasard
-                    </button>
-
-                    <div class="mvp-manual-selection">
-                        <h5>Ou sélectionner manuellement :</h5>
-                        <div class="mvp-grid">
-                            <div class="mvp-team-section">
-                                <h6>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h6>
-                                <select id="team1-mvp-select" onchange="app.selectManualMVP(1)">
-                                    <option value="">-- Choisir --</option>
-                                    ${this.getTeamPlayersOptions(1)}
-                                </select>
-                            </div>
-                            <div class="mvp-team-section">
-                                <h6>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h6>
-                                <select id="team2-mvp-select" onchange="app.selectManualMVP(2)">
-                                    <option value="">-- Choisir --</option>
-                                    ${this.getTeamPlayersOptions(2)}
-                                </select>
-                            </div>
+                <div class="mvp-selection-grid">
+                    <div class="mvp-team-section">
+                        <h5>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h5>
+                        <div class="mvp-input-group">
+                            <label>Nom du JDM :</label>
+                            <input type="text"
+                                id="team1-mvp-name"
+                                class="mvp-name-input"
+                                placeholder="Entrez le nom du joueur"
+                                value="${this.matchData.team1.mvpName || ''}"
+                                onchange="app.updateMVP(1, this.value)">
                         </div>
+                        ${this.matchData.team1.mvpName ? `
+                            <div class="mvp-display-small">
+                                <span class="mvp-icon">🌟</span>
+                                <span class="mvp-text">${this.matchData.team1.mvpName} (+4 XP)</span>
+                            </div>
+                        ` : ''}
                     </div>
 
-                    <div id="mvp-result" class="mvp-result-display">
-                        ${this.getMVPDisplay()}
+                    <div class="mvp-team-section">
+                        <h5>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h5>
+                        <div class="mvp-input-group">
+                            <label>Nom du JDM :</label>
+                            <input type="text"
+                                id="team2-mvp-name"
+                                class="mvp-name-input"
+                                placeholder="Entrez le nom du joueur"
+                                value="${this.matchData.team2.mvpName || ''}"
+                                onchange="app.updateMVP(2, this.value)">
+                        </div>
+                        ${this.matchData.team2.mvpName ? `
+                            <div class="mvp-display-small">
+                                <span class="mvp-icon">🌟</span>
+                                <span class="mvp-text">${this.matchData.team2.mvpName} (+4 XP)</span>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
         `;
+    }
+
+    updateMVP(team, name) {
+        this.matchData[`team${team}`].mvpName = name.trim();
+
+        // Si le joueur existe dans le tableau, lui attribuer le JDM
+        const player = this.matchData[`team${team}`].players.find(p =>
+            p.name && p.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (player) {
+            // Retirer JDM de tous les autres joueurs de l'équipe
+            this.matchData[`team${team}`].players.forEach(p => {
+                if (p.actions) p.actions.jdm = false;
+            });
+
+            // Attribuer JDM à ce joueur
+            if (!player.actions) player.actions = {};
+            player.actions.jdm = true;
+            this.calculatePlayerXP(team, player.id);
+        }
+
+        this.saveState();
     }
 
     getTeamPlayersOptions(team) {
@@ -3022,6 +3312,158 @@ class BloodBowlApp {
         }
 
         console.log('Summary tab initialized');
+    }
+
+    showSaveIndicator() {
+        // Retirer l'ancien indicateur s'il existe
+        const oldIndicator = document.getElementById('save-indicator');
+        if (oldIndicator) oldIndicator.remove();
+
+        const indicator = document.createElement('div');
+        indicator.id = 'save-indicator';
+        indicator.className = 'save-indicator';
+        indicator.innerHTML = '💾 Sauvegarde...';
+        document.body.appendChild(indicator);
+
+        setTimeout(() => {
+            indicator.innerHTML = '✅ Sauvegardé';
+            setTimeout(() => {
+                if (indicator.parentElement) {
+                    indicator.remove();
+                }
+            }, 2000);
+        }, 500);
+    }
+
+    getScoreDisplay() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+
+        return `
+            <div class="score-display">
+                <h2>⚽ SCORE ACTUEL</h2>
+
+                <div class="match-timer">
+                    <div class="timer-display">
+                        <span class="timer-icon">⏱️</span>
+                        <span id="match-timer">00:00</span>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="timer-btn ${this.matchData.timerRunning ? 'pause' : 'play'}"
+                            onclick="app.toggleTimer()">
+                            ${this.matchData.timerRunning ? '⏸️ Pause' : '▶️ Démarrer'}
+                        </button>
+                        <button class="timer-btn reset" onclick="app.resetTimer()">
+                            🔄 Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="score-numbers">
+                    <div class="team-score">
+                        <div class="score" id="score1">${team1.score}</div>
+                        <div class="name">${team1.name || 'Équipe 1'}</div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="team-score">
+                        <div class="score" id="score2">${team2.score}</div>
+                        <div class="name">${team2.name || 'Équipe 2'}</div>
+                    </div>
+                </div>
+                <div class="score-controls">
+                    <button class="dice-btn" onclick="app.addTouchdown(1)">🏈 TD ${team1.name || 'Équipe 1'}</button>
+                    <button class="dice-btn" onclick="app.addTouchdown(2)">🏈 TD ${team2.name || 'Équipe 2'}</button>
+                    <button class="dice-btn" onclick="app.resetScore()" style="background: #dc3545;">🔄 Reset Score</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Gestion du chronomètre
+    toggleTimer() {
+        if (!this.matchData.timerRunning) {
+            // Démarrer le chrono
+            if (!this.matchData.matchStart) {
+                this.matchData.matchStart = new Date();
+            }
+            this.matchData.timerRunning = true;
+            this.startTimerInterval();
+        } else {
+            // Mettre en pause
+            this.matchData.timerRunning = false;
+            this.matchData.pausedDuration = this.getElapsedTime();
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+        }
+
+        // Mettre à jour le bouton
+        this.updateTimerButton();
+        this.saveState();
+    }
+
+    resetTimer() {
+        if (confirm('Réinitialiser le chronomètre ?')) {
+            this.matchData.matchStart = null;
+            this.matchData.matchEnd = null;
+            this.matchData.timerRunning = false;
+            this.matchData.pausedDuration = 0;
+
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+
+            document.getElementById('match-timer').textContent = '00:00';
+            this.updateTimerButton();
+            this.saveState();
+        }
+    }
+
+    startTimerInterval() {
+        this.timerInterval = setInterval(() => {
+            this.updateTimerDisplay();
+        }, 1000);
+
+        // Mise à jour immédiate
+        this.updateTimerDisplay();
+    }
+
+    updateTimerDisplay() {
+        const elapsed = this.getElapsedTime();
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+
+        const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const timerElement = document.getElementById('match-timer');
+        if (timerElement) {
+            timerElement.textContent = display;
+        }
+    }
+
+    getElapsedTime() {
+        if (!this.matchData.matchStart) return 0;
+
+        const now = new Date();
+        const start = new Date(this.matchData.matchStart);
+        const elapsedMs = now - start;
+        const elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+        return elapsedSeconds + (this.matchData.pausedDuration || 0);
+    }
+
+    updateTimerButton() {
+        const button = document.querySelector('.timer-btn.play, .timer-btn.pause');
+        if (button) {
+            if (this.matchData.timerRunning) {
+                button.className = 'timer-btn pause';
+                button.innerHTML = '⏸️ Pause';
+            } else {
+                button.className = 'timer-btn play';
+                button.innerHTML = '▶️ Démarrer';
+            }
+        }
     }
 
 }
