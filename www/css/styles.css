@@ -1625,3 +1625,478 @@ input:focus, select:focus, textarea:focus {
     color: var(--danger-color);
     font-weight: 500;
 }
+
+/* MVP Section */
+.mvp-selection {
+    text-align: center;
+    padding: 20px;
+}
+
+.mvp-manual-selection {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.mvp-manual-selection h5 {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.mvp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    .mvp-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.mvp-team-section h6 {
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.mvp-team-section select {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+}
+
+.mvp-result-display {
+    margin-top: 20px;
+}
+
+.mvp-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.mvp-icon {
+    font-size: 3em;
+}
+
+.mvp-info h4 {
+    margin: 0;
+    color: #333;
+}
+
+.mvp-name {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 5px 0;
+}
+
+.mvp-team {
+    color: #666;
+    margin: 5px 0;
+}
+
+.mvp-bonus {
+    color: #28a745;
+    font-weight: 500;
+}
+
+/* Summary Page Styles */
+.summary-header {
+    display: flex;
+    justify-content: space-around;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.summary-header-item {
+    text-align: center;
+}
+
+.summary-header-item .label {
+    display: block;
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.summary-header-item .value {
+    display: block;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Match Result Section */
+.match-result-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.match-result-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.final-score-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin: 20px 0;
+}
+
+.team-final-score {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 25px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.team-final-score.winner {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);
+}
+
+.team-final-score .team-icon {
+    font-size: 2em;
+}
+
+.team-final-score .team-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.team-final-score .team-score {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.vs-separator {
+    font-size: 1.2em;
+    color: #999;
+}
+
+.winner-announcement {
+    font-size: 1.3em;
+    margin-top: 20px;
+    color: var(--success-color);
+}
+
+/* Match Stats Section */
+.match-stats-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.match-stats-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stat-value {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+/* MVP Summary in stats */
+.mvp-summary {
+    text-align: center;
+    padding: 15px;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.mvp-title {
+    font-size: 1.1em;
+    color: #856404;
+    margin-bottom: 8px;
+}
+
+.mvp-player-name {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.2em;
+}
+
+.mvp-team-name {
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Teams Summary */
+.teams-summary-section {
+    margin-bottom: 20px;
+}
+
+.teams-summary-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.teams-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .teams-comparison {
+        grid-template-columns: 1fr;
+    }
+}
+
+.team-summary-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.team-summary-header {
+    background: var(--primary-color);
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.team-summary-header h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.team-roster {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.team-summary-content {
+    padding: 15px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row.highlight {
+    background: #e8f5e8;
+    margin: 0 -15px;
+    padding: 8px 15px;
+    font-weight: bold;
+}
+
+/* Financial Summary */
+.financial-summary-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.financial-summary-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.financial-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .financial-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.financial-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.financial-item h5 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.financial-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+}
+
+.financial-row.total {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 2px solid var(--primary-color);
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Export Section */
+.export-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.export-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.export-options {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white !important;
+    }
+
+    .form-actions,
+    .export-section,
+    .btn {
+        display: none !important;
+    }
+
+    .container {
+        max-width: 100%;
+        padding: 0;
+    }
+
+    .tab-content {
+        box-shadow: none !important;
+        padding: 10px !important;
+    }
+
+    .section-title {
+        font-size: 1.5em;
+        text-align: center;
+        page-break-after: avoid;
+    }
+
+    .match-result-section,
+    .match-stats-section,
+    .teams-summary-section,
+    .financial-summary-section {
+        page-break-inside: avoid;
+        margin-bottom: 15px;
+    }
+
+    .final-score-display {
+        justify-content: space-around;
+    }
+
+    .team-final-score {
+        border: 2px solid #000;
+    }
+
+    /* Ajuster les couleurs pour l'impression */
+    .team-final-score.winner {
+        background: #f0f0f0 !important;
+        border-width: 3px;
+    }
+
+    /* Simplifier les dégradés */
+    .mvp-display,
+    .mvp-summary {
+        background: #f0f0f0 !important;
+        border: 2px solid #000;
+    }
+}
+
+/* Responsive adjustments for summary */
+@media (max-width: 768px) {
+    .summary-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .final-score-display {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .team-final-score {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .vs-separator {
+        display: none;
+    }
+
+    .export-options {
+        flex-direction: column;
+    }
+
+    .export-options .btn {
+        width: 100%;
+    }
+}

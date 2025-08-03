@@ -406,6 +406,7 @@ class BloodBowlApp {
                 ${this.getMatchGainsSection()}
                 ${this.getFansUpdateSection()}
                 ${this.getExperienceSection()}
+                ${this.getMVPSection()}
                 ${this.getPlayerSalesSection()}
                 ${this.getCostlyErrorsSection()}
 
@@ -419,11 +420,361 @@ class BloodBowlApp {
 
     getSummaryTabHTML() {
         return `
-            <div class="tab-content" id="summary">
-                <h2 class="section-title">📋 Résumé</h2>
-                <p>Cet onglet sera implémenté prochainement.</p>
+            <div class="tab-content active" id="summary">
+                <h2 class="section-title">📋 Résumé du Match</h2>
+
+                ${this.getMatchSummaryHeader()}
+                ${this.getMatchResultSection()}
+                ${this.getMatchStatsSection()}
+                ${this.getTeamsSummarySection()}
+                ${this.getFinancialSummarySection()}
+                ${this.getExportSection()}
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="app.switchTab('postmatch')">⬅️ Retour Après-Match</button>
+                    <button class="btn btn-primary" onclick="app.resetMatch()">🔄 Nouveau Match</button>
+                </div>
             </div>
         `;
+    }
+
+    getMatchSummaryHeader() {
+        const matchDate = this.matchData.matchDate || new Date().toLocaleDateString('fr-FR');
+        const duration = this.getMatchDuration();
+
+        return `
+            <div class="summary-header">
+                <div class="summary-header-item">
+                    <span class="label">Date du match</span>
+                    <span class="value">${matchDate}</span>
+                </div>
+                <div class="summary-header-item">
+                    <span class="label">Durée</span>
+                    <span class="value">${duration}</span>
+                </div>
+                <div class="summary-header-item">
+                    <span class="label">Météo</span>
+                    <span class="value">${this.matchData.weather.effect ?
+                        this.matchData.weather.effect.split(':')[0] : 'Non définie'}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    getMatchResultSection() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+        const winner = team1.score > team2.score ? team1.name :
+                       team2.score > team1.score ? team2.name : null;
+
+        return `
+            <div class="match-result-section">
+                <h3>🏆 Résultat Final</h3>
+                <div class="final-score-display">
+                    <div class="team-final-score ${team1.score > team2.score ? 'winner' : ''}">
+                        <div class="team-icon">🏠</div>
+                        <div class="team-name">${team1.name}</div>
+                        <div class="team-score">${team1.score}</div>
+                    </div>
+                    <div class="vs-separator">VS</div>
+                    <div class="team-final-score ${team2.score > team1.score ? 'winner' : ''}">
+                        <div class="team-score">${team2.score}</div>
+                        <div class="team-name">${team2.name}</div>
+                        <div class="team-icon">🚌</div>
+                    </div>
+                </div>
+                ${winner ?
+                    `<p class="winner-announcement">🎉 Victoire de ${winner} !</p>` :
+                    `<p class="winner-announcement">🤝 Match nul !</p>`}
+            </div>
+        `;
+    }
+
+    getMatchStatsSection() {
+        const totalTD = this.matchData.team1.score + this.matchData.team2.score;
+        const totalXP = this.calculateTotalMatchXP();
+        const kickoffEventsCount = (this.matchData.kickoffEvents || []).length;
+
+        return `
+            <div class="match-stats-section">
+                <h3>📊 Statistiques du Match</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${totalTD}</div>
+                        <div class="stat-label">Touchdowns totaux</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${totalXP}</div>
+                        <div class="stat-label">XP distribuée</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${kickoffEventsCount}</div>
+                        <div class="stat-label">Événements</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${this.countTotalPlayers()}</div>
+                        <div class="stat-label">Joueurs totaux</div>
+                    </div>
+                </div>
+
+                ${this.matchData.mvp && this.matchData.mvp.playerId ? this.getMVPSummary() : ''}
+            </div>
+        `;
+    }
+
+    getTeamsSummarySection() {
+        return `
+            <div class="teams-summary-section">
+                <h3>👥 Résumé des Équipes</h3>
+                <div class="teams-comparison">
+                    ${this.getTeamSummaryCard(1)}
+                    ${this.getTeamSummaryCard(2)}
+                </div>
+            </div>
+        `;
+    }
+
+    getTeamSummaryCard(team) {
+        const teamData = this.matchData[`team${team}`];
+        const gains = this.calculateGains(team);
+        const topScorer = this.getTeamTopScorer(team);
+        const totalXP = this.calculateTeamTotalXP(team);
+
+        return `
+            <div class="team-summary-card">
+                <div class="team-summary-header">
+                    <h4>${team === 1 ? '🏠' : '🚌'} ${teamData.name}</h4>
+                    <span class="team-roster">${teamData.roster || 'Non défini'}</span>
+                </div>
+
+                <div class="team-summary-content">
+                    <div class="summary-row">
+                        <span>Coach</span>
+                        <span>${teamData.coach || 'Non défini'}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>VEA</span>
+                        <span>${Utils.formatNumber(teamData.vea)} PO</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Popularité</span>
+                        <span>${teamData.popularity}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Fans dévoués</span>
+                        <span>${teamData.fans}</span>
+                    </div>
+                    <div class="summary-row highlight">
+                        <span>Gains du match</span>
+                        <span>${Utils.formatNumber(gains)} PO</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>XP totale</span>
+                        <span>${totalXP} XP</span>
+                    </div>
+                    ${topScorer ? `
+                        <div class="summary-row">
+                            <span>Meilleur marqueur</span>
+                            <span>${topScorer.name} (${topScorer.xp} XP)</span>
+                        </div>
+                    ` : ''}
+                    ${teamData.soldPlayers && teamData.soldPlayers.length > 0 ? `
+                        <div class="summary-row">
+                            <span>Joueurs vendus</span>
+                            <span>${teamData.soldPlayers.length}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getFinancialSummarySection() {
+        const team1Gains = this.calculateGains(1);
+        const team2Gains = this.calculateGains(2);
+        const team1Sales = this.calculateSalesTotal(1);
+        const team2Sales = this.calculateSalesTotal(2);
+
+        return `
+            <div class="financial-summary-section">
+                <h3>💰 Résumé Financier</h3>
+                <div class="financial-grid">
+                    <div class="financial-item">
+                        <h5>${this.matchData.team1.name}</h5>
+                        <div class="financial-row">
+                            <span>Gains du match</span>
+                            <span>+${Utils.formatNumber(team1Gains)} PO</span>
+                        </div>
+                        ${team1Sales > 0 ? `
+                            <div class="financial-row">
+                                <span>Ventes de joueurs</span>
+                                <span>+${Utils.formatNumber(team1Sales)} PO</span>
+                            </div>
+                        ` : ''}
+                        <div class="financial-row total">
+                            <span>Total</span>
+                            <span>+${Utils.formatNumber(team1Gains + team1Sales)} PO</span>
+                        </div>
+                    </div>
+
+                    <div class="financial-item">
+                        <h5>${this.matchData.team2.name}</h5>
+                        <div class="financial-row">
+                            <span>Gains du match</span>
+                            <span>+${Utils.formatNumber(team2Gains)} PO</span>
+                        </div>
+                        ${team2Sales > 0 ? `
+                            <div class="financial-row">
+                                <span>Ventes de joueurs</span>
+                                <span>+${Utils.formatNumber(team2Sales)} PO</span>
+                            </div>
+                        ` : ''}
+                        <div class="financial-row total">
+                            <span>Total</span>
+                            <span>+${Utils.formatNumber(team2Gains + team2Sales)} PO</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getExportSection() {
+        return `
+            <div class="export-section">
+                <h3>📤 Export & Sauvegarde</h3>
+                <div class="export-options">
+                    <button class="btn btn-secondary" onclick="app.printSummary()">
+                        🖨️ Version imprimable
+                    </button>
+                    <button class="btn btn-secondary" onclick="app.exportMatchData()">
+                        💾 Exporter les données (JSON)
+                    </button>
+                    <button class="btn btn-secondary" onclick="app.saveMatchState()">
+                        ☁️ Sauvegarder localement
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Méthodes auxiliaires pour le résumé
+    getMatchDuration() {
+        if (this.matchData.matchStart && this.matchData.matchEnd) {
+            const duration = this.matchData.matchEnd - this.matchData.matchStart;
+            const hours = Math.floor(duration / 3600000);
+            const minutes = Math.floor((duration % 3600000) / 60000);
+            return hours > 0 ? `${hours}h ${minutes}min` : `${minutes} minutes`;
+        }
+        return 'Non enregistrée';
+    }
+
+    calculateTotalMatchXP() {
+        return this.calculateTeamTotalXP(1) + this.calculateTeamTotalXP(2);
+    }
+
+    calculateTeamTotalXP(team) {
+        const players = this.matchData[`team${team}`].players || [];
+        return players.reduce((total, player) => total + (player.xp || 0), 0);
+    }
+
+    countTotalPlayers() {
+        const team1Players = (this.matchData.team1.players || []).filter(p => p.name).length;
+        const team2Players = (this.matchData.team2.players || []).filter(p => p.name).length;
+        return team1Players + team2Players;
+    }
+
+    getTeamTopScorer(team) {
+        const players = this.matchData[`team${team}`].players || [];
+        return players
+            .filter(p => p.name && p.xp > 0)
+            .sort((a, b) => b.xp - a.xp)[0] || null;
+    }
+
+    calculateSalesTotal(team) {
+        const soldPlayers = this.matchData[`team${team}`].soldPlayers || [];
+        return soldPlayers.reduce((total, player) => total + (player.value || 0), 0);
+    }
+
+    getMVPSummary() {
+        if (!this.matchData.mvp || !this.matchData.mvp.playerId) return '';
+
+        const team = this.matchData.mvp.team;
+        const player = this.matchData[`team${team}`].players.find(p => p.id === this.matchData.mvp.playerId);
+
+        if (!player) return '';
+
+        return `
+            <div class="mvp-summary">
+                <div class="mvp-title">🌟 Joueur du Match</div>
+                <div class="mvp-details">
+                    <span class="mvp-player-name">${player.name}</span>
+                    <span class="mvp-team-name">(${this.matchData[`team${team}`].name})</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Méthode pour imprimer le résumé
+    printSummary() {
+        window.print();
+    }
+
+    // Méthode pour exporter les données
+    exportMatchData() {
+        const dataStr = JSON.stringify(this.matchData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `match_${this.matchData.team1.name}_vs_${this.matchData.team2.name}_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // Méthode pour réinitialiser le match
+    resetMatch() {
+        if (confirm('Êtes-vous sûr de vouloir commencer un nouveau match ? Toutes les données actuelles seront perdues.')) {
+            // Réinitialiser toutes les données
+            this.matchData = {
+                team1: this.createTeamObject(),
+                team2: this.createTeamObject(),
+                weather: {
+                    total: 0,
+                    effect: '',
+                    rolled: false,
+                    dice1: null,
+                    dice2: null
+                },
+                kickoffEvents: [],
+                matchStart: null,
+                matchEnd: null,
+                coinFlip: '',
+                prayer: {
+                    effect: '',
+                    rolled: false,
+                    dice: null
+                },
+                inducements: {
+                    team1Items: {},
+                    team2Items: {},
+                    team1PetiteMonnaie: 0,
+                    team2PetiteMonnaie: 0,
+                    team1Treasury: 0,
+                    team2Treasury: 0
+                },
+                mvp: null
+            };
+
+            // Réinitialiser les inducements
+            this.initializeInducementsData();
+
+            // Sauvegarder et retourner au début
+            this.saveState();
+            this.switchTab('setup');
+        }
     }
 
     // === MÉTHODES DE SAUVEGARDE ===
@@ -730,7 +1081,9 @@ class BloodBowlApp {
             case 'postmatch':
                 this.initializePostmatchTab();
                 break;
-            // ... autres onglets
+            case 'summary':
+                this.initializeSummaryTab();
+                break;
         }
     }
 
@@ -2170,7 +2523,7 @@ class BloodBowlApp {
         return `
             <div class="step-section">
                 <div class="step-header">
-                    <div class="step-number">11</div>
+                    <div class="step-number">12</div>
                     <div class="step-title">Vente de Joueurs</div>
                 </div>
                 <div class="explanation-box">
@@ -2212,7 +2565,7 @@ class BloodBowlApp {
         return `
             <div class="step-section">
                 <div class="step-header">
-                    <div class="step-number">12</div>
+                    <div class="step-number">13</div>
                     <div class="step-title">Erreurs Coûteuses</div>
                 </div>
                 <div class="explanation-box">
@@ -2490,6 +2843,185 @@ class BloodBowlApp {
         });
 
         console.log('Post-match tab initialized');
+    }
+
+    getMVPSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">11</div>
+                    <div class="step-title">Joueur du Match (JDM)</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> Le JDM est tiré au hasard parmi tous les joueurs (sauf morts, mercenaires et champions)</p>
+                    <p>Le joueur sélectionné gagne automatiquement 4 XP bonus</p>
+                    <p>Vous pouvez aussi désigner manuellement le JDM si nécessaire</p>
+                </div>
+
+                <div class="mvp-selection">
+                    <button class="dice-btn" onclick="app.selectRandomMVP()" style="font-size: 16px; padding: 12px 25px;">
+                        🎲 Tirer le JDM au hasard
+                    </button>
+
+                    <div class="mvp-manual-selection">
+                        <h5>Ou sélectionner manuellement :</h5>
+                        <div class="mvp-grid">
+                            <div class="mvp-team-section">
+                                <h6>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h6>
+                                <select id="team1-mvp-select" onchange="app.selectManualMVP(1)">
+                                    <option value="">-- Choisir --</option>
+                                    ${this.getTeamPlayersOptions(1)}
+                                </select>
+                            </div>
+                            <div class="mvp-team-section">
+                                <h6>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h6>
+                                <select id="team2-mvp-select" onchange="app.selectManualMVP(2)">
+                                    <option value="">-- Choisir --</option>
+                                    ${this.getTeamPlayersOptions(2)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mvp-result" class="mvp-result-display">
+                        ${this.getMVPDisplay()}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getTeamPlayersOptions(team) {
+        const players = this.matchData[`team${team}`].players || [];
+        return players
+            .filter(p => p.name && p.name.trim() !== '')
+            .map(p => `<option value="${p.id}">${p.name}</option>`)
+            .join('');
+    }
+
+    getMVPDisplay() {
+        if (!this.matchData.mvp || !this.matchData.mvp.playerId) {
+            return '<p class="help-text">Aucun JDM sélectionné</p>';
+        }
+
+        const mvp = this.matchData.mvp;
+        const team = mvp.team;
+        const player = this.matchData[`team${team}`].players.find(p => p.id === mvp.playerId);
+
+        if (!player) {
+            return '<p class="help-text">Aucun JDM sélectionné</p>';
+        }
+
+        return `
+            <div class="mvp-display">
+                <div class="mvp-icon">🌟</div>
+                <div class="mvp-info">
+                    <h4>Joueur du Match</h4>
+                    <p class="mvp-name">${player.name}</p>
+                    <p class="mvp-team">${this.matchData[`team${team}`].name}</p>
+                    <p class="mvp-bonus">+4 XP bonus accordés</p>
+                </div>
+            </div>
+        `;
+    }
+
+    selectRandomMVP() {
+        const allPlayers = [];
+
+        // Collecter tous les joueurs éligibles
+        [1, 2].forEach(team => {
+            const players = this.matchData[`team${team}`].players || [];
+            players.forEach(player => {
+                if (player.name && player.name.trim() !== '') {
+                    allPlayers.push({
+                        ...player,
+                        team: team
+                    });
+                }
+            });
+        });
+
+        if (allPlayers.length === 0) {
+            alert('Aucun joueur éligible pour être JDM');
+            return;
+        }
+
+        // Sélection aléatoire
+        const randomIndex = Math.floor(Math.random() * allPlayers.length);
+        const mvpPlayer = allPlayers[randomIndex];
+
+        // Enregistrer le MVP
+        this.setMVP(mvpPlayer.team, mvpPlayer.id);
+    }
+
+    selectManualMVP(team) {
+        const select = document.getElementById(`team${team}-mvp-select`);
+        const playerId = select.value;
+
+        if (!playerId) return;
+
+        // Réinitialiser l'autre select
+        const otherTeam = team === 1 ? 2 : 1;
+        document.getElementById(`team${otherTeam}-mvp-select`).value = '';
+
+        this.setMVP(team, playerId);
+    }
+
+    setMVP(team, playerId) {
+        // Retirer l'ancien JDM s'il existe
+        if (this.matchData.mvp && this.matchData.mvp.playerId) {
+            const oldTeam = this.matchData.mvp.team;
+            const oldPlayer = this.matchData[`team${oldTeam}`].players.find(p => p.id === this.matchData.mvp.playerId);
+            if (oldPlayer && oldPlayer.actions) {
+                oldPlayer.actions.jdm = false;
+                // Recalculer l'XP
+                this.calculatePlayerXP(oldTeam, oldPlayer.id);
+            }
+        }
+
+        // Définir le nouveau JDM
+        this.matchData.mvp = {
+            team: team,
+            playerId: playerId
+        };
+
+        // Marquer le joueur comme JDM
+        const player = this.matchData[`team${team}`].players.find(p => p.id === playerId);
+        if (player) {
+            if (!player.actions) player.actions = {};
+            player.actions.jdm = true;
+
+            // Recalculer l'XP
+            this.calculatePlayerXP(team, playerId);
+        }
+
+        // Rafraîchir l'affichage
+        document.getElementById('mvp-result').innerHTML = this.getMVPDisplay();
+
+        // Mettre à jour aussi dans l'onglet Match si nécessaire
+        const checkbox = document.querySelector(`input[data-player="${playerId}"][data-action="jdm"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+        }
+
+        this.saveState();
+
+        // Animation de célébration
+        Utils.vibrate(100);
+    }
+
+    initializeSummaryTab() {
+        // Mettre à jour la date du match si elle n'existe pas
+        if (!this.matchData.matchDate) {
+            this.matchData.matchDate = new Date().toLocaleDateString('fr-FR');
+        }
+
+        // Calculer la durée si le match est terminé
+        if (this.matchData.matchStart && !this.matchData.matchEnd) {
+            this.matchData.matchEnd = new Date();
+        }
+
+        console.log('Summary tab initialized');
     }
 
 }
