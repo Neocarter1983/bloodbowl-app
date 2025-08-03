@@ -1740,9 +1740,24 @@ class BloodBowlApp {
                     <p><strong>TD :</strong> Touchdown (3 XP) | <strong>JDM :</strong> Joueur du Match (4 XP)</p>
                 </div>
 
-                <div class="players-actions-grid">
-                    ${this.getTeamPlayersTable(1)}
-                    ${this.getTeamPlayersTable(2)}
+                <div class="players-tabs">
+                    <div class="players-tab-buttons">
+                        <button class="players-tab-btn active" onclick="app.showPlayersTab(1)">
+                            🏠 ${this.matchData.team1.name || 'Équipe 1'}
+                        </button>
+                        <button class="players-tab-btn" onclick="app.showPlayersTab(2)">
+                            🚌 ${this.matchData.team2.name || 'Équipe 2'}
+                        </button>
+                    </div>
+
+                    <div class="players-tab-content">
+                        <div id="players-team-1" class="team-players-panel active">
+                            ${this.getTeamPlayersTable(1)}
+                        </div>
+                        <div id="players-team-2" class="team-players-panel">
+                            ${this.getTeamPlayersTable(2)}
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -2009,6 +2024,36 @@ class BloodBowlApp {
         });
 
         player.xp = xp;
+    }
+
+    showPlayersTab(team) {
+        // Retirer la classe active de tous les boutons et panneaux
+        document.querySelectorAll('.players-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelectorAll('.team-players-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+
+        // Activer le bon bouton et panneau
+        const buttons = document.querySelectorAll('.players-tab-btn');
+        const panels = document.querySelectorAll('.team-players-panel');
+
+        if (buttons[team - 1]) buttons[team - 1].classList.add('active');
+        if (panels[team - 1]) panels[team - 1].classList.add('active');
+    }
+
+    calculateTeamXP(team) {
+        const players = this.matchData[`team${team}`].players || [];
+        let totalXP = 0;
+
+        players.forEach(player => {
+            if (player.xp) {
+                totalXP += player.xp;
+            }
+        });
+
+        return totalXP;
     }
 
 }
