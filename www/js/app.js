@@ -364,12 +364,27 @@ class BloodBowlApp {
         }
     }
 
-    // Méthodes temporaires pour les onglets non implémentés
     getMatchTabHTML() {
         return `
-            <div class="tab-content" id="match">
-                <h2 class="section-title">🎮 Match</h2>
-                <p>Cet onglet sera implémenté prochainement.</p>
+            <div class="tab-content active" id="match">
+                <h2 class="section-title">🎮 Déroulement du Match</h2>
+
+                <div class="explanation-box">
+                    <h4>🏈 Comment ça marche</h4>
+                    <p><strong>1.</strong> Un match = 2 mi-temps de 6 tours chacune</p>
+                    <p><strong>2.</strong> À chaque coup d'envoi, lancez l'événement</p>
+                    <p><strong>3.</strong> Notez les actions des joueurs au fur et à mesure</p>
+                    <p><strong>4.</strong> Cliquez sur "TD" quand une équipe marque</p>
+                </div>
+
+                ${this.getScoreDisplay()}
+                ${this.getKickoffSection()}
+                ${this.getPlayersActionsSection()}
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="app.switchTab('prematch')">⬅️ Retour Avant-Match</button>
+                    <button class="btn btn-primary" onclick="app.switchTab('postmatch')">➡️ Terminer le Match</button>
+                </div>
             </div>
         `;
     }
@@ -689,6 +704,9 @@ class BloodBowlApp {
                 break;
             case 'prematch':
                 this.initializePrematchTab();
+                break;
+            case 'match':
+                this.initializeMatchTab();
                 break;
             // ... autres onglets
         }
@@ -1258,6 +1276,11 @@ class BloodBowlApp {
         }
     }
 
+    initializeMatchTab() {
+        // Initialiser les événements si nécessaire
+        console.log('Match tab initialized');
+    }
+
     updatePopularityResult() {
         if (this.matchData.team1.popularity && this.matchData.team2.popularity) {
             const resultDiv = document.getElementById('popularity-result');
@@ -1604,6 +1627,388 @@ class BloodBowlApp {
         }
 
         return list;
+    }
+
+    getScoreDisplay() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+
+        return `
+            <div class="score-display">
+                <h2>⚽ SCORE ACTUEL</h2>
+                <div class="score-numbers">
+                    <div class="team-score">
+                        <div class="score" id="score1">${team1.score}</div>
+                        <div class="name">${team1.name || 'Équipe 1'}</div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="team-score">
+                        <div class="score" id="score2">${team2.score}</div>
+                        <div class="name">${team2.name || 'Équipe 2'}</div>
+                    </div>
+                </div>
+                <div class="score-controls">
+                    <button class="dice-btn" onclick="app.addTouchdown(1)">🏈 TD ${team1.name || 'Équipe 1'}</button>
+                    <button class="dice-btn" onclick="app.addTouchdown(2)">🏈 TD ${team2.name || 'Équipe 2'}</button>
+                    <button class="dice-btn" onclick="app.resetScore()" style="background: #dc3545;">🔄 Reset Score</button>
+                </div>
+            </div>
+        `;
+    }
+
+    getKickoffSection() {
+        const kickoffEvents = this.matchData.kickoffEvents || [];
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">6</div>
+                    <div class="step-title">Événements du Coup d'Envoi</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> À chaque coup d'envoi (début de match, après un TD), lancez 2D6</p>
+                    <p>L'événement peut donner des bonus, permettre des actions spéciales, ou modifier le jeu</p>
+                </div>
+                <div class="dice-controls">
+                    <button class="dice-btn" data-dice-type="kickoff" onclick="app.rollKickoffEvent()">
+                        🎲 Lancer 2D6 pour l'Événement
+                    </button>
+                    <input type="number" class="dice-result" id="kickoff-result"
+                        value="" min="2" max="12" onchange="app.updateKickoffEvent()">
+                </div>
+                <div id="kickoff-description" class="result-box" style="display: none;"></div>
+
+                ${this.getKickoffHistory()}
+            </div>
+        `;
+    }
+
+    getKickoffHistory() {
+        const events = this.matchData.kickoffEvents || [];
+
+        if (events.length === 0) {
+            return '';
+        }
+
+        return `
+            <div class="kickoff-history">
+                <h5>📜 Historique des événements</h5>
+                <div class="history-list">
+                    ${events.map((event, index) => `
+                        <div class="history-item">
+                            <span class="history-number">${index + 1}</span>
+                            <span class="history-text">${event}</span>
+                            <button class="btn-remove-event"
+                                onclick="app.removeKickoffEvent(${index})"
+                                title="Supprimer cet événement">
+                                ❌
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    removeKickoffEvent(index) {
+        if (confirm('Supprimer cet événement de l\'historique ?')) {
+            // Supprimer l'événement de la liste
+            this.matchData.kickoffEvents.splice(index, 1);
+
+            // Sauvegarder les changements
+            this.saveState();
+
+            // Rafraîchir l'affichage
+            this.loadTab('match');
+
+            // Feedback tactile
+            Utils.vibrate(20);
+        }
+    }
+
+    getPlayersActionsSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">7</div>
+                    <div class="step-title">Actions des Joueurs</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Important :</strong> Cochez les cases au fur et à mesure que vos joueurs réalisent des actions</p>
+                    <p><strong>REU :</strong> Passe ou Lancer précis (1 XP) | <strong>DET :</strong> Détournement (1 XP)</p>
+                    <p><strong>INT :</strong> Interception (2 XP) | <strong>ELIM :</strong> Élimination (2 XP)</p>
+                    <p><strong>TD :</strong> Touchdown (3 XP) | <strong>JDM :</strong> Joueur du Match (4 XP)</p>
+                </div>
+
+                <div class="players-actions-grid">
+                    ${this.getTeamPlayersTable(1)}
+                    ${this.getTeamPlayersTable(2)}
+                </div>
+            </div>
+        `;
+    }
+
+    getTeamPlayersTable(team) {
+        const teamData = this.matchData[`team${team}`];
+        const players = teamData.players || [];
+
+        return `
+            <div class="team-players-section">
+                <h4 style="color: var(--primary-color); margin-bottom: 15px;">
+                    ${team === 1 ? '🏠' : '🚌'} ${teamData.name || `Équipe ${team}`}
+                    <button class="add-player-btn" onclick="app.addPlayer(${team})">➕ Ajouter Joueur</button>
+                </h4>
+                <div class="table-wrapper">
+                    <table class="player-table">
+                        <thead>
+                            <tr>
+                                <th class="tooltip" data-tooltip="Nom du joueur">Joueur</th>
+                                <th class="tooltip" data-tooltip="Passe/Lancer précis (1XP)">REU</th>
+                                <th class="tooltip" data-tooltip="Détournement (1XP)">DET</th>
+                                <th class="tooltip" data-tooltip="Interception (2XP)">INT</th>
+                                <th class="tooltip" data-tooltip="Élimination (2XP)">ELIM</th>
+                                <th class="tooltip" data-tooltip="Touchdown (3XP)">TD</th>
+                                <th class="tooltip" data-tooltip="Joueur du Match (4XP)">JDM</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="team${team}-players">
+                            ${players.map(player => this.getPlayerRowHTML(team, player)).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    getPlayerRowHTML(team, player) {
+        return `
+            <tr data-player-id="${player.id}">
+                <td>
+                    <input type="text" class="player-name-input"
+                        placeholder="Nom du joueur"
+                        value="${player.name || ''}"
+                        data-team="${team}"
+                        data-player="${player.id}"
+                        onchange="app.updatePlayerName(${team}, '${player.id}', this.value)">
+                </td>
+                <td>
+                    <input type="checkbox" class="action-checkbox"
+                        data-team="${team}"
+                        data-player="${player.id}"
+                        data-action="reu"
+                        data-xp="1"
+                        ${player.actions && player.actions.reu ? 'checked' : ''}
+                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'reu', this.checked)">
+                </td>
+                <td>
+                    <input type="checkbox" class="action-checkbox"
+                        data-team="${team}"
+                        data-player="${player.id}"
+                        data-action="det"
+                        data-xp="1"
+                        ${player.actions && player.actions.det ? 'checked' : ''}
+                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'det', this.checked)">
+                </td>
+                <td>
+                    <input type="checkbox" class="action-checkbox"
+                        data-team="${team}"
+                        data-player="${player.id}"
+                        data-action="int"
+                        data-xp="2"
+                        ${player.actions && player.actions.int ? 'checked' : ''}
+                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'int', this.checked)">
+                </td>
+                <td>
+                    <input type="checkbox" class="action-checkbox"
+                        data-team="${team}"
+                        data-player="${player.id}"
+                        data-action="elim"
+                        data-xp="2"
+                        ${player.actions && player.actions.elim ? 'checked' : ''}
+                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'elim', this.checked)">
+                </td>
+                <td>
+                    <input type="checkbox" class="action-checkbox"
+                        data-team="${team}"
+                        data-player="${player.id}"
+                        data-action="td"
+                        data-xp="3"
+                        ${player.actions && player.actions.td ? 'checked' : ''}
+                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'td', this.checked)">
+                </td>
+                <td>
+                    <input type="checkbox" class="action-checkbox"
+                        data-team="${team}"
+                        data-player="${player.id}"
+                        data-action="jdm"
+                        data-xp="4"
+                        ${player.actions && player.actions.jdm ? 'checked' : ''}
+                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'jdm', this.checked)">
+                </td>
+                <td>
+                    <button class="btn-remove-player" onclick="app.removePlayer(${team}, '${player.id}')">❌</button>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Gestion du score
+    addTouchdown(team) {
+        this.matchData[`team${team}`].score++;
+        document.getElementById(`score${team}`).textContent = this.matchData[`team${team}`].score;
+        this.saveState();
+
+        // Vibration pour feedback
+        Utils.vibrate(50);
+    }
+
+    resetScore() {
+        if (confirm('Êtes-vous sûr de vouloir réinitialiser le score ?')) {
+            this.matchData.team1.score = 0;
+            this.matchData.team2.score = 0;
+            document.getElementById('score1').textContent = '0';
+            document.getElementById('score2').textContent = '0';
+            this.saveState();
+        }
+    }
+
+    // Gestion des événements de coup d'envoi
+    rollKickoffEvent() {
+        const roll = Utils.getRandomInt(2, 12);
+        document.getElementById('kickoff-result').value = roll;
+        this.updateKickoffEvent();
+    }
+
+    updateKickoffEvent() {
+        const roll = parseInt(document.getElementById('kickoff-result').value) || 0;
+
+        const kickoffEvents = {
+            2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
+            3: "💥 Temps mort : si l'une des 2 équipes est au tour 4,5,6 le curseur est reculé d'une case. Sinon le curseur avance d'1 case.",
+            4: "🤩 Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être placés différemment mais dans le respect des règles de placement.",
+            5: "➡ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle sans tenir compte de son mouvement.",
+            6: "🏈 Fan en folie : chaque coach jette 1d6+cheerleaders, le meilleur a droit a un jet sur le tableau des prières a Nuffle.",
+            7: "🙌 Coaching brillant : chaque coach jette 1d6+assistants, le meilleur a droit à une relance pour la phase (aucun si égalité).",
+            8: "📣 Météo capricieuse : refaire le jet de météo ; si le résultat est condition idéale, le ballon ricoche.",
+            9: "🚧 Surprise : 1d3+1 joueurs de l'équipe en réception peuvent bouger d'une case.",
+            10: "⭐ Blitz : 1d3+1 joueurs « démarqués » de l'équipe qui engage peuvent être activés pour une action de M, l'un d'entre eux peut faire 1 blitz, un autre peut lancer un coéquipier. Ce tour gratuit s'arrête si un joueur chute ou est plaqué.",
+            11: "🚨 Arbitre officieux : chaque coach jette 1d6+FP, le coach ayant le plus mauvais résultat désigne 1 joueur de ses joueurs, sur le terrain, au hasard (si égalité les deux coachs choisissent au hasard). Sur 2+ avec 1d6, ce joueur est « mis a terre » « sonné ». Sur un 1 il est expulsé.",
+            12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP, le plus mauvais désigne 1d3 de ses joueurs, sur le terrain, au hasard (si égalité les deux coachs désignent 1d3 joueurs au hasard). Ces joueurs sont « mis à terre » « sonnés »."
+        };
+
+        if (roll >= 2 && roll <= 12) {
+            const event = kickoffEvents[roll] || "Événement inconnu.";
+
+            // Ajouter à l'historique
+            if (!this.matchData.kickoffEvents) {
+                this.matchData.kickoffEvents = [];
+            }
+            this.matchData.kickoffEvents.push(event);
+
+            // Mettre à jour l'affichage
+            const descDiv = document.getElementById('kickoff-description');
+            descDiv.style.display = 'block';
+            descDiv.className = 'result-box warning';
+            descDiv.innerHTML = `<p>Événement du Coup d'Envoi (${roll}) : <strong>${event}</strong></p>`;
+
+            // Rafraîchir l'historique
+            this.loadTab('match');
+
+            this.saveState();
+        }
+    }
+
+    // Gestion des joueurs
+    addPlayer(team) {
+        const playerId = `player-${team}-${Date.now()}`;
+        const player = {
+            id: playerId,
+            name: '',
+            xp: 0,
+            actions: { reu: false, det: false, int: false, elim: false, td: false, jdm: false }
+        };
+
+        if (!this.matchData[`team${team}`].players) {
+            this.matchData[`team${team}`].players = [];
+        }
+
+        this.matchData[`team${team}`].players.push(player);
+
+        // Ajouter la ligne dans le tableau
+        const tbody = document.getElementById(`team${team}-players`);
+        if (tbody) {
+            const row = document.createElement('tr');
+            row.innerHTML = this.getPlayerRowHTML(team, player);
+            tbody.appendChild(row);
+        }
+
+        this.saveState();
+    }
+
+    removePlayer(team, playerId) {
+        if (confirm('Supprimer ce joueur ?')) {
+            const players = this.matchData[`team${team}`].players;
+            const index = players.findIndex(p => p.id === playerId);
+
+            if (index > -1) {
+                players.splice(index, 1);
+
+                // Retirer de l'affichage
+                const row = document.querySelector(`tr[data-player-id="${playerId}"]`);
+                if (row) {
+                    row.remove();
+                }
+
+                this.saveState();
+            }
+        }
+    }
+
+    updatePlayerName(team, playerId, name) {
+        const player = this.matchData[`team${team}`].players.find(p => p.id === playerId);
+        if (player) {
+            player.name = name.trim();
+            this.saveState();
+        }
+    }
+
+    updatePlayerAction(team, playerId, action, checked) {
+        const player = this.matchData[`team${team}`].players.find(p => p.id === playerId);
+        if (player) {
+            if (!player.actions) {
+                player.actions = {};
+            }
+            player.actions[action] = checked;
+
+            // Recalculer l'XP du joueur
+            this.calculatePlayerXP(team, playerId);
+
+            this.saveState();
+        }
+    }
+
+    calculatePlayerXP(team, playerId) {
+        const player = this.matchData[`team${team}`].players.find(p => p.id === playerId);
+        if (!player) return;
+
+        let xp = 0;
+        const xpValues = {
+            reu: 1,
+            det: 1,
+            int: 2,
+            elim: 2,
+            td: 3,
+            jdm: 4
+        };
+
+        Object.keys(xpValues).forEach(action => {
+            if (player.actions && player.actions[action]) {
+                xp += xpValues[action];
+            }
+        });
+
+        player.xp = xp;
     }
 
 }
