@@ -391,9 +391,28 @@ class BloodBowlApp {
 
     getPostmatchTabHTML() {
         return `
-            <div class="tab-content" id="postmatch">
-                <h2 class="section-title">📊 Après-Match</h2>
-                <p>Cet onglet sera implémenté prochainement.</p>
+            <div class="tab-content active" id="postmatch">
+                <h2 class="section-title">📊 Séquence d'Après-Match</h2>
+
+                <div class="explanation-box">
+                    <h4>💰 Ce qui se passe après le match</h4>
+                    <p><strong>1.</strong> Calcul automatique des gains selon les touchdowns et la popularité</p>
+                    <p><strong>2.</strong> Test de fans : le gagnant peut en gagner, le perdant peut en perdre</p>
+                    <p><strong>3.</strong> Calcul de l'expérience des joueurs selon leurs actions</p>
+                    <p><strong>4.</strong> Tests de transfert pour les joueurs expérimentés</p>
+                    <p><strong>5.</strong> Gestion des erreurs coûteuses si trop de trésorerie</p>
+                </div>
+
+                ${this.getMatchGainsSection()}
+                ${this.getFansUpdateSection()}
+                ${this.getExperienceSection()}
+                ${this.getPlayerSalesSection()}
+                ${this.getCostlyErrorsSection()}
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="app.switchTab('match')">⬅️ Retour au Match</button>
+                    <button class="btn btn-primary" onclick="app.switchTab('summary')">➡️ Voir le Résumé</button>
+                </div>
             </div>
         `;
     }
@@ -707,6 +726,9 @@ class BloodBowlApp {
                 break;
             case 'match':
                 this.initializeMatchTab();
+                break;
+            case 'postmatch':
+                this.initializePostmatchTab();
                 break;
             // ... autres onglets
         }
@@ -2054,6 +2076,420 @@ class BloodBowlApp {
         });
 
         return totalXP;
+    }
+
+    getMatchGainsSection() {
+        const team1Gains = this.calculateGains(1);
+        const team2Gains = this.calculateGains(2);
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">8</div>
+                    <div class="step-title">Gains du Match</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Formule :</strong> 10 000 PO × (Facteur de Popularité + Touchdowns marqués)</p>
+                    <p>Une équipe qui concède ne compte pas son facteur de popularité</p>
+                </div>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="label">${this.matchData.team1.name || 'Équipe 1'}</div>
+                        <div class="value">${Utils.formatNumber(team1Gains)} PO</div>
+                        <small>Calcul : (${this.matchData.team1.popularity} + ${this.matchData.team1.score}) × 10k</small>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">${this.matchData.team2.name || 'Équipe 2'}</div>
+                        <div class="value">${Utils.formatNumber(team2Gains)} PO</div>
+                        <small>Calcul : (${this.matchData.team2.popularity} + ${this.matchData.team2.score}) × 10k</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getFansUpdateSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">9</div>
+                    <div class="step-title">Mise à Jour des Fans Dévoués</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Gagnant :</strong> Lance 1D6. Si ≥ fans actuels → gagne 1D3 fans</p>
+                    <p><strong>Perdant :</strong> Lance 1D6. Si ≤ fans actuels → perd 1D3 fans</p>
+                    <p><strong>Match nul :</strong> Pas de changement</p>
+                </div>
+                <div class="fans-update-controls">
+                    <div class="dice-controls">
+                        <span><strong>${this.matchData.team1.name || 'Équipe 1'}</strong> (${this.getMatchResult(1)}) :</span>
+                        <button class="dice-btn" onclick="app.rollFansUpdate(1)">🎲 Test Fans</button>
+                        <input type="number" class="dice-result" id="fans1-roll"
+                            value="" min="1" max="6" onchange="app.updateFans(1)">
+                        <span id="fans1-result"></span>
+                    </div>
+                    <div class="dice-controls">
+                        <span><strong>${this.matchData.team2.name || 'Équipe 2'}</strong> (${this.getMatchResult(2)}) :</span>
+                        <button class="dice-btn" onclick="app.rollFansUpdate(2)">🎲 Test Fans</button>
+                        <input type="number" class="dice-result" id="fans2-roll"
+                            value="" min="1" max="6" onchange="app.updateFans(2)">
+                        <span id="fans2-result"></span>
+                    </div>
+                </div>
+                <div id="fans-update-info" class="result-box" style="display: none;"></div>
+            </div>
+        `;
+    }
+
+    getExperienceSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">10</div>
+                    <div class="step-title">Calcul de l'Expérience</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Barème XP :</strong> REU/DET (1XP), INT/ELIM (2XP), TD (3XP), JDM (4XP)</p>
+                    <p>L'expérience est calculée automatiquement selon les cases cochées pendant le match</p>
+                </div>
+                <div class="xp-summary-grid">
+                    <div class="team-xp-section">
+                        <h5>${this.matchData.team1.name || 'Équipe 1'}</h5>
+                        ${this.getTeamXPSummary(1)}
+                    </div>
+                    <div class="team-xp-section">
+                        <h5>${this.matchData.team2.name || 'Équipe 2'}</h5>
+                        ${this.getTeamXPSummary(2)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getPlayerSalesSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">11</div>
+                    <div class="step-title">Vente de Joueurs</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> Les coachs professionnels peuvent racheter vos joueurs selon leur rang</p>
+                    <p><strong>Test :</strong> Expérimenté (6), Vétéran (5), Future Star (4), Star (3), Super Star (2), Légende (automatique)</p>
+                    <p>Une équipe avec 4+ staff (assistants+pom-pom) a une relance pour garder le joueur</p>
+                </div>
+
+                <div class="player-sales-grid">
+                    <div class="team-sales-section">
+                        <h5>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h5>
+                        <div id="team1-sales-list" class="sales-list">
+                            ${this.getTeamSalesList(1)}
+                        </div>
+                        <button class="btn btn-secondary" onclick="app.addSoldPlayer(1)">
+                            ➕ Ajouter un joueur vendu
+                        </button>
+                    </div>
+
+                    <div class="team-sales-section">
+                        <h5>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h5>
+                        <div id="team2-sales-list" class="sales-list">
+                            ${this.getTeamSalesList(2)}
+                        </div>
+                        <button class="btn btn-secondary" onclick="app.addSoldPlayer(2)">
+                            ➕ Ajouter un joueur vendu
+                        </button>
+                    </div>
+                </div>
+
+                <div class="help-text">
+                    📝 Faites vos jets de dés selon le rang de vos joueurs, puis notez ceux qui ont été vendus ci-dessus
+                </div>
+            </div>
+        `;
+    }
+
+    getCostlyErrorsSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">12</div>
+                    <div class="step-title">Erreurs Coûteuses</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> Si une équipe a ≥100 000 PO en trésorerie, elle risque des scandales</p>
+                    <p><strong>Incident mineur :</strong> -D3×10k PO | <strong>Incident majeur :</strong> Trésorerie ÷ 2</p>
+                    <p><strong>Catastrophe :</strong> Ne garde que 2D6×10k PO</p>
+                </div>
+
+                <div class="costly-errors-grid">
+                    <div class="team-errors-section">
+                        <h5>${this.matchData.team1.name || 'Équipe 1'}</h5>
+                        <div class="treasury-input">
+                            <label>Trésorerie actuelle :</label>
+                            <input type="number" id="team1-current-treasury"
+                                placeholder="0" min="0" step="1000"
+                                value="${this.matchData.team1.treasury || 0}"
+                                onchange="app.updateTreasury(1, this.value)">
+                            <span>PO</span>
+                        </div>
+                        ${this.matchData.team1.treasury >= 100000 ? `
+                            <div class="dice-controls">
+                                <button class="dice-btn" onclick="app.rollCostlyErrors(1)">🎲 Test D6</button>
+                                <input type="number" class="dice-result" id="team1-errors-roll"
+                                    value="" min="1" max="6" onchange="app.updateCostlyErrors(1)">
+                            </div>
+                            <div id="team1-errors-result"></div>
+                        ` : '<p class="success-text">Trésorerie < 100k PO : Pas de test requis</p>'}
+                    </div>
+
+                    <div class="team-errors-section">
+                        <h5>${this.matchData.team2.name || 'Équipe 2'}</h5>
+                        <div class="treasury-input">
+                            <label>Trésorerie actuelle :</label>
+                            <input type="number" id="team2-current-treasury"
+                                placeholder="0" min="0" step="1000"
+                                value="${this.matchData.team2.treasury || 0}"
+                                onchange="app.updateTreasury(2, this.value)">
+                            <span>PO</span>
+                        </div>
+                        ${this.matchData.team2.treasury >= 100000 ? `
+                            <div class="dice-controls">
+                                <button class="dice-btn" onclick="app.rollCostlyErrors(2)">🎲 Test D6</button>
+                                <input type="number" class="dice-result" id="team2-errors-roll"
+                                    value="" min="1" max="6" onchange="app.updateCostlyErrors(2)">
+                            </div>
+                            <div id="team2-errors-result"></div>
+                        ` : '<p class="success-text">Trésorerie < 100k PO : Pas de test requis</p>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Méthodes de calcul
+    calculateGains(team) {
+        const popularity = this.matchData[`team${team}`].popularity || 0;
+        const touchdowns = this.matchData[`team${team}`].score || 0;
+        return 10000 * (popularity + touchdowns);
+    }
+
+    getMatchResult(team) {
+        const team1Score = this.matchData.team1.score;
+        const team2Score = this.matchData.team2.score;
+
+        if (team1Score > team2Score) {
+            return team === 1 ? 'Gagnant' : 'Perdant';
+        } else if (team2Score > team1Score) {
+            return team === 2 ? 'Gagnant' : 'Perdant';
+        } else {
+            return 'Match nul';
+        }
+    }
+
+    getTeamXPSummary(team) {
+        const players = this.matchData[`team${team}`].players || [];
+
+        if (players.length === 0) {
+            return '<p class="help-text">Aucun joueur ajouté dans l\'onglet Match</p>';
+        }
+
+        let html = '<div class="xp-list">';
+        let totalXP = 0;
+
+        players.forEach(player => {
+            if (player.name || player.xp > 0) {
+                html += `
+                    <div class="xp-player-item">
+                        <span class="player-name">${player.name || 'Joueur sans nom'}</span>
+                        <span class="player-xp">${player.xp || 0} XP</span>
+                    </div>
+                `;
+                totalXP += player.xp || 0;
+            }
+        });
+
+        html += `
+            <div class="xp-total-item">
+                <span>Total équipe</span>
+                <span>${totalXP} XP</span>
+            </div>
+        </div>`;
+
+        return html;
+    }
+
+    // Gestion des ventes de joueurs
+    getTeamSalesList(team) {
+        if (!this.matchData[`team${team}`].soldPlayers) {
+            this.matchData[`team${team}`].soldPlayers = [];
+        }
+
+        const soldPlayers = this.matchData[`team${team}`].soldPlayers;
+
+        if (soldPlayers.length === 0) {
+            return '<p class="help-text">Aucun joueur vendu</p>';
+        }
+
+        return soldPlayers.map((player, index) => `
+            <div class="sold-player-item">
+                <input type="text" class="sold-player-input"
+                    value="${player.name}"
+                    placeholder="Nom du joueur vendu"
+                    onchange="app.updateSoldPlayer(${team}, ${index}, this.value)">
+                <input type="number" class="sold-player-value"
+                    value="${player.value || 0}"
+                    placeholder="Valeur"
+                    min="0" step="10000"
+                    onchange="app.updateSoldPlayerValue(${team}, ${index}, this.value)">
+                <span>PO</span>
+                <button class="btn-remove-player" onclick="app.removeSoldPlayer(${team}, ${index})">❌</button>
+            </div>
+        `).join('');
+    }
+
+    addSoldPlayer(team) {
+        if (!this.matchData[`team${team}`].soldPlayers) {
+            this.matchData[`team${team}`].soldPlayers = [];
+        }
+
+        this.matchData[`team${team}`].soldPlayers.push({
+            name: '',
+            value: 0
+        });
+
+        this.loadTab('postmatch');
+        this.saveState();
+    }
+
+    updateSoldPlayer(team, index, name) {
+        this.matchData[`team${team}`].soldPlayers[index].name = name;
+        this.saveState();
+    }
+
+    updateSoldPlayerValue(team, index, value) {
+        this.matchData[`team${team}`].soldPlayers[index].value = parseInt(value) || 0;
+        this.saveState();
+    }
+
+    removeSoldPlayer(team, index) {
+        this.matchData[`team${team}`].soldPlayers.splice(index, 1);
+        this.loadTab('postmatch');
+        this.saveState();
+    }
+
+    // Gestion des fans
+    rollFansUpdate(team) {
+        const roll = Utils.getRandomInt(1, 6);
+        document.getElementById(`fans${team}-roll`).value = roll;
+        this.updateFans(team);
+    }
+
+    updateFans(team) {
+        const roll = parseInt(document.getElementById(`fans${team}-roll`).value) || 0;
+        const currentFans = this.matchData[`team${team}`].fans;
+        const result = this.getMatchResult(team);
+
+        let message = '';
+        let newFans = currentFans;
+
+        if (result === 'Match nul') {
+            message = 'Match nul : pas de changement';
+        } else if (result === 'Gagnant') {
+            if (roll >= currentFans) {
+                const gain = Utils.getRandomInt(1, 3);
+                newFans = Math.min(6, currentFans + gain);
+                message = `Gagne ${gain} fan(s) ! (${currentFans} → ${newFans})`;
+            } else {
+                message = `Pas de gain (jet ${roll} < ${currentFans} fans actuels)`;
+            }
+        } else { // Perdant
+            if (roll <= currentFans) {
+                const loss = Utils.getRandomInt(1, 3);
+                newFans = Math.max(1, currentFans - loss);
+                message = `Perd ${loss} fan(s) ! (${currentFans} → ${newFans})`;
+            } else {
+                message = `Pas de perte (jet ${roll} > ${currentFans} fans actuels)`;
+            }
+        }
+
+        this.matchData[`team${team}`].fans = newFans;
+        document.getElementById(`fans${team}-result`).textContent = message;
+
+        // Afficher le résumé
+        const infoDiv = document.getElementById('fans-update-info');
+        infoDiv.style.display = 'block';
+        infoDiv.className = result === 'Gagnant' ? 'result-box success' : 'result-box warning';
+        infoDiv.innerHTML = `<p>Mise à jour des fans terminée</p>`;
+
+        this.saveState();
+    }
+
+    // Gestion de la trésorerie et erreurs coûteuses
+    updateTreasury(team, value) {
+        this.matchData[`team${team}`].treasury = parseInt(value) || 0;
+        this.loadTab('postmatch'); // Rafraîchir pour afficher/masquer le test
+        this.saveState();
+    }
+
+    rollCostlyErrors(team) {
+        const roll = Utils.getRandomInt(1, 6);
+        document.getElementById(`team${team}-errors-roll`).value = roll;
+        this.updateCostlyErrors(team);
+    }
+
+    updateCostlyErrors(team) {
+        const roll = parseInt(document.getElementById(`team${team}-errors-roll`).value) || 0;
+        const treasury = this.matchData[`team${team}`].treasury;
+        const resultDiv = document.getElementById(`team${team}-errors-result`);
+
+        const errorTable = this.getCostlyErrorResult(treasury, roll);
+
+        if (errorTable.type === 'none') {
+            resultDiv.innerHTML = '<p class="success-text">✅ Crise évitée !</p>';
+        } else if (errorTable.type === 'minor') {
+            const loss = Utils.getRandomInt(1, 3) * 10000;
+            resultDiv.innerHTML = `<p class="warning-text">⚠️ Incident mineur : -${Utils.formatNumber(loss)} PO</p>`;
+        } else if (errorTable.type === 'major') {
+            resultDiv.innerHTML = `<p class="danger-text">🔥 Incident majeur : Trésorerie divisée par 2 !</p>`;
+        } else if (errorTable.type === 'catastrophe') {
+            resultDiv.innerHTML = `<p class="danger-text">💥 Catastrophe ! Ne garde que 2D6×10k PO</p>`;
+        }
+
+        this.saveState();
+    }
+
+    getCostlyErrorResult(treasury, roll) {
+        if (treasury < 100000) return { type: 'none' };
+
+        const table = {
+            100000: { 1: 'minor', 2: 'none', 3: 'none', 4: 'none', 5: 'none', 6: 'none' },
+            200000: { 1: 'minor', 2: 'minor', 3: 'none', 4: 'none', 5: 'none', 6: 'none' },
+            300000: { 1: 'major', 2: 'minor', 3: 'minor', 4: 'none', 5: 'none', 6: 'none' },
+            400000: { 1: 'major', 2: 'major', 3: 'minor', 4: 'minor', 5: 'none', 6: 'none' },
+            500000: { 1: 'catastrophe', 2: 'major', 3: 'major', 4: 'minor', 5: 'minor', 6: 'none' },
+            600000: { 1: 'catastrophe', 2: 'catastrophe', 3: 'major', 4: 'major', 5: 'minor', 6: 'minor' }
+        };
+
+        let bracket = 100000;
+        if (treasury >= 600000) bracket = 600000;
+        else if (treasury >= 500000) bracket = 500000;
+        else if (treasury >= 400000) bracket = 400000;
+        else if (treasury >= 300000) bracket = 300000;
+        else if (treasury >= 200000) bracket = 200000;
+
+        return { type: table[bracket][roll] || 'none' };
+    }
+
+    initializePostmatchTab() {
+        // Recalculer l'XP si nécessaire
+        this.matchData.team1.players.forEach(player => {
+            this.calculatePlayerXP(1, player.id);
+        });
+        this.matchData.team2.players.forEach(player => {
+            this.calculatePlayerXP(2, player.id);
+        });
+
+        console.log('Post-match tab initialized');
     }
 
 }
