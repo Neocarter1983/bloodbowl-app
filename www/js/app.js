@@ -174,7 +174,10 @@ class BloodBowlApp {
             popularity: 0,
             popularityDice: null, // Ajouter cette ligne
             players: [],
-            treasury: 0
+            treasury: 0,
+            fansUpdateRoll: null,      // Le résultat du dé pour le test de fans
+            fansUpdateResult: '',       // Le message de résultat
+            soldPlayers: []
         };
     }
 
@@ -910,6 +913,36 @@ class BloodBowlApp {
 
             if (savedState && savedState.matchData) {
                 this.matchData = savedState.matchData;
+
+                // S'assurer que les nouvelles propriétés du chrono existent
+                if (this.matchData.timerRunning && this.matchData.matchStart && !this.matchData.lastStartTime) {
+                    // Si le chrono était en marche mais pas de lastStartTime, utiliser matchStart
+                    this.matchData.lastStartTime = this.matchData.matchStart;
+                }
+
+                // S'assurer que pausedDuration existe
+                if (!this.matchData.hasOwnProperty('pausedDuration')) {
+                    this.matchData.pausedDuration = 0;
+                }
+
+                // S'assurer que timerRunning existe
+                if (!this.matchData.hasOwnProperty('timerRunning')) {
+                    this.matchData.timerRunning = false;
+                }
+
+                // S'assurer que lastStartTime existe
+                if (!this.matchData.hasOwnProperty('lastStartTime')) {
+                    this.matchData.lastStartTime = null;
+                }
+
+                if (!this.matchData.team1.hasOwnProperty('fansUpdateRoll')) {
+                    this.matchData.team1.fansUpdateRoll = null;
+                    this.matchData.team1.fansUpdateResult = '';
+                }
+                if (!this.matchData.team2.hasOwnProperty('fansUpdateRoll')) {
+                    this.matchData.team2.fansUpdateRoll = null;
+                    this.matchData.team2.fansUpdateResult = '';
+                }
 
                 // Migration des anciennes données
                 this.migrateOldData();
@@ -2761,18 +2794,20 @@ class BloodBowlApp {
                         <span><strong>${this.matchData.team1.name || 'Équipe 1'}</strong> (${this.getMatchResult(1)}) :</span>
                         <button class="dice-btn" onclick="app.rollFansUpdate(1)">🎲 Test Fans</button>
                         <input type="number" class="dice-result" id="fans1-roll"
-                            value="" min="1" max="6" onchange="app.updateFans(1)">
-                        <span id="fans1-result"></span>
+                            value="${this.matchData.team1.fansUpdateRoll || ''}" min="1" max="6" onchange="app.updateFans(1)">
+                        <span id="fans1-result">${this.matchData.team1.fansUpdateResult || ''}</span>
                     </div>
                     <div class="dice-controls">
                         <span><strong>${this.matchData.team2.name || 'Équipe 2'}</strong> (${this.getMatchResult(2)}) :</span>
                         <button class="dice-btn" onclick="app.rollFansUpdate(2)">🎲 Test Fans</button>
                         <input type="number" class="dice-result" id="fans2-roll"
-                            value="" min="1" max="6" onchange="app.updateFans(2)">
-                        <span id="fans2-result"></span>
+                            value="${this.matchData.team2.fansUpdateRoll || ''}" min="1" max="6" onchange="app.updateFans(2)">
+                        <span id="fans2-result">${this.matchData.team2.fansUpdateResult || ''}</span>
                     </div>
                 </div>
-                <div id="fans-update-info" class="result-box" style="display: none;"></div>
+                <div id="fans-update-info" class="result-box" style="${(this.matchData.team1.fansUpdateRoll || this.matchData.team2.fansUpdateRoll) ? '' : 'display: none;'}">
+                    <p>Mise à jour des fans terminée</p>
+                </div>
             </div>
         `;
     }
@@ -3017,6 +3052,8 @@ class BloodBowlApp {
     rollFansUpdate(team) {
         const roll = Utils.getRandomInt(1, 6);
         document.getElementById(`fans${team}-roll`).value = roll;
+        // AJOUT : Sauvegarder le résultat du dé
+        this.matchData[`team${team}`].fansUpdateRoll = roll;
         this.updateFans(team);
         this.saveState();
     }
@@ -3025,6 +3062,9 @@ class BloodBowlApp {
         const roll = parseInt(document.getElementById(`fans${team}-roll`).value) || 0;
         const currentFans = this.matchData[`team${team}`].fans;
         const result = this.getMatchResult(team);
+
+        // AJOUT : Sauvegarder le résultat du dé
+        this.matchData[`team${team}`].fansUpdateRoll = roll;
 
         let message = '';
         let newFans = currentFans;
@@ -3050,6 +3090,9 @@ class BloodBowlApp {
         }
 
         this.matchData[`team${team}`].fans = newFans;
+        // AJOUT : Sauvegarder le message de résultat
+        this.matchData[`team${team}`].fansUpdateResult = message;
+
         document.getElementById(`fans${team}-result`).textContent = message;
 
         // Afficher le résumé
