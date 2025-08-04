@@ -98,38 +98,66 @@ body {
     padding: var(--spacing-md);
 }
 
-/* Tabs scrollables sur mobile */
+/* Tabs améliorés */
 .tabs {
     display: flex;
     background: white;
-    padding: 5px;
+    padding: 0 !important;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    position: relative; /* Changé de sticky */
-    border-radius: 15px; /* Arrondir */
-    margin-bottom: 20px; /* Espace en bas */
-    box-shadow: var(--box-shadow);
+    border-radius: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 0;
+    justify-content: center;
 }
 
 .tabs::-webkit-scrollbar {
     display: none;
 }
 
+/* Style des onglets individuels */
 .tab {
     flex: 0 0 auto;
-    padding: 12px 15px;
+    padding: 15px 25px;
     white-space: nowrap;
     cursor: pointer;
-    border-radius: 10px;
-    transition: var(--transition);
+    border-radius: 12px 12px 0 0;
+    transition: all 0.3s ease;
     user-select: none;
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #666;
+    background: transparent;
+    position: relative;
+    margin: 0 2px;
+    min-width: 120px;
+    text-align: center;
+    border-bottom: 3px solid transparent;
 }
 
+/* Effet hover */
+.tab:hover:not(.active) {
+    background: rgba(26, 95, 63, 0.05);
+    color: var(--primary-color);
+}
+
+/* Onglet actif */
 .tab.active {
-    background: var(--primary-color);
-    color: white;
+    background: white;
+    color: var(--primary-color);
+    font-weight: 600;
+    border-bottom: 3px solid var(--primary-color);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+}
+
+/* Icônes dans les onglets */
+.tab::before {
+    content: '';
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 1.2em;
+    vertical-align: middle;
 }
 
 /* Contenu principal */
@@ -458,37 +486,50 @@ input:focus, select:focus, textarea:focus {
     z-index: 9999;
 }
 
-/* Progress indicator compact */
+/* Progress indicator centré */
 .progress-indicator {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    padding: var(--spacing-sm);
-    background: white;
-    box-shadow: var(--box-shadow);
-    border-radius: 10px;
-    margin-bottom: 15px;
+    gap: 15px;
+    padding: 10px 0;
+    margin-bottom: 10px;
 }
 
 .progress-step {
-    width: 30px;
-    height: 30px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
-    background: #ddd;
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    color: white;
-    font-size: 0.875rem;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.5);
 }
 
 .progress-step.completed {
-    background: var(--success-color);
+    background: white;
+    color: var(--primary-color);
+    border-color: white;
 }
 
 .progress-step.current {
     background: var(--primary-color);
+    color: white;
+    border-color: white;
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+}
+
+/* Animation du progress indicator */
+@keyframes pulse {
+    0% { transform: scale(1.2); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1.2); }
 }
 
 /* Step sections */
@@ -570,26 +611,83 @@ input:focus, select:focus, textarea:focus {
     max-width: 80px;
 }
 
+/* Responsive - Mobile */
 @media (max-width: 768px) {
-    .dice-controls {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
+    .sticky-wrapper {
+        padding-bottom: 15px;
     }
 
-    .dice-controls > * {
-        width: 100%;
-        text-align: center;
+    .sticky-wrapper .header,
+    .sticky-wrapper .progress-indicator,
+    .sticky-wrapper .tabs {
+        padding: 0 10px;
     }
 
-    .dice-controls .dice-btn {
-        width: 100%;
+    .tabs {
+        justify-content: flex-start; /* Sur mobile, permettre le scroll */
     }
 
-    .dice-controls .dice-result {
-        width: 100%;
-        max-width: none;
+    .tab {
+        padding: 12px 15px;
+        font-size: 13px;
+        min-width: auto;
+        flex: 1;
+        margin: 0 1px;
     }
+
+    /* Cacher les icônes sur mobile pour gagner de l'espace */
+    .tab::before {
+        display: none;
+    }
+
+    /* Progress indicator plus petit sur mobile */
+    .progress-step {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+}
+
+/* Desktop - Amélioration de l'espacement */
+@media (min-width: 769px) {
+    .tab {
+        flex: 1;
+        max-width: 180px;
+    }
+}
+
+/* Effet de transition fluide entre les onglets */
+.tab::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-color);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.tab.active::after {
+    transform: scaleX(1);
+}
+
+/* Style du contenu sous les tabs */
+.sticky-wrapper + .content {
+    margin-top: 20px;
+}
+
+/* Option : Ajouter un dégradé subtil sous le menu */
+.sticky-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1), transparent);
+    pointer-events: none;
 }
 
 /* Budget display */
@@ -2410,20 +2508,28 @@ input:focus, select:focus, textarea:focus {
 
 /* === CSS POUR LE STICKY WRAPPER === */
 
-/* Wrapper collant pour header + tabs */
+/* Wrapper sticky amélioré */
 .sticky-wrapper {
     position: sticky;
     top: 0;
     z-index: 100;
     background: linear-gradient(135deg, #1a5f3f 0%, #2d8f5f 100%);
     padding-bottom: 20px;
-    margin: -15px -15px 0 -15px; /* Compenser le padding du container */
-    padding: 15px 15px 20px 15px;
+}
+
+/* Container interne pour aligner avec le contenu */
+.sticky-wrapper .header,
+.sticky-wrapper .progress-indicator,
+.sticky-wrapper .tabs {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
 }
 
 /* Ajuster le header dans le wrapper sticky */
 .sticky-wrapper .header {
-    margin-bottom: 10px; /* Réduire l'espace */
+    padding-top: 15px;
+    padding-bottom: 15px;
 }
 
 /* Ajuster les tabs */
