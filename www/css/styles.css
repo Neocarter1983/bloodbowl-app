@@ -2526,7 +2526,7 @@ input:focus, select:focus, textarea:focus {
     padding: 0 15px;
 }
 
-/* Ajuster le header dans le wrapper sticky */
+/* Header dans le sticky wrapper */
 .sticky-wrapper .header {
     padding-top: 15px;
     padding-bottom: 15px;
