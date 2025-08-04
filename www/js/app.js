@@ -99,9 +99,13 @@ if (typeof AppConfig === 'undefined') {
 class BloodBowlApp {
     constructor() {
         this.currentTab = 'setup';
+
         this.matchData = {
             team1: this.createTeamObject(),
             team2: this.createTeamObject(),
+            timerRunning: false,
+            pausedDuration: 0,
+            lastStartTime: null,
             weather: {
                 total: 0,
                 effect: '',
@@ -677,13 +681,23 @@ class BloodBowlApp {
 
     // Méthodes auxiliaires pour le résumé
     getMatchDuration() {
-        if (this.matchData.matchStart && this.matchData.matchEnd) {
-            const duration = this.matchData.matchEnd - this.matchData.matchStart;
-            const hours = Math.floor(duration / 3600000);
-            const minutes = Math.floor((duration % 3600000) / 60000);
-            return hours > 0 ? `${hours}h ${minutes}min` : `${minutes} minutes`;
+        if (!this.matchData.matchStart) {
+            return 'Non démarrée';
         }
-        return 'Non enregistrée';
+
+        // Utiliser le temps écoulé actuel
+        const totalSeconds = this.getElapsedTime();
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}min`;
+        } else if (minutes > 0) {
+            return `${minutes}min ${seconds}s`;
+        } else {
+            return `${seconds}s`;
+        }
     }
 
     calculateTotalMatchXP() {
@@ -1902,6 +1916,10 @@ class BloodBowlApp {
     initializeMatchTab() {
         // Restaurer l'état du chrono si nécessaire
         if (this.matchData.timerRunning) {
+            // S'assurer que lastStartTime est défini
+            if (!this.matchData.lastStartTime) {
+                this.matchData.lastStartTime = new Date();
+            }
             this.startTimerInterval();
         } else if (this.matchData.matchStart) {
             // Afficher le temps écoulé même si le chrono est en pause
@@ -3397,13 +3415,21 @@ class BloodBowlApp {
             // Démarrer le chrono
             if (!this.matchData.matchStart) {
                 this.matchData.matchStart = new Date();
+                this.matchData.pausedDuration = 0;
             }
             this.matchData.timerRunning = true;
+            this.matchData.lastStartTime = new Date();
             this.startTimerInterval();
         } else {
             // Mettre en pause
             this.matchData.timerRunning = false;
-            this.matchData.pausedDuration = this.getElapsedTime();
+
+            // Calculer et ajouter le temps écoulé depuis le dernier démarrage
+            const now = new Date();
+            const lastStart = new Date(this.matchData.lastStartTime);
+            const additionalTime = Math.floor((now - lastStart) / 1000);
+            this.matchData.pausedDuration = (this.matchData.pausedDuration || 0) + additionalTime;
+
             if (this.timerInterval) {
                 clearInterval(this.timerInterval);
                 this.timerInterval = null;
@@ -3418,7 +3444,7 @@ class BloodBowlApp {
     resetTimer() {
         if (confirm('Réinitialiser le chronomètre ?')) {
             this.matchData.matchStart = null;
-            this.matchData.matchEnd = null;
+            this.matchData.lastStartTime = null;
             this.matchData.timerRunning = false;
             this.matchData.pausedDuration = 0;
 
@@ -3457,12 +3483,16 @@ class BloodBowlApp {
     getElapsedTime() {
         if (!this.matchData.matchStart) return 0;
 
-        const now = new Date();
-        const start = new Date(this.matchData.matchStart);
-        const elapsedMs = now - start;
-        const elapsedSeconds = Math.floor(elapsedMs / 1000);
-
-        return elapsedSeconds + (this.matchData.pausedDuration || 0);
+        if (this.matchData.timerRunning) {
+            // Si le chrono tourne, calculer le temps depuis le dernier démarrage
+            const now = new Date();
+            const lastStart = new Date(this.matchData.lastStartTime || this.matchData.matchStart);
+            const currentSessionTime = Math.floor((now - lastStart) / 1000);
+            return (this.matchData.pausedDuration || 0) + currentSessionTime;
+        } else {
+            // Si en pause, retourner seulement le temps accumulé
+            return this.matchData.pausedDuration || 0;
+        }
     }
 
     updateTimerButton() {
