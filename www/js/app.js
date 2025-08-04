@@ -808,19 +808,19 @@ class BloodBowlApp {
             // Sauvegarde principale
             const saved = Utils.storage.set('match_state', stateToSave);
 
-            // Sauvegarde de secours avec timestamp
+            // Sauvegarde de secours silencieuse
             if (saved) {
                 const backupKey = `match_backup_${new Date().getTime()}`;
                 Utils.storage.set(backupKey, stateToSave);
 
-                // Nettoyer les anciennes sauvegardes (garder les 5 dernières)
+                // Nettoyer les anciennes sauvegardes silencieusement
                 this.cleanOldBackups();
             }
 
-            if (saved && this.hasMatchData()) {
-               this.showSaveIndicator();
-           }
-           return saved;
+            // Ne PAS afficher l'indicateur pour les sauvegardes automatiques
+            // this.showSaveIndicator(); // Commenté
+
+            return saved;
         } catch (error) {
             console.error('Erreur lors de la sauvegarde:', error);
             this.showSaveError();
@@ -952,15 +952,17 @@ class BloodBowlApp {
     showRecoveryInfo(saveDate) {
         if (!this.hasMatchData()) return;
 
+        // Afficher seulement si les données sont vraiment anciennes (plus de 5 minutes)
         const date = new Date(saveDate);
-        const timeAgo = this.getTimeAgo(date);
+        const minutesAgo = Math.floor((new Date() - date) / 60000);
+
+        if (minutesAgo < 5) return; // Ne rien afficher si moins de 5 minutes
 
         const recoveryDiv = document.createElement('div');
-        recoveryDiv.className = 'recovery-notification';
+        recoveryDiv.className = 'recovery-notification subtle';
         recoveryDiv.innerHTML = `
             <div class="recovery-content">
-                <span>✅ Données récupérées (sauvegarde d'il y a ${timeAgo})</span>
-                <button onclick="this.parentElement.parentElement.remove()">×</button>
+                <span>✓ Données restaurées</span>
             </div>
         `;
         document.body.appendChild(recoveryDiv);
@@ -969,7 +971,17 @@ class BloodBowlApp {
             if (recoveryDiv.parentElement) {
                 recoveryDiv.remove();
             }
-        }, 5000);
+        }, 2000); // Réduit à 2 secondes
+    }
+
+    manualSave() {
+        this.showingSaveIndicator = true;
+        const saved = this.saveState();
+        this.showingSaveIndicator = false;
+
+        if (saved) {
+            this.showSaveIndicator();
+        }
     }
 
     getTimeAgo(date) {
@@ -1040,11 +1052,11 @@ class BloodBowlApp {
         // Sauvegarde immédiate au démarrage
         this.saveState();
 
-        // Sauvegarde automatique toutes les 10 secondes (au lieu de 30)
+        // Sauvegarde automatique silencieuse toutes les 30 secondes
         this.autoSaveInterval = setInterval(() => {
             this.saveState();
-            console.log('Auto-save effectué à', new Date().toLocaleTimeString());
-        }, 10000); // 10 secondes
+            // Retirer le console.log pour moins de bruit
+        }, 30000); // Revenir à 30 secondes
 
         // Sauvegarde lors de certains événements critiques
         this.setupCriticalSaveEvents();
@@ -1055,27 +1067,25 @@ class BloodBowlApp {
         window.addEventListener('beforeunload', (e) => {
             this.saveState();
 
-            // Si des données importantes sont présentes, avertir l'utilisateur
-            if (this.hasMatchData()) {
+            // Avertir seulement si match en cours avec des scores
+            if (this.matchData.team1.score > 0 || this.matchData.team2.score > 0) {
                 e.preventDefault();
-                e.returnValue = 'Des données de match sont en cours. Êtes-vous sûr de vouloir quitter ?';
+                e.returnValue = 'Match en cours';
                 return e.returnValue;
             }
         });
 
-        // Sauvegarde lorsque la page perd le focus
+        // Autres événements restent silencieux
         window.addEventListener('blur', () => {
             this.saveState();
         });
 
-        // Sauvegarde lorsque l'utilisateur change d'onglet du navigateur
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 this.saveState();
             }
         });
 
-        // Sauvegarde sur mobile lors de la mise en arrière-plan
         window.addEventListener('pagehide', () => {
             this.saveState();
         });
@@ -3315,24 +3325,26 @@ class BloodBowlApp {
     }
 
     showSaveIndicator() {
-        // Retirer l'ancien indicateur s'il existe
+        // Ne pas afficher d'indicateur pour les sauvegardes automatiques
+        // Seulement en cas de sauvegarde manuelle ou d'action importante
+        if (!this.showingSaveIndicator) {
+            return;
+        }
+
         const oldIndicator = document.getElementById('save-indicator');
         if (oldIndicator) oldIndicator.remove();
 
         const indicator = document.createElement('div');
         indicator.id = 'save-indicator';
         indicator.className = 'save-indicator';
-        indicator.innerHTML = '💾 Sauvegarde...';
+        indicator.innerHTML = '✓';
         document.body.appendChild(indicator);
 
         setTimeout(() => {
-            indicator.innerHTML = '✅ Sauvegardé';
-            setTimeout(() => {
-                if (indicator.parentElement) {
-                    indicator.remove();
-                }
-            }, 2000);
-        }, 500);
+            if (indicator.parentElement) {
+                indicator.remove();
+            }
+        }, 1000); // Réduit à 1 seconde
     }
 
     getScoreDisplay() {
