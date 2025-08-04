@@ -771,28 +771,6 @@ class BloodBowlApp {
         `;
     }
 
-    // Méthode pour imprimer le résumé
-    printSummary() {
-        // Créer une nouvelle fenêtre pour l'impression
-        const printWindow = window.open('', '_blank', 'width=800,height=600');
-
-        // Générer le contenu HTML formaté
-        const printContent = this.generatePrintableContent();
-
-        // Écrire le contenu dans la nouvelle fenêtre
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-
-        // Lancer l'impression après un court délai
-        setTimeout(() => {
-            printWindow.print();
-            // Fermer la fenêtre après l'impression
-            printWindow.onafterprint = () => {
-                printWindow.close();
-            };
-        }, 500);
-    }
-
     // Nouvelle méthode pour générer le contenu imprimable
     printSummary() {
         // Créer une nouvelle fenêtre pour l'impression
@@ -1050,15 +1028,74 @@ class BloodBowlApp {
             </div>
         </div>
 
-        <!-- MVP -->
-        ${this.matchData.mvp && this.matchData.mvp.playerId ? (() => {
-            const mvpTeam = this.matchData.mvp.team;
-            const mvpPlayer = this.matchData[`team${mvpTeam}`].players.find(p => p.id === this.matchData.mvp.playerId);
-            return mvpPlayer ? `
-            <div class="mvp-display">
-                🌟 Joueur du Match : ${mvpPlayer.name} (${this.matchData[`team${mvpTeam}`].name}) - +4 XP Bonus
-            </div>` : '';
-        })() : ''}
+        <!-- MVP / Joueurs du Match -->
+        ${(() => {
+            const mvps = [];
+
+            // Système 1 : Chercher via mvpName dans chaque équipe
+            [1, 2].forEach(teamNum => {
+                const teamData = this.matchData[`team${teamNum}`];
+                if (teamData.mvpName) {
+                    // Trouver le joueur correspondant pour obtenir son XP
+                    const player = teamData.players.find(p =>
+                        p.name && p.name.toLowerCase() === teamData.mvpName.toLowerCase()
+                    );
+                    mvps.push({
+                        name: teamData.mvpName,
+                        team: teamData.name,
+                        xp: player ? player.xp : '4' // Si joueur non trouvé, au moins 4 XP du bonus
+                    });
+                }
+            });
+
+            // Système 2 : Si pas de mvpName, chercher via mvp.playerId
+            if (mvps.length === 0 && this.matchData.mvp && this.matchData.mvp.playerId) {
+                const mvpTeam = this.matchData.mvp.team;
+                const mvpPlayer = this.matchData[`team${mvpTeam}`].players.find(p => p.id === this.matchData.mvp.playerId);
+                if (mvpPlayer) {
+                    mvps.push({
+                        name: mvpPlayer.name,
+                        team: this.matchData[`team${mvpTeam}`].name,
+                        xp: mvpPlayer.xp || 0
+                    });
+                }
+            }
+
+            // Système 3 : Chercher les joueurs avec actions.jdm
+            if (mvps.length === 0) {
+                [1, 2].forEach(teamNum => {
+                    const teamPlayers = this.matchData[`team${teamNum}`].players || [];
+                    teamPlayers.forEach(player => {
+                        if (player.actions && player.actions.jdm && player.name) {
+                            mvps.push({
+                                name: player.name,
+                                team: this.matchData[`team${teamNum}`].name,
+                                xp: player.xp || 0
+                            });
+                        }
+                    });
+                });
+            }
+
+            // Afficher les JDM s'il y en a
+            if (mvps.length > 0) {
+                return `
+                <div class="mvp-display">
+                    <div style="text-align: center; font-size: 16pt; margin-bottom: 10px;">
+                        🌟 Joueur${mvps.length > 1 ? 's' : ''} du Match 🌟
+                    </div>
+                    ${mvps.map(mvp => `
+                        <div style="text-align: center; margin: 5px 0;">
+                            <strong>${mvp.name}</strong> (${mvp.team}) - ${mvp.xp} XP total
+                        </div>
+                    `).join('')}
+                    <div style="text-align: center; font-size: 10pt; color: #666; margin-top: 5px;">
+                        (incluant le bonus de +4 XP)
+                    </div>
+                </div>`;
+            }
+            return '';
+        })()}
 
         <!-- Détails des Équipes -->
         <div class="section">
