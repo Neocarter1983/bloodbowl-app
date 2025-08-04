@@ -761,7 +761,389 @@ class BloodBowlApp {
 
     // Méthode pour imprimer le résumé
     printSummary() {
-        window.print();
+        // Créer une nouvelle fenêtre pour l'impression
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+        // Générer le contenu HTML formaté
+        const printContent = this.generatePrintableContent();
+
+        // Écrire le contenu dans la nouvelle fenêtre
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+
+        // Lancer l'impression après un court délai
+        setTimeout(() => {
+            printWindow.print();
+            // Fermer la fenêtre après l'impression
+            printWindow.onafterprint = () => {
+                printWindow.close();
+            };
+        }, 500);
+    }
+
+    // Nouvelle méthode pour générer le contenu imprimable
+    generatePrintableContent() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+        const winner = team1.score > team2.score ? team1.name :
+                       team2.score > team1.score ? team2.name : null;
+
+        return `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <title>Match ${team1.name} vs ${team2.name}</title>
+        <style>
+            @page {
+                size: A4;
+                margin: 20mm;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                font-size: 12pt;
+                line-height: 1.5;
+                color: #333;
+            }
+
+            .header {
+                text-align: center;
+                border-bottom: 3px solid #1a5f3f;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
+
+            .header h1 {
+                color: #1a5f3f;
+                font-size: 24pt;
+                margin-bottom: 10px;
+            }
+
+            .header p {
+                color: #666;
+                font-size: 14pt;
+            }
+
+            .section {
+                margin-bottom: 30px;
+                page-break-inside: avoid;
+            }
+
+            .section h2 {
+                color: #1a5f3f;
+                font-size: 16pt;
+                margin-bottom: 15px;
+                padding-bottom: 5px;
+                border-bottom: 2px solid #1a5f3f;
+            }
+
+            .score-display {
+                text-align: center;
+                margin: 30px 0;
+                padding: 20px;
+                border: 3px solid #1a5f3f;
+                border-radius: 10px;
+                background: #f8f9fa;
+            }
+
+            .score-display .teams {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 50px;
+                font-size: 20pt;
+                font-weight: bold;
+            }
+
+            .winner {
+                color: #28a745;
+            }
+
+            .info-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin: 20px 0;
+            }
+
+            .info-box {
+                border: 1px solid #ddd;
+                padding: 15px;
+                border-radius: 5px;
+                background: #f8f9fa;
+            }
+
+            .info-box h3 {
+                color: #1a5f3f;
+                font-size: 14pt;
+                margin-bottom: 10px;
+            }
+
+            .info-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 5px 0;
+                border-bottom: 1px dotted #ccc;
+            }
+
+            .info-item:last-child {
+                border-bottom: none;
+            }
+
+            .players-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 15px 0;
+                font-size: 11pt;
+            }
+
+            .players-table th,
+            .players-table td {
+                border: 1px solid #333;
+                padding: 8px;
+                text-align: center;
+            }
+
+            .players-table th {
+                background: #1a5f3f;
+                color: white;
+                font-weight: bold;
+            }
+
+            .players-table tr:nth-child(even) {
+                background: #f8f9fa;
+            }
+
+            .mvp-display {
+                text-align: center;
+                padding: 15px;
+                background: #ffd700;
+                border: 2px solid #f0c800;
+                border-radius: 10px;
+                margin: 20px 0;
+                font-size: 14pt;
+                font-weight: bold;
+            }
+
+            .footer {
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 2px solid #ccc;
+                text-align: center;
+                color: #666;
+                font-size: 10pt;
+            }
+
+            @media print {
+                body {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>🏈 Ligue des Rava'Jeux</h1>
+            <p>Feuille de Match - Blood Bowl Sevens</p>
+            <p>${new Date().toLocaleDateString('fr-FR')}</p>
+        </div>
+
+        <!-- Score Final -->
+        <div class="section">
+            <h2>🏆 Résultat Final</h2>
+            <div class="score-display">
+                <div class="teams">
+                    <div class="${team1.score > team2.score ? 'winner' : ''}">
+                        ${team1.name}: ${team1.score}
+                    </div>
+                    <div>VS</div>
+                    <div class="${team2.score > team1.score ? 'winner' : ''}">
+                        ${team2.name}: ${team2.score}
+                    </div>
+                </div>
+                ${winner ? `<p style="margin-top: 15px; color: #28a745;">Victoire de ${winner} !</p>` :
+                          `<p style="margin-top: 15px;">Match nul !</p>`}
+            </div>
+        </div>
+
+        <!-- Informations du Match -->
+        <div class="section">
+            <h2>📊 Informations du Match</h2>
+            <div class="info-grid">
+                <div class="info-box">
+                    <h3>Configuration</h3>
+                    <div class="info-item">
+                        <span>Durée</span>
+                        <span>${this.getMatchDuration()}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Météo</span>
+                        <span>${this.matchData.weather.effect ?
+                                this.matchData.weather.effect.split(':')[0] : 'Non définie'}</span>
+                    </div>
+                    ${this.matchData.coinFlip ? `
+                    <div class="info-item">
+                        <span>Pile ou Face</span>
+                        <span>${this.matchData.coinFlip}</span>
+                    </div>` : ''}
+                </div>
+
+                <div class="info-box">
+                    <h3>Statistiques</h3>
+                    <div class="info-item">
+                        <span>Total Touchdowns</span>
+                        <span>${team1.score + team2.score}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Total XP distribuée</span>
+                        <span>${this.calculateTotalMatchXP()}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Nombre de joueurs</span>
+                        <span>${this.countTotalPlayers()}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MVP -->
+        ${this.matchData.mvp && this.matchData.mvp.playerId ? (() => {
+            const mvpTeam = this.matchData.mvp.team;
+            const mvpPlayer = this.matchData[`team${mvpTeam}`].players.find(p => p.id === this.matchData.mvp.playerId);
+            return mvpPlayer ? `
+            <div class="mvp-display">
+                🌟 Joueur du Match : ${mvpPlayer.name} (${this.matchData[`team${mvpTeam}`].name}) - +4 XP Bonus
+            </div>` : '';
+        })() : ''}
+
+        <!-- Détails des Équipes -->
+        <div class="section">
+            <h2>👥 Détails des Équipes</h2>
+            ${this.generatePrintableTeamDetails(1)}
+            <div style="height: 30px;"></div>
+            ${this.generatePrintableTeamDetails(2)}
+        </div>
+
+        <!-- Résumé Financier -->
+        <div class="section">
+            <h2>💰 Résumé Financier</h2>
+            <div class="info-grid">
+                ${this.generatePrintableFinancialSummary(1)}
+                ${this.generatePrintableFinancialSummary(2)}
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
+            <p>Blood Bowl Sevens - Ligue des Rava'Jeux</p>
+        </div>
+    </body>
+    </html>`;
+    }
+
+    // Méthode auxiliaire pour les détails d'équipe
+    generatePrintableTeamDetails(team) {
+        const teamData = this.matchData[`team${team}`];
+        const players = teamData.players.filter(p => p.name);
+
+        return `
+            <div class="info-box">
+                <h3>${teamData.name}</h3>
+                <div class="info-item">
+                    <span>Coach</span>
+                    <span>${teamData.coach || 'Non spécifié'}</span>
+                </div>
+                <div class="info-item">
+                    <span>Roster</span>
+                    <span>${teamData.roster || 'Non spécifié'}</span>
+                </div>
+                <div class="info-item">
+                    <span>VEA</span>
+                    <span>${Utils.formatNumber(teamData.vea)} PO</span>
+                </div>
+                <div class="info-item">
+                    <span>Fans Dévoués</span>
+                    <span>${teamData.fans}</span>
+                </div>
+
+                ${players.length > 0 ? `
+                <h4 style="margin-top: 15px; color: #1a5f3f;">Joueurs (${players.length})</h4>
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>REU</th>
+                            <th>DET</th>
+                            <th>INT</th>
+                            <th>ELIM</th>
+                            <th>TD</th>
+                            <th>JDM</th>
+                            <th>XP Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${players.map(player => `
+                        <tr>
+                            <td style="text-align: left;">${player.name}</td>
+                            <td>${player.actions.reu ? '✓' : ''}</td>
+                            <td>${player.actions.det ? '✓' : ''}</td>
+                            <td>${player.actions.int ? '✓' : ''}</td>
+                            <td>${player.actions.elim ? '✓' : ''}</td>
+                            <td>${player.actions.td ? '✓' : ''}</td>
+                            <td>${player.actions.jdm ? '✓' : ''}</td>
+                            <td><strong>${player.xp}</strong></td>
+                        </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                ` : '<p style="margin-top: 10px; color: #666;">Aucun joueur enregistré</p>'}
+            </div>
+        `;
+    }
+
+    // Méthode auxiliaire pour le résumé financier
+    generatePrintableFinancialSummary(team) {
+        const teamData = this.matchData[`team${team}`];
+        const gains = this.calculateGains(team);
+        const sales = this.calculateSalesTotal(team);
+        const soldPlayers = teamData.soldPlayers || [];
+
+        return `
+            <div class="info-box">
+                <h3>${teamData.name}</h3>
+                <div class="info-item">
+                    <span>Gains du match</span>
+                    <span>+${Utils.formatNumber(gains)} PO</span>
+                </div>
+                ${sales > 0 ? `
+                <div class="info-item">
+                    <span>Ventes de joueurs</span>
+                    <span>+${Utils.formatNumber(sales)} PO</span>
+                </div>
+                ${soldPlayers.length > 0 ? `
+                <div style="margin-left: 20px; margin-top: 5px; font-size: 10pt; color: #666;">
+                    ${soldPlayers.map(p => `
+                        <div style="padding: 2px 0;">
+                            • ${p.name || 'Sans nom'} : ${Utils.formatNumber(p.value)} PO
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+                ` : ''}
+                <div class="info-item" style="font-weight: bold; color: #1a5f3f; margin-top: 10px;">
+                    <span>Total</span>
+                    <span>+${Utils.formatNumber(gains + sales)} PO</span>
+                </div>
+            </div>
+        `;
     }
 
     // Méthode pour exporter les données

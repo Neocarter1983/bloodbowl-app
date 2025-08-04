@@ -1,0 +1,212 @@
+/* css/print.css - Styles dédiés pour l'impression */
+
+@media print {
+    /* Page setup */
+    @page {
+        size: A4;
+        margin: 15mm;
+    }
+
+    /* Reset général */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* Masquer les éléments non pertinents */
+    .sticky-wrapper,
+    .tabs,
+    .progress-indicator,
+    .btn,
+    .btn-primary,
+    .btn-secondary,
+    .form-actions,
+    .export-section,
+    .dice-btn,
+    .dice-controls button,
+    .timer-controls,
+    .score-controls,
+    .manual-save-btn,
+    input[type="number"],
+    input[type="text"],
+    select,
+    .action-checkbox {
+        display: none !important;
+    }
+
+    /* Body et container */
+    body {
+        background: white !important;
+        font-size: 11pt;
+        line-height: 1.4;
+        color: #000 !important;
+    }
+
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Titre principal */
+    .section-title {
+        font-size: 18pt !important;
+        color: #1a5f3f !important;
+        text-align: center;
+        margin: 20px 0 !important;
+        page-break-after: avoid;
+        border-bottom: 2px solid #1a5f3f;
+        padding-bottom: 10px;
+    }
+
+    /* Sections */
+    .tab-content {
+        box-shadow: none !important;
+        padding: 0 !important;
+        background: white !important;
+        page-break-inside: avoid;
+    }
+
+    .step-section,
+    .match-result-section,
+    .match-stats-section,
+    .teams-summary-section,
+    .financial-summary-section {
+        page-break-inside: avoid;
+        margin-bottom: 20px !important;
+        padding: 15px !important;
+        border: 1px solid #ddd !important;
+    }
+
+    /* Headers de sections */
+    h2, h3 {
+        color: #1a5f3f !important;
+        page-break-after: avoid;
+        margin-top: 15px !important;
+    }
+
+    /* Score display */
+    .final-score-display {
+        justify-content: space-around !important;
+        margin: 20px 0 !important;
+    }
+
+    .team-final-score {
+        border: 2px solid #000 !important;
+        padding: 15px !important;
+        background: white !important;
+    }
+
+    .team-final-score.winner {
+        background: #e8f5e9 !important;
+        border-width: 3px !important;
+        border-color: #28a745 !important;
+    }
+
+    /* Tables */
+    .player-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin: 15px 0 !important;
+        font-size: 10pt;
+    }
+
+    .player-table th,
+    .player-table td {
+        border: 1px solid #000 !important;
+        padding: 5px !important;
+        text-align: center !important;
+    }
+
+    .player-table th {
+        background: #e0e0e0 !important;
+        font-weight: bold !important;
+    }
+
+    /* Afficher les valeurs des inputs */
+    .dice-result::after {
+        content: attr(value);
+        font-weight: bold;
+        padding: 5px;
+    }
+
+    /* MVP */
+    .mvp-display,
+    .mvp-summary {
+        background: #fff3cd !important;
+        border: 2px solid #ffc107 !important;
+        padding: 10px !important;
+        text-align: center !important;
+        margin: 15px 0 !important;
+    }
+
+    /* Info boxes */
+    .summary-header,
+    .financial-grid,
+    .teams-grid {
+        display: block !important;
+    }
+
+    .summary-header-item,
+    .financial-item,
+    .team-summary-box {
+        border: 1px solid #ddd !important;
+        padding: 10px !important;
+        margin-bottom: 10px !important;
+        page-break-inside: avoid;
+    }
+
+    /* Labels et valeurs */
+    .label {
+        font-weight: bold !important;
+        color: #666 !important;
+    }
+
+    .value {
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    /* Masquer les éléments vides */
+    .explanation-box,
+    .help-text {
+        display: none !important;
+    }
+
+    /* Footer d'impression */
+    .tab-content::after {
+        content: "Ligue des Rava'Jeux - Blood Bowl Sevens";
+        display: block;
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #ccc;
+        color: #666;
+        font-size: 10pt;
+    }
+
+    /* Forcer les sauts de page appropriés */
+    .summary-header {
+        page-break-after: avoid;
+    }
+
+    .match-result-section {
+        page-break-before: auto;
+        page-break-after: avoid;
+    }
+
+    /* Améliorer la lisibilité */
+    .financial-row {
+        padding: 8px 0 !important;
+        border-bottom: 1px dotted #ccc !important;
+    }
+
+    .financial-row.total {
+        border-top: 2px solid #1a5f3f !important;
+        border-bottom: none !important;
+        font-weight: bold !important;
+        margin-top: 10px !important;
+        padding-top: 10px !important;
+    }
+}
