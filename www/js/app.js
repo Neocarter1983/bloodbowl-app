@@ -3415,7 +3415,7 @@ class BloodBowlApp {
             if (indicator.parentElement) {
                 indicator.remove();
             }
-        }, 1000); // Réduit à 1 seconde
+        }, 1000);
     }
 
     getScoreDisplay() {
@@ -3558,6 +3558,56 @@ class BloodBowlApp {
                 button.className = 'timer-btn play';
                 button.innerHTML = '▶️ Démarrer';
             }
+        }
+    }
+
+    saveMatchState() {
+        // Forcer l'affichage de l'indicateur de sauvegarde pour cette action manuelle
+        this.showingSaveIndicator = true;
+
+        // Effectuer la sauvegarde
+        const saved = this.saveState();
+
+        // Réinitialiser le flag
+        this.showingSaveIndicator = false;
+
+        if (saved) {
+            // Afficher l'indicateur de succès
+            this.showSaveIndicator();
+
+            // Message de confirmation
+            const confirmDiv = document.createElement('div');
+            confirmDiv.className = 'save-confirmation';
+            confirmDiv.innerHTML = `
+                <div class="save-confirmation-content">
+                    <span>✅ Match sauvegardé localement avec succès !</span>
+                </div>
+            `;
+            confirmDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1002;
+                background: rgba(40, 167, 69, 0.95);
+                color: white;
+                padding: 20px 30px;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                font-size: 16px;
+                animation: fadeInOut 2s ease;
+            `;
+
+            document.body.appendChild(confirmDiv);
+
+            setTimeout(() => {
+                if (confirmDiv.parentElement) {
+                    confirmDiv.remove();
+                }
+            }, 2000);
+        } else {
+            // En cas d'échec
+            alert('Erreur lors de la sauvegarde. Essayez d\'exporter vos données en JSON.');
         }
     }
 
