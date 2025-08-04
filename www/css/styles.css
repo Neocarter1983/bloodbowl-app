@@ -2506,3 +2506,43 @@ input:focus, select:focus, textarea:focus {
         margin-top: 10px;
     }
 }
+
+/* Section d'import */
+.import-section {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+}
+
+/* Animation pour la notification d'import */
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    80% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+}
+
+.import-success-notification {
+    pointer-events: none;
+}
+
+/* Style du bouton d'import */
+.btn-import {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-import:hover {
+    background: #138496;
+}

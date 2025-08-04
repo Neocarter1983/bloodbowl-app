@@ -684,6 +684,9 @@ class BloodBowlApp {
                     <button class="btn btn-secondary" onclick="app.exportMatchData()">
                         💾 Exporter les données (JSON)
                     </button>
+                    <button class="btn btn-secondary" onclick="app.importMatchData()">
+                        💾 Importer les données (JSON)
+                    </button>
                     <button class="btn btn-secondary" onclick="app.saveMatchState()">
                         ☁️ Sauvegarder localement
                     </button>
@@ -760,6 +763,28 @@ class BloodBowlApp {
     }
 
     // Méthode pour imprimer le résumé
+    printSummary() {
+        // Créer une nouvelle fenêtre pour l'impression
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+        // Générer le contenu HTML formaté
+        const printContent = this.generatePrintableContent();
+
+        // Écrire le contenu dans la nouvelle fenêtre
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+
+        // Lancer l'impression après un court délai
+        setTimeout(() => {
+            printWindow.print();
+            // Fermer la fenêtre après l'impression
+            printWindow.onafterprint = () => {
+                printWindow.close();
+            };
+        }, 500);
+    }
+
+    // Nouvelle méthode pour générer le contenu imprimable
     printSummary() {
         // Créer une nouvelle fenêtre pour l'impression
         const printWindow = window.open('', '_blank', 'width=800,height=600');
@@ -4039,6 +4064,215 @@ class BloodBowlApp {
         }
 
         this.saveState();
+    }
+
+    // Méthode pour importer des données depuis un fichier JSON
+    importMatchData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Vérifier que c'est un fichier JSON
+        if (!file.name.endsWith('.json')) {
+            alert('Veuillez sélectionner un fichier JSON valide.');
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+
+                // Valider la structure des données
+                if (!this.validateImportedData(importedData)) {
+                    alert('Le fichier JSON ne contient pas des données de match valides.');
+                    return;
+                }
+
+                // Demander confirmation
+                const confirmMessage = importedData.team1 && importedData.team2 ?
+                    `Voulez-vous charger le match "${importedData.team1.name || 'Équipe 1'}" vs "${importedData.team2.name || 'Équipe 2'}" ?\n\nCela remplacera toutes les données actuelles.` :
+                    'Voulez-vous charger ce match ?\n\nCela remplacera toutes les données actuelles.';
+
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
+
+                // Charger les données
+                this.loadImportedData(importedData);
+
+                // Notification de succès
+                this.showImportSuccess();
+
+            } catch (error) {
+                console.error('Erreur lors de l\'import:', error);
+                alert('Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier JSON valide.');
+            }
+        };
+
+        reader.onerror = () => {
+            alert('Erreur lors de la lecture du fichier.');
+        };
+
+        // Lire le fichier
+        reader.readAsText(file);
+
+        // Réinitialiser l'input pour permettre de réimporter le même fichier
+        event.target.value = '';
+    }
+
+    // Valider la structure des données importées
+    validateImportedData(data) {
+        // Vérifications de base
+        if (!data || typeof data !== 'object') return false;
+
+        // Vérifier les propriétés essentielles
+        const requiredProps = ['team1', 'team2'];
+        for (const prop of requiredProps) {
+            if (!data.hasOwnProperty(prop)) return false;
+        }
+
+        // Vérifier la structure des équipes
+        if (!data.team1 || typeof data.team1 !== 'object') return false;
+        if (!data.team2 || typeof data.team2 !== 'object') return false;
+
+        return true;
+    }
+
+    // Charger les données importées
+    loadImportedData(importedData) {
+        // Migrer les anciennes structures si nécessaire
+        const migratedData = this.migrateImportedData(importedData);
+
+        // Remplacer les données actuelles
+        this.matchData = { ...this.matchData, ...migratedData };
+
+        // S'assurer que toutes les propriétés nécessaires existent
+        this.ensureDataIntegrity();
+
+        // Sauvegarder
+        this.saveState();
+
+        // Recharger l'onglet actuel pour afficher les nouvelles données
+        this.loadTab(this.currentTab);
+    }
+
+    // Migrer les données anciennes vers le nouveau format
+    migrateImportedData(data) {
+        const migrated = { ...data };
+
+        // Migration du chronomètre
+        if (!migrated.hasOwnProperty('timerRunning')) {
+            migrated.timerRunning = false;
+        }
+        if (!migrated.hasOwnProperty('pausedDuration')) {
+            migrated.pausedDuration = 0;
+        }
+        if (!migrated.hasOwnProperty('lastStartTime')) {
+            migrated.lastStartTime = null;
+        }
+
+        // Migration de la météo
+        if (migrated.weather && !migrated.weather.hasOwnProperty('type')) {
+            migrated.weather.type = 'classique';
+        }
+
+        // Migration des fans update
+        ['team1', 'team2'].forEach(team => {
+            if (migrated[team]) {
+                if (!migrated[team].hasOwnProperty('fansUpdateRoll')) {
+                    migrated[team].fansUpdateRoll = null;
+                }
+                if (!migrated[team].hasOwnProperty('fansUpdateResult')) {
+                    migrated[team].fansUpdateResult = '';
+                }
+                if (!migrated[team].hasOwnProperty('soldPlayers')) {
+                    migrated[team].soldPlayers = [];
+                }
+            }
+        });
+
+        // Migration des inducements
+        if (!migrated.inducements) {
+            migrated.inducements = {
+                team1Items: {},
+                team2Items: {},
+                team1PetiteMonnaie: 0,
+                team2PetiteMonnaie: 0,
+                team1Treasury: 0,
+                team2Treasury: 0
+            };
+        }
+
+        return migrated;
+    }
+
+    // S'assurer que toutes les propriétés nécessaires existent
+    ensureDataIntegrity() {
+        // Vérifier chaque équipe
+        ['team1', 'team2'].forEach(team => {
+            if (!this.matchData[team]) {
+                this.matchData[team] = this.createTeamObject();
+            }
+
+            // S'assurer que les tableaux existent
+            if (!Array.isArray(this.matchData[team].players)) {
+                this.matchData[team].players = [];
+            }
+            if (!Array.isArray(this.matchData[team].soldPlayers)) {
+                this.matchData[team].soldPlayers = [];
+            }
+        });
+
+        // Vérifier la météo
+        if (!this.matchData.weather) {
+            this.matchData.weather = {
+                type: 'classique',
+                total: 0,
+                effect: '',
+                rolled: false,
+                dice1: null,
+                dice2: null
+            };
+        }
+
+        // Vérifier les autres propriétés
+        if (!this.matchData.kickoffEvents) {
+            this.matchData.kickoffEvents = [];
+        }
+    }
+
+    // Afficher le succès de l'import
+    showImportSuccess() {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'import-success-notification';
+        successDiv.innerHTML = `
+            <div class="import-success-content">
+                <span>✅ Match importé avec succès !</span>
+            </div>
+        `;
+        successDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1002;
+            background: rgba(40, 167, 69, 0.95);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-size: 16px;
+            animation: fadeInOut 3s ease;
+        `;
+
+        document.body.appendChild(successDiv);
+
+        setTimeout(() => {
+            if (successDiv.parentElement) {
+                successDiv.remove();
+            }
+        }, 3000);
     }
 
 }
