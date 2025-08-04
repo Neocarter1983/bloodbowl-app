@@ -684,11 +684,20 @@ class BloodBowlApp {
                     <button class="btn btn-secondary" onclick="app.exportMatchData()">
                         💾 Exporter les données (JSON)
                     </button>
-                    <button class="btn btn-secondary" onclick="app.importMatchData()">
-                        💾 Importer les données (JSON)
-                    </button>
                     <button class="btn btn-secondary" onclick="app.saveMatchState()">
                         ☁️ Sauvegarder localement
+                    </button>
+                </div>
+
+                <div class="import-section" style="margin-top: 20px;">
+                    <h4 style="color: #666; margin-bottom: 10px;">📥 Importer un match</h4>
+                    <input type="file"
+                           id="import-file-input"
+                           accept=".json"
+                           style="display: none;"
+                           onchange="app.importMatchData(event)">
+                    <button class="btn btn-secondary" onclick="document.getElementById('import-file-input').click()">
+                        📂 Charger un fichier JSON
                     </button>
                 </div>
             </div>
