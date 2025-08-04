@@ -258,6 +258,16 @@ class BloodBowlApp {
         document.addEventListener('click', (e) => {
             this.handleClick(e);
         });
+
+        // Effet d'ombre au scroll
+        window.addEventListener('scroll', () => {
+            const stickyWrapper = document.querySelector('.sticky-wrapper');
+            if (stickyWrapper && window.scrollY > 50) {
+                stickyWrapper.classList.add('scrolled');
+            } else if (stickyWrapper) {
+                stickyWrapper.classList.remove('scrolled');
+            }
+        });
     }
 
     switchTab(tabId) {

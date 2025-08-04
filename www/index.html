@@ -21,38 +21,36 @@
 </head>
 <body>
     <div id="app" class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>🏈 Ligue des Rava'Jeux</h1>
-            <p>Feuille de Match Interactive - Blood Bowl Sevens</p>
-            <small style="color: #888;">Suivez les étapes pour gérer votre match de façon simple et efficace</small>
-        </header>
+        <!-- Wrapper pour le header et les tabs -->
+        <div class="sticky-wrapper">
+            <!-- Header -->
+            <header class="header">
+                <h1>🏈 Ligue des Rava'Jeux</h1>
+                <p>Feuille de Match Interactive - Blood Bowl Sevens</p>
+                <small style="color: #888;">Suivez les étapes pour gérer votre match de façon simple et efficace</small>
+            </header>
 
-        <!-- Progress indicator -->
-        <div class="progress-indicator" id="progress-indicator">
-            <div class="progress-step current">1</div>
-            <div class="progress-step">2</div>
-            <div class="progress-step">3</div>
-            <div class="progress-step">4</div>
-            <div class="progress-step">5</div>
+            <!-- Progress indicator -->
+            <div class="progress-indicator" id="progress-indicator">
+                <div class="progress-step current">1</div>
+                <div class="progress-step">2</div>
+                <div class="progress-step">3</div>
+                <div class="progress-step">4</div>
+                <div class="progress-step">5</div>
+            </div>
+
+            <!-- Tabs -->
+            <nav class="tabs" id="main-tabs">
+                <div class="tab active" data-tab="setup">🏟️ Configuration</div>
+                <div class="tab" data-tab="prematch">⚡ Avant-Match</div>
+                <div class="tab" data-tab="match">🎮 Match</div>
+                <div class="tab" data-tab="postmatch">📊 Après-Match</div>
+                <div class="tab" data-tab="summary">📋 Résumé</div>
+            </nav>
         </div>
 
-        <!-- Tabs -->
-        <nav class="tabs" id="main-tabs">
-            <div class="tab active" data-tab="setup">🏟️ Configuration</div>
-            <div class="tab" data-tab="prematch">⚡ Avant-Match</div>
-            <div class="tab" data-tab="match">🎮 Match</div>
-            <div class="tab" data-tab="postmatch">📊 Après-Match</div>
-            <div class="tab" data-tab="summary">📋 Résumé</div>
-        </nav>
-
-        <!-- Content -->
+        <!-- Content (reste en dehors du wrapper) -->
         <main class="content" id="main-content">
-            <!-- Le contenu sera chargé ici -->
-        </main>
-
-        <!-- Content -->
-        <main class="content tab-content active" id="main-content">
             <!-- Le contenu sera chargé ici -->
         </main>
 

@@ -2407,3 +2407,53 @@ input:focus, select:focus, textarea:focus {
         bottom: 70px; /* Au-dessus de la navigation mobile */
     }
 }
+
+/* === CSS POUR LE STICKY WRAPPER === */
+
+/* Wrapper collant pour header + tabs */
+.sticky-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(135deg, #1a5f3f 0%, #2d8f5f 100%);
+    padding-bottom: 20px;
+    margin: -15px -15px 0 -15px; /* Compenser le padding du container */
+    padding: 15px 15px 20px 15px;
+}
+
+/* Ajuster le header dans le wrapper sticky */
+.sticky-wrapper .header {
+    margin-bottom: 10px; /* Réduire l'espace */
+}
+
+/* Ajuster les tabs */
+.sticky-wrapper .tabs {
+    margin-bottom: 0; /* Pas de marge en bas dans le wrapper */
+}
+
+/* Ombre quand on scroll */
+.sticky-wrapper.scrolled {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+/* Sur mobile, cacher le header pour gagner de l'espace */
+@media (max-width: 768px) {
+    .sticky-wrapper .header {
+        display: none;
+    }
+
+    .sticky-wrapper {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    /* Afficher seulement les tabs sur mobile */
+    .sticky-wrapper .progress-indicator {
+        display: none;
+    }
+}
+
+/* Transition smooth */
+.sticky-wrapper {
+    transition: box-shadow 0.3s ease;
+}
