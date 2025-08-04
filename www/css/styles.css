@@ -2457,3 +2457,52 @@ input:focus, select:focus, textarea:focus {
 .sticky-wrapper {
     transition: box-shadow 0.3s ease;
 }
+
+/* Sélecteur de type de météo */
+.weather-type-selector {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.weather-type-selector label {
+    margin-right: 10px;
+    color: var(--primary-color);
+}
+
+.weather-select {
+    padding: 8px 15px;
+    border: 2px solid var(--primary-color);
+    border-radius: 6px;
+    font-size: 16px;
+    background: white;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+.weather-select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(26, 95, 63, 0.1);
+}
+
+/* Amélioration de l'affichage du résultat météo */
+#weather-description p {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .weather-type-selector {
+        padding: 10px;
+    }
+
+    .weather-select {
+        width: 100%;
+        margin-top: 10px;
+    }
+}

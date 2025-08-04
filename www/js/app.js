@@ -986,8 +986,10 @@ class BloodBowlApp {
                     </div>
                     <div class="info-item">
                         <span>Météo</span>
-                        <span>${this.matchData.weather.effect ?
-                                this.matchData.weather.effect.split(':')[0] : 'Non définie'}</span>
+                        <span>${this.matchData.weather.effect ? (() => {
+                            const weatherTable = AppConfig.gameData.weatherTables[this.matchData.weather.type || 'classique'];
+                            return `${weatherTable.icon} ${weatherTable.name} : ${this.matchData.weather.effect.split(':')[0]}`;
+                        })() : 'Non définie'}</span>
                     </div>
                     ${this.matchData.coinFlip ? `
                     <div class="info-item">
@@ -1168,6 +1170,7 @@ class BloodBowlApp {
                 team1: this.createTeamObject(),
                 team2: this.createTeamObject(),
                 weather: {
+                    type: 'classique',  // AJOUT : Type de météo sélectionné
                     total: 0,
                     effect: '',
                     rolled: false,
@@ -1984,6 +1987,19 @@ class BloodBowlApp {
                     <p><strong>Règle :</strong> Chaque coach lance 1D6, on additionne les résultats (2-12)</p>
                     <p>La météo peut affecter les passes, la course, les tests d'armure, etc.</p>
                 </div>
+
+                <!-- NOUVEAU : Sélecteur de type de météo -->
+                <div class="weather-type-selector">
+                    <label for="weather-type-select"><strong>Type de météo :</strong></label>
+                    <select id="weather-type-select" class="weather-select" onchange="app.changeWeatherType(this.value)">
+                        ${Object.keys(AppConfig.gameData.weatherTables).map(key => `
+                            <option value="${key}" ${weather.type === key ? 'selected' : ''}>
+                                ${AppConfig.gameData.weatherTables[key].icon} ${AppConfig.gameData.weatherTables[key].name}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+
                 <div class="dice-controls">
                     <span><strong>${this.matchData.team1.name || 'Équipe 1'}</strong> :</span>
                     <button class="dice-btn" data-dice-type="weather" data-team="1">🎲 Lancer D6</button>
@@ -2234,14 +2250,23 @@ class BloodBowlApp {
         if (this.matchData.weather.dice1 && this.matchData.weather.dice2) {
             const total = this.matchData.weather.dice1 + this.matchData.weather.dice2;
             this.matchData.weather.total = total;
-            this.matchData.weather.effect = AppConfig.gameData.weatherEffects[total] || "Effet météo inconnu.";
+
+            // Utiliser la table de météo sélectionnée
+            const weatherTable = AppConfig.gameData.weatherTables[this.matchData.weather.type];
+            this.matchData.weather.effect = weatherTable.effects[total] || "Effet météo inconnu.";
             this.matchData.weather.rolled = true;
 
             document.getElementById('weather-total').value = total;
             const descDiv = document.getElementById('weather-description');
             descDiv.style.display = 'block';
             descDiv.className = 'result-box success';
-            descDiv.innerHTML = `<p>Météo actuelle (${total}) : <strong>${this.matchData.weather.effect}</strong></p>`;
+            descDiv.innerHTML = `
+                <p>
+                    <span style="font-size: 1.2em;">${weatherTable.icon}</span>
+                    Météo ${weatherTable.name} (${total}) :
+                    <strong>${this.matchData.weather.effect}</strong>
+                </p>
+            `;
         }
         this.saveState();
     }
@@ -2375,14 +2400,25 @@ class BloodBowlApp {
         if (this.matchData.weather.dice1 && this.matchData.weather.dice2) {
             const total = this.matchData.weather.dice1 + this.matchData.weather.dice2;
             this.matchData.weather.total = total;
-            this.matchData.weather.effect = AppConfig.gameData.weatherEffects[total] || "Effet météo inconnu.";
+
+            // Utiliser la table de météo sélectionnée
+            const weatherTable = AppConfig.gameData.weatherTables[this.matchData.weather.type];
+            this.matchData.weather.effect = weatherTable.effects[total] || "Effet météo inconnu.";
             this.matchData.weather.rolled = true;
 
             document.getElementById('weather-total').value = total;
             const descDiv = document.getElementById('weather-description');
             descDiv.style.display = 'block';
             descDiv.className = 'result-box success';
-            descDiv.innerHTML = `<p>Météo actuelle (${total}) : <strong>${this.matchData.weather.effect}</strong></p>`;
+            descDiv.innerHTML = `
+                <p>
+                    <span style="font-size: 1.2em;">${weatherTable.icon}</span>
+                    Météo ${weatherTable.name} (${total}) :
+                    <strong>${this.matchData.weather.effect}</strong>
+                </p>
+            `;
+
+            this.saveState();
         }
     }
 
@@ -3991,6 +4027,18 @@ class BloodBowlApp {
             // En cas d'échec
             alert('Erreur lors de la sauvegarde. Essayez d\'exporter vos données en JSON.');
         }
+    }
+
+    // Méthode pour changer le type de météo
+    changeWeatherType(type) {
+        this.matchData.weather.type = type;
+
+        // Si des dés ont déjà été lancés, recalculer l'effet
+        if (this.matchData.weather.dice1 && this.matchData.weather.dice2) {
+            this.updateWeatherResult();
+        }
+
+        this.saveState();
     }
 
 }

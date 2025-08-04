@@ -53,19 +53,95 @@ const AppConfig = {
             12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP, le plus mauvais désigne 1d3 de ses joueurs, sur le terrain, au hasard (si égalité les deux coachs désignent 1d3 joueurs au hasard) . Ces joueurs sont « mis à terre » « sonnés »."
         },
 
-        weatherEffects: {
-            2: "🌡️ Chaleur Accablante : À la fin de la Phase, 1D3 joueurs tirés au sort dans chaque équipe et se trouvant sur le terrain sont placés en Réserves et ratent la prochaine Phase",
-            3: "☀️ Très ensoleillé : -1 aux tests de Capacité de Passe",
-            4: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-            5: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-            6: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-            7: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-            8: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-            9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-            10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-            11: "⚡ Pluie Battante : -1 aux jets d'AG pour Réceptionner, Ramasser le ballon, ou Interférer avec une passe",
-            12: "❄️ Blizzard : -1 aux tests pour « Foncer » sur 1 case supp. Seules les passes Rapides ou Courtes sont possibles"
+        weatherTables: {
+            classique: {
+                name: "Météo Classique",
+                icon: "🌤️",
+                effects: {
+                    2: "🌡️ Chaleur Accablante : À la fin de la Phase, 1D3 joueurs tirés au sort dans chaque équipe et se trouvant sur le terrain sont placés en Réserves et ratent la prochaine Phase",
+                    3: "☀️ Très ensoleillé : -1 aux tests de Capacité de Passe",
+                    4: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    5: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    6: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    7: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    8: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    11: "⚡ Pluie Battante : -1 aux jets d'AG pour Réceptionner, Ramasser le ballon, ou Interférer avec une passe",
+                    12: "❄️ Blizzard : -1 aux tests pour « Foncer » sur 1 case supp. Seules les passes Rapides ou Courtes sont possibles"
+                }
+            },
+            printaniere: {
+                name: "Météo Printanière",
+                icon: "🌸",
+                effects: {
+                    2: "🌱 Rosée du Matin : -1 aux jets de dés pour « Foncer ». -1 pour Ramasser",
+                    3: "🌷 Floraison : Pas d’Expulsion sur Agression",
+                    4: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    5: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    6: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    7: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    8: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    11: "🍂 Brumes Matinales : M = 6 cases max, « Foncer » possible. Seules les passes Rapides ou Courtes sont possibles",
+                    12: "🌪️ Grand Vent : Avant d’utiliser 1 Relance, jetez 1D6. Sur 1, elle ne peut pas être utilisée"
+                }
+            },
+            estivale: {
+                name: "Météo Estivale",
+                icon: "☀️",
+                effects: {
+                    2: "🔥 Chaleur Accablante : 1D3 joueurs désigné au hasard dans chaque équipe et présents sur le terrain lors de la précédente phase restent en Réserves",
+                    3: "🌞 Astrogranite en Fusion : La capacité pour « Foncer » est réduite d’1 case",
+                    4: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    5: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    6: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    7: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    8: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    11: "🌞 Lumière Aveuglante : Seules les passes Rapides ou Courtes sont possibles. -1 aux tests de CP",
+                    12: "🌨️ Mousson : -1 pour Réceptionner, Interférer avec une passe et Ramasser. Balle Ricoche sur 4 au lieu de 3"
+                }
+            },
+            automnale: {
+                name: "Météo Automnale",
+                icon: "🍁",
+                effects: {
+                    2: "🍂 Terrain Envahi de Feuilles : -1 aux jets d’AR si le joueur « Chute » ou « est Plaqué »",
+                    3: "🍂 Fraîcheur Automnale : -1 aux jets pour sortir du Box des KO",
+                    4: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    5: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    6: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    7: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    8: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    11: "🌨️ Pluie battante : -1 pour Réceptionner, Interférer avec une passe et Ramasser",
+                    12: "🌪️ Vent fort : Direction du vent avec 1D8. 1-2 : vers En-but équipe qui engage ; 3-4 : vers En-but équipe en réception ; 5-6 : vers touche à gauche de l’équipe qui engage ; 7-8 vers touche à droite de l’équipe qui engage. Aux Coups d’Envoi, la balle dévie selon le Gabarit de Renvoi avec le 3-4 dans la direction du vent et sur 1D8 cases (au lieu d’1D6)"
+                }
+            },
+            hivernale: {
+                name: "Météo Hivernale",
+                icon: "❄️",
+                effects: {
+                    2: "🧊 Vent Froid : -1 aux tests de CP. -1 aux jets pour sortir du Box des KO",
+                    3: "🍂 Gel : +1 aux jets d’AR si le joueur « Chute » ou « est Plaqué »",
+                    4: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    5: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    6: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    7: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    8: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
+                    11: "🌨️ Neige : -1F lors des actions de Blitz.",
+                    12: "🌨️ Blizzard : -1 aux tests pour « Foncer » sur 1 case supp. Seules les passes Rapides ou Courtes sont possibles"
+                }
+            }
         },
+
+        weatherEffects: null,
 
         teamRosters: [
             "Alliance du Vieux Monde",
