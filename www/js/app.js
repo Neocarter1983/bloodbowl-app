@@ -246,13 +246,37 @@ class BloodBowlApp {
     }
 
     setupEventListeners() {
-        // Gestion des onglets
-        document.getElementById('main-tabs').addEventListener('click', (e) => {
-            if (e.target.classList.contains('tab')) {
-                const tabId = e.target.dataset.tab;
-                this.switchTab(tabId);
-            }
-        });
+        console.log('🔧 Configuration des événements...');
+
+        // Gestion des onglets avec validation STRICTE
+        const tabsContainer = document.getElementById('main-tabs');
+        if (tabsContainer) {
+            tabsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('tab')) {
+                    e.preventDefault(); // Empêcher le comportement par défaut
+                    e.stopPropagation(); // Empêcher la propagation
+
+                    const tabId = e.target.dataset.tab;
+                    console.log(`👆 Clic sur onglet: ${tabId}`);
+
+                    // Appeler switchTab qui gère la validation
+                    const success = this.switchTab(tabId);
+
+                    if (!success) {
+                        console.log(`🚫 Navigation vers ${tabId} échouée - maintien sur ${this.currentTab}`);
+
+                        // Forcer la remise en place de l'onglet actuel après un délai
+                        setTimeout(() => {
+                            this.ensureCurrentTabSelected();
+                        }, 100);
+                    }
+                }
+            });
+
+            console.log('✅ Gestionnaire d\'onglets configuré');
+        } else {
+            console.error('❌ Container des onglets introuvable');
+        }
 
         // Délégation d'événements pour les inputs
         document.addEventListener('input', Utils.debounce((e) => {
@@ -273,109 +297,121 @@ class BloodBowlApp {
                 stickyWrapper.classList.remove('scrolled');
             }
         });
+
+        console.log('✅ Tous les événements configurés');
     }
 
     switchTab(tabId) {
+        console.log(`🔄 Tentative navigation: ${this.currentTab} → ${tabId}`);
+
         try {
-            // Validation AVANT de faire quoi que ce soit
+            // ⚠️ VALIDATION BLOQUANTE EN PREMIER - AVANT TOUT
             if (window.secureTabSwitch) {
                 const canSwitch = window.secureTabSwitch(this, tabId);
                 if (!canSwitch) {
-                    console.log(`Navigation vers ${tabId} bloquée`);
-                    return; // Arrêter ici si bloqué
+                    console.log(`❌ Navigation vers ${tabId} REFUSÉE - ARRÊT TOTAL`);
+
+                    // S'assurer que l'onglet actuel reste visuellement sélectionné
+                    this.ensureCurrentTabSelected();
+
+                    // ARRÊT COMPLET - ne rien faire d'autre
+                    return false;
                 }
             }
+
+            console.log(`✅ Navigation vers ${tabId} AUTORISÉE - continuation...`);
 
             // Nettoyer l'onglet actuel si nécessaire
             if (this.currentTab === 'match') {
                 this.cleanupMatchTab();
             }
 
-            // Retirer la classe active de tous les onglets
+            // Retirer la classe active de TOUS les onglets
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
 
             // Ajouter la classe active au bon onglet
             const targetTab = document.querySelector(`[data-tab="${tabId}"]`);
-            if (targetTab) {
-                targetTab.classList.add('active');
-            } else {
-                console.error(`Onglet ${tabId} introuvable dans le DOM`);
-                return;
+            if (!targetTab) {
+                console.error(`❌ Onglet ${tabId} introuvable dans le DOM`);
+                this.ensureCurrentTabSelected();
+                return false;
             }
 
-            // Charger le contenu
+            targetTab.classList.add('active');
+
+            // Charger le contenu SEULEMENT si validation OK
             this.loadTab(tabId);
 
-            // Mettre à jour l'onglet actuel
+            // Mettre à jour l'onglet actuel SEULEMENT si tout s'est bien passé
             this.currentTab = tabId;
 
-            // Vibration tactile (optionnelle)
+            // Mettre à jour la progression
+            this.updateProgress(tabId);
+
+            // Vibration tactile
             if (window.Utils && Utils.vibrate) {
                 Utils.vibrate(10);
             }
 
-            console.log(`✅ Navigation vers ${tabId} réussie`);
+            console.log(`✅ Navigation vers ${tabId} TERMINÉE avec succès`);
+            return true;
 
         } catch (error) {
-            console.error('Erreur dans switchTab:', error);
-            // En cas d'erreur, essayer quand même de charger l'onglet
-            this.loadTab(tabId);
-            this.currentTab = tabId;
+            console.error('❌ Erreur critique dans switchTab:', error);
+
+            // En cas d'erreur, rester sur l'onglet actuel
+            this.ensureCurrentTabSelected();
+            return false;
         }
     }
 
-    // Modification temporaire de la méthode loadTab pour voir où ça bloque :
-//    async loadTab(tabId) {
-//        console.log('Loading tab:', tabId);
-//        const content = document.getElementById('main-content');
-//
-//        // Afficher le loading
-//        this.showLoading();
-//
-//        try {
-//            // Charger le contenu de l'onglet
-//            console.log('Getting tab content...');
-//            const tabContent = await this.getTabContent(tabId);
-//            console.log('Tab content length:', tabContent.length);
-//
-//            content.innerHTML = tabContent;
-//
-//            // Initialiser les éléments spécifiques à l'onglet
-//            console.log('Initializing tab...');
-//            this.initializeTab(tabId);
-//
-//            this.currentTab = tabId;
-//
-//            // Mettre à jour la progression
-//            this.updateProgress(tabId);
-//
-//            console.log('Tab loaded successfully');
-//
-//        } catch (error) {
-//            console.error('Erreur chargement onglet:', error);
-//            console.error('Stack trace:', error.stack);
-//            content.innerHTML = '<p class="error">Erreur de chargement: ' + error.message + '</p>';
-//        } finally {
-//            this.hideLoading();
-//        }
-//    }
+    ensureCurrentTabSelected() {
+        console.log(`🔧 Maintien de l'onglet actuel: ${this.currentTab}`);
+
+        // Retirer toutes les classes active
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Remettre l'onglet actuel en actif
+        const currentTab = document.querySelector(`[data-tab="${this.currentTab}"]`);
+        if (currentTab) {
+            currentTab.classList.add('active');
+            console.log(`✅ Onglet ${this.currentTab} remis en surbrillance`);
+        } else {
+            console.error(`❌ Impossible de trouver l'onglet actuel: ${this.currentTab}`);
+        }
+    }
 
     async loadTab(tabId) {
-        console.log('Loading tab:', tabId);
+        console.log(`📄 Chargement du contenu pour: ${tabId}`);
+
+        // Vérification de sécurité supplémentaire
+        if (tabId !== this.currentTab && window.secureTabSwitch) {
+            const canLoad = window.secureTabSwitch(this, tabId);
+            if (!canLoad) {
+                console.log(`❌ Chargement de ${tabId} refusé par la validation`);
+                return;
+            }
+        }
+
         const content = document.getElementById('main-content');
+        if (!content) {
+            console.error('❌ Container de contenu introuvable');
+            return;
+        }
 
         // Afficher le loading
         this.showLoading();
 
         try {
-            // Charger le contenu de l'onglet
-            console.log('Getting tab content...');
-            const tabContent = await this.getTabContent(tabId);
-            console.log('Tab content length:', tabContent.length);
+            console.log(`🔄 Génération du contenu pour: ${tabId}`);
 
-            // Injecter le contenu
+            // Charger le contenu de l'onglet
+            const tabContent = await this.getTabContent(tabId);
+
             content.innerHTML = tabContent;
 
             // IMPORTANT : Ajouter la classe active au tab-content
@@ -385,20 +421,16 @@ class BloodBowlApp {
             }
 
             // Initialiser les éléments spécifiques à l'onglet
-            console.log('Initializing tab...');
             this.initializeTab(tabId);
-
-            this.currentTab = tabId;
 
             // Mettre à jour la progression
             this.updateProgress(tabId);
 
-            console.log('Tab loaded successfully');
+            console.log(`✅ Contenu ${tabId} chargé avec succès`);
 
         } catch (error) {
-            console.error('Erreur chargement onglet:', error);
-            console.error('Stack trace:', error.stack);
-            content.innerHTML = '<p class="error">Erreur de chargement: ' + error.message + '</p>';
+            console.error(`❌ Erreur chargement onglet ${tabId}:`, error);
+            content.innerHTML = `<div class="tab-content active"><p class="error">Erreur de chargement: ${error.message}</p></div>`;
         } finally {
             this.hideLoading();
         }
@@ -1271,12 +1303,14 @@ class BloodBowlApp {
     // Méthode pour réinitialiser le match
     resetMatch() {
         if (confirm('Êtes-vous sûr de vouloir commencer un nouveau match ? Toutes les données actuelles seront perdues.')) {
+            console.log('🔄 Réinitialisation du match...');
+
             // Réinitialiser toutes les données
             this.matchData = {
                 team1: this.createTeamObject(),
                 team2: this.createTeamObject(),
                 weather: {
-                    type: 'classique',  // AJOUT : Type de météo sélectionné
+                    type: 'classique',
                     total: 0,
                     effect: '',
                     rolled: false,
@@ -1306,9 +1340,30 @@ class BloodBowlApp {
             // Réinitialiser les inducements
             this.initializeInducementsData();
 
-            // Sauvegarder et retourner au début
-            this.saveState();
+            // FORCER le retour à setup
+            console.log('🔧 Retour forcé à l\'onglet setup');
+
+            // Désactiver temporairement la validation pour permettre le retour à setup
+            const originalSecureTabSwitch = window.secureTabSwitch;
+            window.secureTabSwitch = () => true; // Temporairement tout autoriser
+
+            // Aller à setup
             this.switchTab('setup');
+
+            // Restaurer la validation après un délai
+            setTimeout(() => {
+                window.secureTabSwitch = originalSecureTabSwitch;
+            }, 100);
+
+            // Sauvegarder l'état réinitialisé
+            this.saveState();
+
+            console.log('✅ Match réinitialisé - retour à la configuration');
+
+            // Notification de succès
+            if (window.errorManager) {
+                window.errorManager.success('Nouveau match créé !');
+            }
         }
     }
 

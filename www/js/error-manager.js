@@ -458,32 +458,93 @@ function initializeErrorManagement() {
 // Correction de la fonction de navigation
 window.secureTabSwitch = function(app, tabId) {
     try {
+        console.log(`🔍 Validation navigation: ${app.currentTab} → ${tabId}`);
+
         if (!window.navigationManager || !app || !app.matchData) {
-            console.log('Gestionnaire ou données manquants, navigation autorisée');
+            console.log('⚠️ Gestionnaire ou données manquants, navigation autorisée par défaut');
+            return true;
+        }
+
+        // Permettre toujours le retour vers setup
+        if (tabId === 'setup') {
+            console.log('✅ Navigation vers setup toujours autorisée');
             return true;
         }
 
         const validation = window.navigationManager.canNavigateTo(tabId, app.matchData);
 
+        console.log('Résultat validation:', validation);
+
         if (!validation.canNavigate && validation.missing.length > 0) {
-            const message = `Pour accéder à cet onglet, veuillez renseigner : ${validation.missing.join(', ')}`;
+            const message = `Pour accéder à cet onglet, veuillez d'abord renseigner :\n• ${validation.missing.join('\n• ')}`;
+
+            console.log(`❌ Navigation bloquée: ${message}`);
 
             if (window.errorManager) {
-                window.errorManager.warning(message);
+                window.errorManager.warning(message.replace(/\n/g, ' '));
             } else {
-                console.warn(message);
                 alert(message);
             }
 
-            return false;
+            return false; // BLOCAGE STRICT
         }
 
+        console.log('✅ Navigation autorisée');
         return true;
 
     } catch (error) {
-        console.error('Erreur secureTabSwitch:', error);
-        return true;
+        console.error('❌ Erreur dans secureTabSwitch:', error);
+        // En cas d'erreur de validation, BLOQUER par sécurité
+        return false;
     }
+};
+
+// Pour tester le blocage
+window.testNavigation = function() {
+    console.group('🧪 Test de navigation');
+
+    if (!window.app) {
+        console.log('❌ window.app non trouvé');
+        console.groupEnd();
+        return;
+    }
+
+    // Sauvegarder l'état actuel
+    const originalData = {
+        team1Name: app.matchData.team1.name,
+        team2Name: app.matchData.team2.name,
+        team1VEA: app.matchData.team1.vea,
+        team2VEA: app.matchData.team2.vea
+    };
+
+    console.log('État initial:', originalData);
+
+    // Test 1 : Vider les données
+    app.matchData.team1.name = '';
+    app.matchData.team2.name = '';
+    app.matchData.team1.vea = 0;
+    app.matchData.team2.vea = 0;
+
+    console.log('Test avec données vides...');
+    const result1 = window.secureTabSwitch(app, 'prematch');
+    console.log('Navigation vers prematch avec données vides:', result1 ? '✅ Autorisée' : '❌ Bloquée');
+
+    // Test 2 : Remplir partiellement
+    app.matchData.team1.name = 'Test Team';
+    app.matchData.team2.name = '';
+
+    console.log('Test avec données partielles...');
+    const result2 = window.secureTabSwitch(app, 'prematch');
+    console.log('Navigation vers prematch avec données partielles:', result2 ? '✅ Autorisée' : '❌ Bloquée');
+
+    // Restaurer l'état original
+    app.matchData.team1.name = originalData.team1Name;
+    app.matchData.team2.name = originalData.team2Name;
+    app.matchData.team1.vea = originalData.team1VEA;
+    app.matchData.team2.vea = originalData.team2VEA;
+
+    console.log('État restauré');
+    console.groupEnd();
 };
 
 // Fonction de debug
@@ -513,6 +574,50 @@ window.debugApp = function() {
         console.log('Test navigation vers prematch:', testResult);
     }
 
+    console.groupEnd();
+};
+
+window.testNavigationDetailed = function() {
+    console.group('🧪 Test détaillé de navigation');
+
+    if (!window.app) {
+        console.log('❌ window.app non trouvé');
+        console.groupEnd();
+        return;
+    }
+
+    console.log('Onglet actuel:', app.currentTab);
+    console.log('Données actuelles:', {
+        team1: { name: app.matchData.team1.name, vea: app.matchData.team1.vea },
+        team2: { name: app.matchData.team2.name, vea: app.matchData.team2.vea }
+    });
+
+    // Test 1 : Vider complètement
+    console.log('\n--- Test 1: Données vides ---');
+    const backup = {
+        team1Name: app.matchData.team1.name,
+        team2Name: app.matchData.team2.name,
+        team1VEA: app.matchData.team1.vea,
+        team2VEA: app.matchData.team2.vea
+    };
+
+    app.matchData.team1.name = '';
+    app.matchData.team2.name = '';
+    app.matchData.team1.vea = 0;
+    app.matchData.team2.vea = 0;
+
+    console.log('Tentative de navigation vers prematch...');
+    const result = app.switchTab('prematch');
+    console.log('Résultat:', result ? 'AUTORISÉ ❌' : 'BLOQUÉ ✅');
+    console.log('Onglet actuel après tentative:', app.currentTab);
+
+    // Restaurer
+    app.matchData.team1.name = backup.team1Name;
+    app.matchData.team2.name = backup.team2Name;
+    app.matchData.team1.vea = backup.team1VEA;
+    app.matchData.team2.vea = backup.team2VEA;
+
+    console.log('Données restaurées');
     console.groupEnd();
 };
 
