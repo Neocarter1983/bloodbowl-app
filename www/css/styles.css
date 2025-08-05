@@ -490,14 +490,18 @@ input:focus, select:focus, textarea:focus {
 .progress-indicator {
     display: flex;
     justify-content: center;
-    gap: 15px;
-    padding: 10px 0;
-    margin-bottom: 10px;
+    gap: 10px; /* Encore plus réduit */
+    padding-top: 0;
+    padding-bottom: 12px; /* Légèrement réduit */
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
+    margin-top: -5px; /* Décale légèrement vers le haut pour compenser */
 }
 
 .progress-step {
-    width: 35px;
-    height: 35px;
+    width: 30px; /* Encore plus petit */
+    height: 30px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.3);
     color: white;
@@ -505,9 +509,10 @@ input:focus, select:focus, textarea:focus {
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 12px; /* Police encore plus petite */
     transition: all 0.3s ease;
     border: 2px solid rgba(255, 255, 255, 0.5);
+    position: relative;
 }
 
 .progress-step.completed {
@@ -520,16 +525,16 @@ input:focus, select:focus, textarea:focus {
     background: var(--primary-color);
     color: white;
     border-color: white;
-    transform: scale(1.2);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transform: scale(1.05); /* Scale encore réduit */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     animation: pulse 2s infinite;
 }
 
 /* Animation du progress indicator */
 @keyframes pulse {
-    0% { transform: scale(1.2); }
-    50% { transform: scale(1.3); }
-    100% { transform: scale(1.2); }
+    0% { transform: scale(1.05); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1.05); }
 }
 
 /* Step sections */
@@ -617,14 +622,32 @@ input:focus, select:focus, textarea:focus {
         padding-bottom: 15px;
     }
 
-    .sticky-wrapper .header,
+    /* IMPORTANT : Garder le header visible sur mobile */
+    .sticky-wrapper .header {
+        display: block !important; /* Forcer l'affichage */
+        padding: 10px;
+    }
+
+    /* Ajuster le texte du header sur mobile */
+    .sticky-wrapper .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .sticky-wrapper .header p {
+        font-size: 0.9rem;
+    }
+
+    .sticky-wrapper .header small {
+        display: none; /* Cacher le sous-titre sur mobile pour gagner de l'espace */
+    }
+
     .sticky-wrapper .progress-indicator,
     .sticky-wrapper .tabs {
         padding: 0 10px;
     }
 
     .tabs {
-        justify-content: flex-start; /* Sur mobile, permettre le scroll */
+        justify-content: flex-start;
     }
 
     .tab {
@@ -635,16 +658,20 @@ input:focus, select:focus, textarea:focus {
         margin: 0 1px;
     }
 
-    /* Cacher les icônes sur mobile pour gagner de l'espace */
     .tab::before {
         display: none;
     }
 
-    /* Progress indicator plus petit sur mobile */
+    /* Progress indicator encore plus petit sur mobile */
     .progress-step {
-        width: 30px;
-        height: 30px;
-        font-size: 12px;
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .progress-indicator {
+        gap: 8px; /* Espacement réduit sur mobile */
+        margin-top: -3px;
     }
 }
 
@@ -2529,7 +2556,10 @@ input:focus, select:focus, textarea:focus {
 /* Header dans le sticky wrapper */
 .sticky-wrapper .header {
     padding-top: 15px;
-    padding-bottom: 15px;
+    padding-bottom: 5px; /* Réduit pour moins d'espace */
+    margin-bottom: 0;
+    position: relative;
+    z-index: 2;
 }
 
 /* Ajuster les tabs */
