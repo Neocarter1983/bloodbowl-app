@@ -225,7 +225,12 @@ class BloodBowlApp {
     }
 
     init() {
-        console.log('Initializing BloodBowl App...');
+    console.log('Initializing BloodBowl App...');
+
+        // NOUVEAU : Initialiser le système d'erreurs
+        if (window.initializeErrorManagement) {
+            window.initializeErrorManagement();
+        }
 
         // Charger les données sauvegardées
         this.loadState();
@@ -271,24 +276,54 @@ class BloodBowlApp {
     }
 
     switchTab(tabId) {
-        // Nettoyer l'onglet actuel si nécessaire
-        if (this.currentTab === 'match') {
-            this.cleanupMatchTab();
+        try {
+            // Validation AVANT de faire quoi que ce soit
+            if (window.secureTabSwitch) {
+                const canSwitch = window.secureTabSwitch(this, tabId);
+                if (!canSwitch) {
+                    console.log(`Navigation vers ${tabId} bloquée`);
+                    return; // Arrêter ici si bloqué
+                }
+            }
+
+            // Nettoyer l'onglet actuel si nécessaire
+            if (this.currentTab === 'match') {
+                this.cleanupMatchTab();
+            }
+
+            // Retirer la classe active de tous les onglets
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Ajouter la classe active au bon onglet
+            const targetTab = document.querySelector(`[data-tab="${tabId}"]`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            } else {
+                console.error(`Onglet ${tabId} introuvable dans le DOM`);
+                return;
+            }
+
+            // Charger le contenu
+            this.loadTab(tabId);
+
+            // Mettre à jour l'onglet actuel
+            this.currentTab = tabId;
+
+            // Vibration tactile (optionnelle)
+            if (window.Utils && Utils.vibrate) {
+                Utils.vibrate(10);
+            }
+
+            console.log(`✅ Navigation vers ${tabId} réussie`);
+
+        } catch (error) {
+            console.error('Erreur dans switchTab:', error);
+            // En cas d'erreur, essayer quand même de charger l'onglet
+            this.loadTab(tabId);
+            this.currentTab = tabId;
         }
-
-        // Retirer la classe active de tous les onglets
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-
-        // Ajouter la classe active au bon onglet
-        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-
-        // Charger le contenu
-        this.loadTab(tabId);
-
-        // Vibration tactile
-        Utils.vibrate(10);
     }
 
     // Modification temporaire de la méthode loadTab pour voir où ça bloque :
@@ -1281,32 +1316,32 @@ class BloodBowlApp {
 
     saveState() {
         try {
+            // Essayer d'abord la méthode sécurisée
+            if (window.secureSaveState) {
+                const success = window.secureSaveState(this);
+                if (success) {
+                    return true;
+                }
+                console.warn('Sauvegarde sécurisée échouée, tentative fallback');
+            }
+
+            // Fallback sur Utils.storage
             const stateToSave = {
                 matchData: this.matchData,
                 currentTab: this.currentTab,
-                saveDate: new Date().toISOString(),
-                version: AppConfig.version
+                saveDate: new Date().toISOString()
             };
 
-            // Sauvegarde principale
             const saved = Utils.storage.set('match_state', stateToSave);
 
-            // Sauvegarde de secours silencieuse
-            if (saved) {
-                const backupKey = `match_backup_${new Date().getTime()}`;
-                Utils.storage.set(backupKey, stateToSave);
-
-                // Nettoyer les anciennes sauvegardes silencieusement
-                this.cleanOldBackups();
+            if (saved && Math.random() < 0.1) {
+                console.log('💾 Sauvegarde fallback réussie');
             }
 
-            // Ne PAS afficher l'indicateur pour les sauvegardes automatiques
-            // this.showSaveIndicator(); // Commenté
-
             return saved;
+
         } catch (error) {
-            console.error('Erreur lors de la sauvegarde:', error);
-            this.showSaveError();
+            console.error('Erreur sauvegarde complète:', error);
             return false;
         }
     }
@@ -1368,61 +1403,34 @@ class BloodBowlApp {
 
     loadState() {
         try {
-            // Essayer de charger la sauvegarde principale
-            let savedState = Utils.storage.get('match_state');
-
-            // Si pas de sauvegarde principale, chercher la plus récente des backups
-            if (!savedState || !savedState.matchData) {
-                console.log('Pas de sauvegarde principale, recherche de backup...');
-                savedState = this.loadLatestBackup();
+            // Essayer le système sécurisé
+            if (window.secureLoadState) {
+                const success = window.secureLoadState(this);
+                if (success) {
+                    console.log('✅ Chargement sécurisé réussi');
+                    return true;
+                }
             }
 
+            // Fallback Utils.storage
+            let savedState = Utils.storage.get('match_state');
+
             if (savedState && savedState.matchData) {
-                this.matchData = savedState.matchData;
-
-                // S'assurer que les nouvelles propriétés du chrono existent
-                if (this.matchData.timerRunning && this.matchData.matchStart && !this.matchData.lastStartTime) {
-                    // Si le chrono était en marche mais pas de lastStartTime, utiliser matchStart
-                    this.matchData.lastStartTime = this.matchData.matchStart;
-                }
-
-                // S'assurer que pausedDuration existe
-                if (!this.matchData.hasOwnProperty('pausedDuration')) {
-                    this.matchData.pausedDuration = 0;
-                }
-
-                // S'assurer que timerRunning existe
-                if (!this.matchData.hasOwnProperty('timerRunning')) {
-                    this.matchData.timerRunning = false;
-                }
-
-                // S'assurer que lastStartTime existe
-                if (!this.matchData.hasOwnProperty('lastStartTime')) {
-                    this.matchData.lastStartTime = null;
-                }
-
-                if (!this.matchData.team1.hasOwnProperty('fansUpdateRoll')) {
-                    this.matchData.team1.fansUpdateRoll = null;
-                    this.matchData.team1.fansUpdateResult = '';
-                }
-                if (!this.matchData.team2.hasOwnProperty('fansUpdateRoll')) {
-                    this.matchData.team2.fansUpdateRoll = null;
-                    this.matchData.team2.fansUpdateResult = '';
-                }
-
-                // Migration des anciennes données
-                this.migrateOldData();
-
-                // Afficher les informations de récupération
-                this.showRecoveryInfo(savedState.saveDate);
-
-                console.log('État restauré:', savedState.saveDate);
+                this.matchData = { ...this.matchData, ...savedState.matchData };
+                console.log('✅ Chargement fallback réussi');
+                return true;
+            } else if (savedState && savedState.team1) {
+                // Format encore plus ancien
+                this.matchData = { ...this.matchData, ...savedState };
+                console.log('✅ Chargement format ancien réussi');
                 return true;
             }
 
+            console.log('ℹ️ Aucune sauvegarde trouvée');
             return false;
+
         } catch (error) {
-            console.error('Erreur lors du chargement:', error);
+            console.error('Erreur chargement complète:', error);
             return false;
         }
     }
@@ -1645,7 +1653,7 @@ class BloodBowlApp {
         }
         this.saveTimeout = setTimeout(() => {
             this.saveState();
-        }, 1000); // Sauvegarde 1 seconde après la fin de la saisie
+        }, 1000); // Augmenté à 1 seconde
 
     }
 
@@ -1848,28 +1856,41 @@ class BloodBowlApp {
     }
 
     updateTeamData(teamNumber, field, value) {
-        // Validation selon le champ
-        let isValid = true;
-        let validatedValue = value;
+        try {
+            // Validation et nettoyage
+            let validatedValue = value;
+            let isValid = true;
 
-        switch(field) {
-            case 'name':
-                isValid = Utils.validate.teamName(value);
-                break;
-            case 'vea':
-                isValid = Utils.validate.vea(value);
-                validatedValue = parseInt(value) || 0;
-                break;
-            case 'fans':
-                isValid = Utils.validate.fans(value);
-                validatedValue = parseInt(value) || 1;
-                break;
-        }
+            switch(field) {
+                case 'name':
+                    validatedValue = String(value || '').trim();
+                    isValid = validatedValue.length >= 2;
+                    if (!isValid) {
+                        console.warn(`Nom équipe ${teamNumber} trop court:`, validatedValue);
+                    }
+                    break;
 
-        if (isValid) {
+                case 'vea':
+                    validatedValue = parseInt(value) || 0;
+                    isValid = validatedValue >= 0 && validatedValue <= 10000000;
+                    if (!isValid) {
+                        console.warn(`VEA équipe ${teamNumber} invalide:`, validatedValue);
+                    }
+                    break;
+
+                case 'fans':
+                    validatedValue = parseInt(value) || 1;
+                    isValid = validatedValue >= 1 && validatedValue <= 6;
+                    if (!isValid) {
+                        console.warn(`Fans équipe ${teamNumber} invalides:`, validatedValue);
+                    }
+                    break;
+            }
+
+            // Appliquer la valeur même si non valide (pour permettre la saisie)
             this.matchData[`team${teamNumber}`][field] = validatedValue;
 
-            // Mettre à jour les affichages dépendants
+            // Mettre à jour les affichages
             if (field === 'name') {
                 this.updateTeamNamesDisplay();
             }
@@ -1877,8 +1898,26 @@ class BloodBowlApp {
             if (field === 'vea' || field === 'fans') {
                 this.updateVEAComparison();
             }
+
+            // Sauvegarde différée
+            this.scheduleSave();
+
+            return true;
+
+        } catch (error) {
+            console.error('Erreur updateTeamData:', error);
+            return false;
         }
-        this.saveState();
+    }
+
+    scheduleSave() {
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+
+        this.saveTimeout = setTimeout(() => {
+            this.saveState();
+        }, 1000);
     }
 
     updateVEAComparison() {
