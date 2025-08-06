@@ -236,22 +236,29 @@ class ErrorManager {
 // 2. GESTIONNAIRE DE NAVIGATION
 class SafeNavigationManager {
     constructor() {
+        // Définir les exigences pour chaque onglet
         this.tabRequirements = {
-            'setup': [],
+            'setup': [], // Pas de prérequis pour setup
+
             'prematch': [
                 { path: 'team1.name', name: 'Nom équipe 1', required: true },
                 { path: 'team2.name', name: 'Nom équipe 2', required: true },
-                { path: 'team1.vea', name: 'VEA équipe 1', required: true, min: 0 },
-                { path: 'team2.vea', name: 'VEA équipe 2', required: true, min: 0 }
+                { path: 'team1.vea', name: 'VEA équipe 1', required: true, allowZero: true },
+                { path: 'team2.vea', name: 'VEA équipe 2', required: true, allowZero: true }
             ],
+
             'match': [
                 { path: 'team1.name', name: 'Nom équipe 1', required: true },
-                { path: 'team2.name', name: 'Nom équipe 2', required: true }
+                { path: 'team2.name', name: 'Nom équipe 2', required: true },
+                { path: 'team1.popularity', name: 'Popularité équipe 1', required: true, allowZero: true },
+                { path: 'team2.popularity', name: 'Popularité équipe 2', required: true, allowZero: true }
             ],
+
             'postmatch': [
                 { path: 'team1.name', name: 'Nom équipe 1', required: true },
                 { path: 'team2.name', name: 'Nom équipe 2', required: true }
             ],
+
             'summary': [
                 { path: 'team1.name', name: 'Nom équipe 1', required: true },
                 { path: 'team2.name', name: 'Nom équipe 2', required: true }
@@ -260,30 +267,88 @@ class SafeNavigationManager {
     }
 
     canNavigateTo(tabId, matchData) {
+        console.log(`🔍 Validation pour navigation vers: ${tabId}`);
+
+        // Toujours autoriser le retour à setup
+        if (tabId === 'setup') {
+            console.log('✅ Navigation vers setup toujours autorisée');
+            return { canNavigate: true, missing: [] };
+        }
+
+        // Vérifier que matchData existe
+        if (!matchData) {
+            console.error('❌ matchData manquant');
+            return {
+                canNavigate: false,
+                missing: ['Données du match non disponibles']
+            };
+        }
+
         const requirements = this.tabRequirements[tabId] || [];
         const missing = [];
+        const details = [];
 
         for (const req of requirements) {
             const keys = req.path.split('.');
             let value = matchData;
 
+            // Navigation sécurisée dans l'objet
             for (const key of keys) {
-                value = value?.[key];
+                if (value && typeof value === 'object') {
+                    value = value[key];
+                } else {
+                    value = undefined;
+                    break;
+                }
             }
 
-            const isEmpty = value === undefined ||
-                           value === null ||
-                           (typeof value === 'string' && value.trim() === '') ||
-                           (typeof value === 'number' && (isNaN(value) || value < 0));
+            // Validation selon le type et les règles
+            let isEmpty = false;
+            let detail = null;
+
+            if (value === undefined || value === null) {
+                isEmpty = true;
+                detail = `${req.name}: non défini`;
+            } else if (typeof value === 'string') {
+                if (value.trim() === '') {
+                    isEmpty = true;
+                    detail = `${req.name}: vide`;
+                }
+            } else if (typeof value === 'number') {
+                // Gérer le cas spécial où 0 est autorisé
+                if (req.allowZero) {
+                    // 0 est OK, mais NaN ou négatif ne l'est pas
+                    if (isNaN(value) || value < 0) {
+                        isEmpty = true;
+                        detail = `${req.name}: valeur invalide (${value})`;
+                    }
+                } else {
+                    // 0 n'est pas accepté
+                    if (isNaN(value) || value <= 0) {
+                        isEmpty = true;
+                        detail = `${req.name}: doit être supérieur à 0`;
+                    }
+                }
+            }
 
             if (isEmpty && req.required) {
                 missing.push(req.name);
+                if (detail) details.push(detail);
             }
         }
 
+        const canNavigate = missing.length === 0;
+
+        console.log(`Validation ${tabId}:`, {
+            canNavigate,
+            missing,
+            details
+        });
+
         return {
-            canNavigate: missing.length === 0,
-            missing: missing
+            canNavigate: canNavigate,
+            missing: missing,
+            details: details
         };
     }
 }
@@ -460,33 +525,48 @@ window.secureTabSwitch = function(app, tabId) {
     try {
         console.log(`🔍 Validation navigation: ${app.currentTab} → ${tabId}`);
 
+        // Vérifications de base
         if (!window.navigationManager || !app || !app.matchData) {
-            console.log('⚠️ Gestionnaire ou données manquants, navigation autorisée par défaut');
-            return true;
+            console.log('⚠️ Gestionnaire ou données manquants');
+            return true; // Autoriser par défaut si le système n'est pas prêt
         }
 
         // Permettre toujours le retour vers setup
         if (tabId === 'setup') {
-            console.log('✅ Navigation vers setup toujours autorisée');
+            console.log('✅ Navigation vers setup autorisée');
             return true;
         }
 
+        // Permettre toujours de revenir en arrière
+        const tabs = ['setup', 'prematch', 'match', 'postmatch', 'summary'];
+        const currentIndex = tabs.indexOf(app.currentTab);
+        const targetIndex = tabs.indexOf(tabId);
+
+        if (targetIndex < currentIndex) {
+            console.log('✅ Navigation arrière autorisée');
+            return true;
+        }
+
+        // Validation stricte pour avancer
         const validation = window.navigationManager.canNavigateTo(tabId, app.matchData);
 
-        console.log('Résultat validation:', validation);
-
         if (!validation.canNavigate && validation.missing.length > 0) {
-            const message = `Pour accéder à cet onglet, veuillez d'abord renseigner :\n• ${validation.missing.join('\n• ')}`;
+            // Construire un message clair
+            let message = `Pour accéder à l'onglet "${tabId}", veuillez d'abord renseigner :`;
+            validation.missing.forEach(field => {
+                message += `\n• ${field}`;
+            });
 
-            console.log(`❌ Navigation bloquée: ${message}`);
+            console.log(`❌ Navigation bloquée: ${validation.missing.join(', ')}`);
 
+            // Afficher le message d'erreur
             if (window.errorManager) {
-                window.errorManager.warning(message.replace(/\n/g, ' '));
+                window.errorManager.warning(message.replace(/\n/g, '<br>'));
             } else {
                 alert(message);
             }
 
-            return false; // BLOCAGE STRICT
+            return false; // BLOQUER LA NAVIGATION
         }
 
         console.log('✅ Navigation autorisée');
@@ -494,10 +574,200 @@ window.secureTabSwitch = function(app, tabId) {
 
     } catch (error) {
         console.error('❌ Erreur dans secureTabSwitch:', error);
-        // En cas d'erreur de validation, BLOQUER par sécurité
+        // En cas d'erreur, autoriser la navigation pour ne pas bloquer l'utilisateur
+        return true;
+    }
+};
+
+window.testValidationSystem = function() {
+    console.group('🧪 Test du système de validation');
+
+    if (!window.app || !window.navigationManager) {
+        console.error('❌ Application ou navigationManager non trouvé');
+        console.groupEnd();
+        return;
+    }
+
+    // Tester avec les données actuelles
+    const tabs = ['setup', 'prematch', 'match', 'postmatch', 'summary'];
+
+    console.log('État actuel des données:');
+    console.log('- Team1 name:', app.matchData.team1.name || 'VIDE');
+    console.log('- Team2 name:', app.matchData.team2.name || 'VIDE');
+    console.log('- Team1 VEA:', app.matchData.team1.vea);
+    console.log('- Team2 VEA:', app.matchData.team2.vea);
+    console.log('- Team1 popularity:', app.matchData.team1.popularity);
+    console.log('- Team2 popularity:', app.matchData.team2.popularity);
+
+    console.log('\nTest de navigation vers chaque onglet:');
+    tabs.forEach(tab => {
+        const result = window.navigationManager.canNavigateTo(tab, app.matchData);
+        console.log(`- ${tab}:`, result.canNavigate ? '✅ OK' : `❌ Bloqué (${result.missing.join(', ')})`);
+    });
+
+    console.groupEnd();
+};
+
+
+// 4. AMÉLIORER updateTeamData dans app.js pour valider correctement
+// (À ajouter/modifier dans app.js)
+window.validateAndUpdateTeamData = function(app, teamNumber, field, value) {
+    try {
+        // S'assurer que l'équipe existe
+        if (!app.matchData[`team${teamNumber}`]) {
+            console.error(`Équipe ${teamNumber} n'existe pas!`);
+            app.matchData[`team${teamNumber}`] = app.createTeamObject();
+        }
+
+        let validatedValue = value;
+        let isValid = true;
+        let errorMessage = null;
+
+        switch(field) {
+            case 'name':
+                validatedValue = String(value || '').trim();
+                // Le nom doit avoir au moins 2 caractères
+                if (validatedValue.length > 0 && validatedValue.length < 2) {
+                    errorMessage = 'Le nom doit faire au moins 2 caractères';
+                    isValid = false;
+                }
+                break;
+
+            case 'coach':
+            case 'roster':
+                validatedValue = String(value || '').trim();
+                break;
+
+            case 'vea':
+                validatedValue = parseInt(value);
+                if (isNaN(validatedValue)) {
+                    validatedValue = 0;
+                }
+                // VEA peut être 0 mais pas négatif
+                if (validatedValue < 0) {
+                    validatedValue = 0;
+                    errorMessage = 'La VEA ne peut pas être négative';
+                }
+                if (validatedValue > 10000000) {
+                    validatedValue = 10000000;
+                    errorMessage = 'VEA maximum : 10 000 000 PO';
+                }
+                break;
+
+            case 'fans':
+                validatedValue = parseInt(value);
+                if (isNaN(validatedValue) || validatedValue < 1) {
+                    validatedValue = 1;
+                    errorMessage = 'Minimum 1 fan dévoué';
+                }
+                if (validatedValue > 6) {
+                    validatedValue = 6;
+                    errorMessage = 'Maximum 6 fans dévoués';
+                }
+                break;
+
+            case 'popularity':
+                validatedValue = parseInt(value) || 0;
+                if (validatedValue < 0) {
+                    validatedValue = 0;
+                }
+                break;
+
+            case 'treasury':
+                validatedValue = parseInt(value) || 0;
+                if (validatedValue < 0) {
+                    validatedValue = 0;
+                    errorMessage = 'La trésorerie ne peut pas être négative';
+                }
+                break;
+
+            default:
+                validatedValue = value;
+        }
+
+        // Appliquer la valeur même si pas complètement valide (pour permettre la saisie)
+        app.matchData[`team${teamNumber}`][field] = validatedValue;
+
+        // Afficher un message d'erreur si nécessaire
+        if (errorMessage && window.errorManager) {
+            window.errorManager.info(errorMessage);
+        }
+
+        // Mettre à jour les affichages
+        if (field === 'name') {
+            app.updateTeamNamesDisplay();
+        }
+
+        if (field === 'vea' || field === 'fans') {
+            app.updateVEAComparison();
+        }
+
+        // Sauvegarde différée
+        app.scheduleSave();
+
+        return isValid;
+
+    } catch (error) {
+        console.error('Erreur validateAndUpdateTeamData:', error);
         return false;
     }
 };
+
+
+
+// FONCTION POUR VÉRIFIER L'ÉTAT DE VALIDATION EN TEMPS RÉEL
+window.checkCurrentValidation = function() {
+    if (!window.app || !window.navigationManager) {
+        console.error('Application non trouvée');
+        return;
+    }
+
+    const currentTab = app.currentTab;
+    const tabs = ['setup', 'prematch', 'match', 'postmatch', 'summary'];
+    const currentIndex = tabs.indexOf(currentTab);
+
+    if (currentIndex < tabs.length - 1) {
+        const nextTab = tabs[currentIndex + 1];
+        const validation = window.navigationManager.canNavigateTo(nextTab, app.matchData);
+
+        if (validation.canNavigate) {
+            console.log(`✅ Prêt pour ${nextTab}`);
+        } else {
+            console.log(`⚠️ Manque pour ${nextTab}:`, validation.missing.join(', '));
+        }
+
+        return validation;
+    }
+
+    return { canNavigate: true, missing: [] };
+};
+
+// INITIALISATION AMÉLIORÉE
+window.initializeValidationSystem = function() {
+    console.log('🚀 Initialisation du système de validation...');
+
+    // Créer le gestionnaire de navigation s'il n'existe pas
+    if (!window.navigationManager) {
+        window.navigationManager = new SafeNavigationManager();
+    }
+
+    // S'assurer que secureTabSwitch est bien défini
+    if (!window.secureTabSwitch) {
+        console.error('❌ secureTabSwitch non défini!');
+    }
+
+    console.log('✅ Système de validation prêt');
+
+    // Test immédiat
+    window.testValidationSystem();
+};
+
+// Auto-initialisation
+setTimeout(() => {
+    if (!window.navigationManager) {
+        window.initializeValidationSystem();
+    }
+}, 500);
 
 // Pour tester le blocage
 window.testNavigation = function() {
@@ -575,6 +845,97 @@ window.debugApp = function() {
     }
 
     console.groupEnd();
+};
+
+// FONCTION DE TEST pour vérifier l'état de l'application
+window.debugAppState = function() {
+    console.group('🔍 État complet de l\'application');
+
+    if (!window.app) {
+        console.error('❌ window.app n\'existe pas!');
+        console.groupEnd();
+        return;
+    }
+
+    console.log('Onglet actuel:', app.currentTab);
+    console.log('Données équipe 1:', {
+        name: app.matchData.team1.name || 'VIDE',
+        vea: app.matchData.team1.vea,
+        fans: app.matchData.team1.fans,
+        players: app.matchData.team1.players.length
+    });
+    console.log('Données équipe 2:', {
+        name: app.matchData.team2.name || 'VIDE',
+        vea: app.matchData.team2.vea,
+        fans: app.matchData.team2.fans,
+        players: app.matchData.team2.players.length
+    });
+    console.log('Météo:', app.matchData.weather);
+    console.log('Chronomètre:', {
+        running: app.matchData.timerRunning,
+        pausedDuration: app.matchData.pausedDuration
+    });
+    console.log('LocalStorage keys:', Object.keys(localStorage).filter(k => k.startsWith('bloodbowl_')));
+
+    console.groupEnd();
+};
+
+// FONCTION pour forcer un nettoyage complet
+window.forceCleanReset = function() {
+    if (!window.app) {
+        console.error('Application non trouvée');
+        return;
+    }
+
+    console.log('🧹 Nettoyage forcé en cours...');
+
+    // Arrêter tous les intervalles
+    if (app.timerInterval) clearInterval(app.timerInterval);
+    if (app.autoSaveInterval) clearInterval(app.autoSaveInterval);
+
+    // Nettoyer TOUT le localStorage de l'app
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes('bloodbowl')) {
+            keysToRemove.push(key);
+        }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+
+    // Réinitialiser l'app
+    app.matchData = {
+        team1: app.createTeamObject(),
+        team2: app.createTeamObject(),
+        weather: { type: 'classique', total: 0, effect: '', rolled: false, dice1: null, dice2: null },
+        kickoffEvents: [],
+        matchStart: null,
+        matchEnd: null,
+        coinFlip: '',
+        prayer: { effect: '', rolled: false, dice: null },
+        inducements: {
+            team1Items: {},
+            team2Items: {},
+            team1PetiteMonnaie: 0,
+            team2PetiteMonnaie: 0,
+            team1Treasury: 0,
+            team2Treasury: 0
+        },
+        timerRunning: false,
+        pausedDuration: 0,
+        lastStartTime: null,
+        mvp: null
+    };
+
+    // Réinitialiser les inducements
+    app.initializeInducementsData();
+
+    // Forcer le retour à setup
+    app.currentTab = 'setup';
+    app.loadTab('setup');
+
+    console.log('✅ Nettoyage forcé terminé');
+    alert('Application réinitialisée complètement !');
 };
 
 window.testNavigationDetailed = function() {

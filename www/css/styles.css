@@ -673,6 +673,21 @@ input:focus, select:focus, textarea:focus {
         gap: 8px; /* Espacement réduit sur mobile */
         margin-top: -3px;
     }
+
+    .validation-status {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+
+    .validation-help {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    .btn.disabled::after {
+        display: none; /* Masquer l'icône de cadenas sur mobile */
+    }
+
 }
 
 /* Desktop - Amélioration de l'espacement */
@@ -2681,4 +2696,194 @@ input:focus, select:focus, textarea:focus {
 
 .btn-import:hover {
     background: #138496;
+}
+
+/* État de validation */
+.validation-status {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideIn 0.3s ease;
+}
+
+.validation-status.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.validation-status.warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.validation-status.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.validation-status strong {
+    font-weight: 600;
+}
+
+/* Boutons désactivés */
+.btn.disabled,
+.btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    position: relative;
+}
+
+.btn.disabled::after {
+    content: '🔒';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+}
+
+/* Animation de blocage pour les onglets */
+.tab.tab-blocked {
+    animation: shake 0.5s ease;
+    background: #f8d7da !important;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Indicateur visuel sur les champs requis mais vides */
+input:required:invalid {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+}
+
+input:required:valid {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.05);
+}
+
+/* Tooltip pour les champs manquants */
+.field-error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Indicateur de progression avec validation */
+.progress-step.locked {
+    background: #6c757d;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.progress-step.locked::after {
+    content: '🔒';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 12px;
+}
+
+/* Mise en évidence des champs obligatoires */
+.form-group.required label::after {
+    content: ' *';
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Animation de validation réussie */
+.validation-success-flash {
+    animation: successFlash 0.5s ease;
+}
+
+@keyframes successFlash {
+    0% { background: transparent; }
+    50% { background: rgba(40, 167, 69, 0.2); }
+    100% { background: transparent; }
+}
+
+/* Bouton avec état de validation */
+.btn-next-tab {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.btn-next-tab.disabled {
+    background: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+.btn-next-tab:not(.disabled):hover {
+    transform: translateX(5px);
+}
+
+/* Message d'aide contextuel */
+.validation-help {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.validation-help::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+}
+
+.btn-next-tab.disabled:hover .validation-help {
+    opacity: 1;
+}
+
+/* Indicateur de champs valides */
+.input-group {
+    position: relative;
+}
+
+.input-validation-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+}
+
+.input-validation-icon.valid {
+    color: #28a745;
+}
+
+.input-validation-icon.invalid {
+    color: #dc3545;
 }

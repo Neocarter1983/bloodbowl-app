@@ -172,12 +172,13 @@ class BloodBowlApp {
             fans: 1,
             score: 0,
             popularity: 0,
-            popularityDice: null, // Ajouter cette ligne
+            popularityDice: null,
             players: [],
             treasury: 0,
-            fansUpdateRoll: null,      // Le résultat du dé pour le test de fans
-            fansUpdateResult: '',       // Le message de résultat
-            soldPlayers: []
+            fansUpdateRoll: null,
+            fansUpdateResult: '',
+            soldPlayers: [],
+            mvpName: '' // Ajout pour éviter les undefined
         };
     }
 
@@ -305,49 +306,50 @@ class BloodBowlApp {
         console.log(`🔄 Tentative navigation: ${this.currentTab} → ${tabId}`);
 
         try {
-            // ⚠️ VALIDATION BLOQUANTE EN PREMIER - AVANT TOUT
+            // VALIDATION EN PREMIER
             if (window.secureTabSwitch) {
                 const canSwitch = window.secureTabSwitch(this, tabId);
                 if (!canSwitch) {
-                    console.log(`❌ Navigation vers ${tabId} REFUSÉE - ARRÊT TOTAL`);
+                    console.log(`❌ Navigation vers ${tabId} REFUSÉE`);
 
-                    // S'assurer que l'onglet actuel reste visuellement sélectionné
+                    // Animation de refus sur l'onglet
+                    const targetTab = document.querySelector(`[data-tab="${tabId}"]`);
+                    if (targetTab) {
+                        targetTab.classList.add('tab-blocked');
+                        setTimeout(() => {
+                            targetTab.classList.remove('tab-blocked');
+                        }, 500);
+                    }
+
+                    // S'assurer que l'onglet actuel reste sélectionné
                     this.ensureCurrentTabSelected();
 
-                    // ARRÊT COMPLET - ne rien faire d'autre
                     return false;
                 }
             }
 
-            console.log(`✅ Navigation vers ${tabId} AUTORISÉE - continuation...`);
+            console.log(`✅ Navigation vers ${tabId} AUTORISÉE`);
 
             // Nettoyer l'onglet actuel si nécessaire
             if (this.currentTab === 'match') {
                 this.cleanupMatchTab();
             }
 
-            // Retirer la classe active de TOUS les onglets
+            // Changer d'onglet visuellement
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
 
-            // Ajouter la classe active au bon onglet
             const targetTab = document.querySelector(`[data-tab="${tabId}"]`);
-            if (!targetTab) {
-                console.error(`❌ Onglet ${tabId} introuvable dans le DOM`);
-                this.ensureCurrentTabSelected();
-                return false;
+            if (targetTab) {
+                targetTab.classList.add('active');
             }
 
-            targetTab.classList.add('active');
-
-            // Charger le contenu SEULEMENT si validation OK
+            // Charger le contenu
             this.loadTab(tabId);
 
-            // Mettre à jour l'onglet actuel SEULEMENT si tout s'est bien passé
+            // Mettre à jour l'état
             this.currentTab = tabId;
-
-            // Mettre à jour la progression
             this.updateProgress(tabId);
 
             // Vibration tactile
@@ -355,13 +357,10 @@ class BloodBowlApp {
                 Utils.vibrate(10);
             }
 
-            console.log(`✅ Navigation vers ${tabId} TERMINÉE avec succès`);
             return true;
 
         } catch (error) {
-            console.error('❌ Erreur critique dans switchTab:', error);
-
-            // En cas d'erreur, rester sur l'onglet actuel
+            console.error('❌ Erreur dans switchTab:', error);
             this.ensureCurrentTabSelected();
             return false;
         }
@@ -1303,14 +1302,23 @@ class BloodBowlApp {
     // Méthode pour réinitialiser le match
     resetMatch() {
         if (confirm('Êtes-vous sûr de vouloir commencer un nouveau match ? Toutes les données actuelles seront perdues.')) {
-            console.log('🔄 Réinitialisation du match...');
+            console.log('🔄 Réinitialisation complète du match...');
 
-            // Réinitialiser toutes les données
+            // Arrêter le chronomètre s'il tourne
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+
+            // Créer une nouvelle structure de données complètement vierge
             this.matchData = {
                 team1: this.createTeamObject(),
                 team2: this.createTeamObject(),
+                timerRunning: false,
+                pausedDuration: 0,
+                lastStartTime: null,
                 weather: {
-                    type: 'classique',
+                    type: 'classique', // Ajout du type par défaut
                     total: 0,
                     effect: '',
                     rolled: false,
@@ -1334,36 +1342,68 @@ class BloodBowlApp {
                     team1Treasury: 0,
                     team2Treasury: 0
                 },
-                mvp: null
+                mvp: null,
+                matchDate: null
             };
 
-            // Réinitialiser les inducements
+            // Réinitialiser COMPLÈTEMENT les inducements
             this.initializeInducementsData();
 
-            // FORCER le retour à setup
-            console.log('🔧 Retour forcé à l\'onglet setup');
+            // IMPORTANT : Effacer le localStorage
+            Utils.storage.remove('match_state');
 
-            // Désactiver temporairement la validation pour permettre le retour à setup
+            // Effacer aussi les éventuelles sauvegardes de backup
+            this.cleanAllBackups();
+
+            // Désactiver temporairement la validation stricte
             const originalSecureTabSwitch = window.secureTabSwitch;
-            window.secureTabSwitch = () => true; // Temporairement tout autoriser
+            window.secureTabSwitch = () => true;
 
-            // Aller à setup
+            // Forcer le retour à l'onglet setup
+            this.currentTab = 'setup'; // Forcer l'état avant switchTab
             this.switchTab('setup');
 
-            // Restaurer la validation après un délai
+            // Réactiver la validation après un délai
             setTimeout(() => {
                 window.secureTabSwitch = originalSecureTabSwitch;
-            }, 100);
+                console.log('✅ Validation réactivée');
+            }, 200);
 
-            // Sauvegarder l'état réinitialisé
+            // Sauvegarder l'état vierge
             this.saveState();
 
-            console.log('✅ Match réinitialisé - retour à la configuration');
+            console.log('✅ Match complètement réinitialisé');
 
             // Notification de succès
             if (window.errorManager) {
-                window.errorManager.success('Nouveau match créé !');
+                window.errorManager.success('Nouveau match créé ! Toutes les données ont été effacées.');
             }
+        }
+    }
+
+    // NOUVELLE MÉTHODE pour nettoyer TOUS les backups
+    cleanAllBackups() {
+        try {
+            const prefix = AppConfig.storage.prefix;
+            const keysToRemove = [];
+
+            // Identifier toutes les clés liées à l'application
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(prefix)) {
+                    keysToRemove.push(key);
+                }
+            }
+
+            // Supprimer toutes les clés identifiées
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log(`🗑️ Suppression: ${key}`);
+            });
+
+            console.log(`✅ ${keysToRemove.length} entrées supprimées du localStorage`);
+        } catch (error) {
+            console.error('Erreur lors du nettoyage des backups:', error);
         }
     }
 
@@ -1458,36 +1498,156 @@ class BloodBowlApp {
 
     loadState() {
         try {
-            // Essayer le système sécurisé
+            console.log('📂 Tentative de chargement des données...');
+
+            // Essayer le système sécurisé d'abord
             if (window.secureLoadState) {
                 const success = window.secureLoadState(this);
                 if (success) {
                     console.log('✅ Chargement sécurisé réussi');
+                    // Vérifier l'intégrité des données chargées
+                    this.validateLoadedData();
                     return true;
                 }
             }
 
-            // Fallback Utils.storage
+            // Fallback sur Utils.storage
             let savedState = Utils.storage.get('match_state');
 
-            if (savedState && savedState.matchData) {
-                this.matchData = { ...this.matchData, ...savedState.matchData };
-                console.log('✅ Chargement fallback réussi');
-                return true;
-            } else if (savedState && savedState.team1) {
-                // Format encore plus ancien
-                this.matchData = { ...this.matchData, ...savedState };
-                console.log('✅ Chargement format ancien réussi');
-                return true;
+            if (savedState) {
+                // Vérifier que les données sont valides
+                if (this.isValidSavedState(savedState)) {
+                    if (savedState.matchData) {
+                        this.matchData = { ...this.matchData, ...savedState.matchData };
+                    } else {
+                        // Format ancien
+                        this.matchData = { ...this.matchData, ...savedState };
+                    }
+
+                    console.log('✅ Données restaurées avec succès');
+                    this.validateLoadedData();
+                    return true;
+                } else {
+                    console.warn('⚠️ Données sauvegardées corrompues, réinitialisation...');
+                    // Nettoyer les données corrompues
+                    Utils.storage.remove('match_state');
+                    return false;
+                }
             }
 
             console.log('ℹ️ Aucune sauvegarde trouvée');
             return false;
 
         } catch (error) {
-            console.error('Erreur chargement complète:', error);
+            console.error('❌ Erreur critique lors du chargement:', error);
+            // En cas d'erreur, nettoyer et repartir sur une base saine
+            Utils.storage.remove('match_state');
             return false;
         }
+    }
+
+    // NOUVELLE MÉTHODE pour valider l'état sauvegardé
+    isValidSavedState(state) {
+        try {
+            // Vérifications de base
+            if (!state || typeof state !== 'object') return false;
+
+            // Vérifier la structure selon le format
+            if (state.matchData) {
+                // Nouveau format
+                return state.matchData.team1 && state.matchData.team2;
+            } else {
+                // Ancien format
+                return state.team1 && state.team2;
+            }
+        } catch (error) {
+            console.error('Erreur validation état:', error);
+            return false;
+        }
+    }
+
+    // NOUVELLE MÉTHODE pour valider et corriger les données chargées
+    validateLoadedData() {
+        console.log('🔍 Validation des données chargées...');
+
+        // S'assurer que toutes les propriétés existent
+        if (!this.matchData.team1) this.matchData.team1 = this.createTeamObject();
+        if (!this.matchData.team2) this.matchData.team2 = this.createTeamObject();
+
+        // Valider chaque équipe
+        ['team1', 'team2'].forEach(team => {
+            const teamData = this.matchData[team];
+
+            // S'assurer que toutes les propriétés de base existent
+            if (teamData.name === undefined) teamData.name = '';
+            if (teamData.coach === undefined) teamData.coach = '';
+            if (teamData.roster === undefined) teamData.roster = '';
+            if (teamData.vea === undefined || teamData.vea === null) teamData.vea = 0;
+            if (teamData.fans === undefined || teamData.fans < 1) teamData.fans = 1;
+            if (teamData.score === undefined) teamData.score = 0;
+            if (teamData.popularity === undefined) teamData.popularity = 0;
+            if (teamData.popularityDice === undefined) teamData.popularityDice = null;
+            if (teamData.treasury === undefined) teamData.treasury = 0;
+            if (teamData.fansUpdateRoll === undefined) teamData.fansUpdateRoll = null;
+            if (teamData.fansUpdateResult === undefined) teamData.fansUpdateResult = '';
+            if (teamData.mvpName === undefined) teamData.mvpName = '';
+
+            // S'assurer que les tableaux sont des tableaux
+            if (!Array.isArray(teamData.players)) teamData.players = [];
+            if (!Array.isArray(teamData.soldPlayers)) teamData.soldPlayers = [];
+
+            // Valider chaque joueur
+            teamData.players.forEach(player => {
+                if (!player.id) player.id = `player-${team}-${Date.now()}-${Math.random()}`;
+                if (player.name === undefined) player.name = '';
+                if (player.xp === undefined) player.xp = 0;
+                if (!player.actions) {
+                    player.actions = { reu: false, det: false, int: false, elim: false, td: false, jdm: false };
+                }
+            });
+        });
+
+        // Valider la météo
+        if (!this.matchData.weather) {
+            this.matchData.weather = {
+                type: 'classique',
+                total: 0,
+                effect: '',
+                rolled: false,
+                dice1: null,
+                dice2: null
+            };
+        } else {
+            if (this.matchData.weather.type === undefined) this.matchData.weather.type = 'classique';
+            if (this.matchData.weather.dice1 === undefined) this.matchData.weather.dice1 = null;
+            if (this.matchData.weather.dice2 === undefined) this.matchData.weather.dice2 = null;
+        }
+
+        // Valider les autres propriétés
+        if (!this.matchData.kickoffEvents) this.matchData.kickoffEvents = [];
+        if (!this.matchData.prayer) {
+            this.matchData.prayer = { effect: '', rolled: false, dice: null };
+        }
+        if (this.matchData.coinFlip === undefined) this.matchData.coinFlip = '';
+
+        // Valider les inducements
+        if (!this.matchData.inducements) {
+            this.matchData.inducements = {
+                team1Items: {},
+                team2Items: {},
+                team1PetiteMonnaie: 0,
+                team2PetiteMonnaie: 0,
+                team1Treasury: 0,
+                team2Treasury: 0
+            };
+        }
+
+        // Valider le chronomètre
+        if (this.matchData.timerRunning === undefined) this.matchData.timerRunning = false;
+        if (this.matchData.pausedDuration === undefined) this.matchData.pausedDuration = 0;
+        if (this.matchData.lastStartTime === undefined) this.matchData.lastStartTime = null;
+
+        console.log('✅ Données validées et corrigées si nécessaire');
     }
 
     loadLatestBackup() {
@@ -1786,6 +1946,8 @@ class BloodBowlApp {
     }
 
     getSetupTabHTML() {
+        const validation = this.validateForPrematch();
+
         return `
             <div class="tab-content active" id="setup">
                 <h2 class="section-title">🏟️ Configuration du Match</h2>
@@ -1798,6 +1960,14 @@ class BloodBowlApp {
                     <p><strong>4.</strong> Une fois terminé, passez à l'onglet "Avant-Match"</p>
                 </div>
 
+                ${validation.show ? `
+                    <div class="validation-status ${validation.canNavigate ? 'success' : 'warning'}">
+                        ${validation.canNavigate ?
+                            '✅ Toutes les informations requises sont remplies' :
+                            `⚠️ Informations manquantes : ${validation.missing.join(', ')}`}
+                    </div>
+                ` : ''}
+
                 <div class="teams-setup">
                     ${this.getTeamCardHTML(1, 'Domicile', '🏠')}
                     ${this.getTeamCardHTML(2, 'Visiteur', '🚌')}
@@ -1806,12 +1976,29 @@ class BloodBowlApp {
                 <div id="vea-comparison" class="result-box" style="display: none;"></div>
 
                 <div class="form-actions">
-                    <button class="btn btn-primary" onclick="app.switchTab('prematch')">
+                    <button class="btn btn-primary btn-next-tab ${validation.canNavigate ? '' : 'disabled'}"
+                            onclick="app.switchTab('prematch')"
+                            ${validation.canNavigate ? '' : 'disabled'}>
                         ➡️ Passer à l'Avant-Match
                     </button>
                 </div>
             </div>
         `;
+    }
+
+    // Méthode de validation pour l'onglet setup
+    validateForPrematch() {
+        if (!window.navigationManager) {
+            return { show: false, canNavigate: true, missing: [] };
+        }
+
+        const validation = window.navigationManager.canNavigateTo('prematch', this.matchData);
+
+        return {
+            show: true,
+            canNavigate: validation.canNavigate,
+            missing: validation.missing
+        };
     }
 
     getTeamCardHTML(teamNumber, type, icon) {
@@ -1908,50 +2095,139 @@ class BloodBowlApp {
     initializeSetupTab() {
         // Mettre à jour l'affichage de la comparaison VEA
         this.updateVEAComparison();
+
+        // Vérifier et afficher l'état de validation
+        this.updateValidationDisplay();
+
+        // Ajouter des écouteurs pour la validation en temps réel
+        this.setupRealtimeValidation();
+    }
+
+    // Validation en temps réel
+    setupRealtimeValidation() {
+        // Écouter les changements sur les champs critiques
+        const criticalFields = [
+            'team1-name', 'team2-name',
+            'team1-vea', 'team2-vea'
+        ];
+
+        criticalFields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.addEventListener('input', () => {
+                    setTimeout(() => this.updateValidationDisplay(), 100);
+                });
+            }
+        });
+    }
+
+    // Méthode pour mettre à jour l'affichage de validation
+    updateValidationDisplay() {
+        if (!window.navigationManager) return;
+
+        const validation = window.navigationManager.canNavigateTo('prematch', this.matchData);
+
+        // Mettre à jour le message de validation
+        let statusDiv = document.querySelector('.validation-status');
+        if (!statusDiv) {
+            // Créer le div s'il n'existe pas
+            const container = document.querySelector('.teams-setup');
+            if (container) {
+                statusDiv = document.createElement('div');
+                statusDiv.className = 'validation-status';
+                container.parentNode.insertBefore(statusDiv, container);
+            }
+        }
+
+        if (statusDiv) {
+            statusDiv.className = `validation-status ${validation.canNavigate ? 'success' : 'warning'}`;
+            if (validation.canNavigate) {
+                statusDiv.innerHTML = '✅ Toutes les informations requises sont remplies';
+            } else {
+                statusDiv.innerHTML = `⚠️ Informations manquantes : <strong>${validation.missing.join(', ')}</strong>`;
+            }
+        }
+
+        // Mettre à jour le bouton
+        const nextButton = document.querySelector('.btn-next-tab');
+        if (nextButton) {
+            if (validation.canNavigate) {
+                nextButton.classList.remove('disabled');
+                nextButton.removeAttribute('disabled');
+                nextButton.style.opacity = '1';
+                nextButton.style.cursor = 'pointer';
+            } else {
+                nextButton.classList.add('disabled');
+                nextButton.setAttribute('disabled', 'disabled');
+                nextButton.style.opacity = '0.5';
+                nextButton.style.cursor = 'not-allowed';
+            }
+        }
     }
 
     updateTeamData(teamNumber, field, value) {
         try {
-            // Validation et nettoyage
+            // Utiliser la fonction de validation si elle existe
+            if (window.validateAndUpdateTeamData) {
+                return window.validateAndUpdateTeamData(this, teamNumber, field, value);
+            }
+
+            // Fallback sur l'ancienne méthode
+            console.log(`Mise à jour équipe ${teamNumber}, champ ${field}:`, value);
+
+            // S'assurer que l'équipe existe
+            if (!this.matchData[`team${teamNumber}`]) {
+                this.matchData[`team${teamNumber}`] = this.createTeamObject();
+            }
+
             let validatedValue = value;
-            let isValid = true;
 
             switch(field) {
                 case 'name':
+                case 'coach':
+                case 'roster':
                     validatedValue = String(value || '').trim();
-                    isValid = validatedValue.length >= 2;
-                    if (!isValid) {
-                        console.warn(`Nom équipe ${teamNumber} trop court:`, validatedValue);
-                    }
                     break;
 
                 case 'vea':
-                    validatedValue = parseInt(value) || 0;
-                    isValid = validatedValue >= 0 && validatedValue <= 10000000;
-                    if (!isValid) {
-                        console.warn(`VEA équipe ${teamNumber} invalide:`, validatedValue);
-                    }
+                    validatedValue = parseInt(value);
+                    if (isNaN(validatedValue)) validatedValue = 0;
+                    if (validatedValue < 0) validatedValue = 0;
+                    if (validatedValue > 10000000) validatedValue = 10000000;
                     break;
 
                 case 'fans':
-                    validatedValue = parseInt(value) || 1;
-                    isValid = validatedValue >= 1 && validatedValue <= 6;
-                    if (!isValid) {
-                        console.warn(`Fans équipe ${teamNumber} invalides:`, validatedValue);
-                    }
+                    validatedValue = parseInt(value);
+                    if (isNaN(validatedValue) || validatedValue < 1) validatedValue = 1;
+                    if (validatedValue > 6) validatedValue = 6;
                     break;
+
+                case 'popularity':
+                    validatedValue = parseInt(value) || 0;
+                    if (validatedValue < 0) validatedValue = 0;
+                    break;
+
+                case 'treasury':
+                    validatedValue = parseInt(value) || 0;
+                    if (validatedValue < 0) validatedValue = 0;
+                    break;
+
+                default:
+                    validatedValue = value;
             }
 
-            // Appliquer la valeur même si non valide (pour permettre la saisie)
+            // Appliquer la valeur
             this.matchData[`team${teamNumber}`][field] = validatedValue;
 
             // Mettre à jour les affichages
             if (field === 'name') {
                 this.updateTeamNamesDisplay();
+                this.updateNavigationState(); // NOUVEAU
             }
 
             if (field === 'vea' || field === 'fans') {
                 this.updateVEAComparison();
+                this.updateNavigationState(); // NOUVEAU
             }
 
             // Sauvegarde différée
@@ -1963,6 +2239,26 @@ class BloodBowlApp {
             console.error('Erreur updateTeamData:', error);
             return false;
         }
+    }
+
+    // Nouvelle méthode pour mettre à jour l'état de navigation
+    updateNavigationState() {
+        // Vérifier si on peut passer à l'onglet suivant
+        if (!window.checkCurrentValidation) return;
+
+        const validation = window.checkCurrentValidation();
+
+        // Mettre à jour visuellement les boutons de navigation
+        const nextButtons = document.querySelectorAll('.btn-next-tab');
+        nextButtons.forEach(btn => {
+            if (validation.canNavigate) {
+                btn.classList.remove('disabled');
+                btn.removeAttribute('title');
+            } else {
+                btn.classList.add('disabled');
+                btn.setAttribute('title', `Remplir: ${validation.missing.join(', ')}`);
+            }
+        });
     }
 
     scheduleSave() {
