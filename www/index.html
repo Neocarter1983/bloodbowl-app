@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/print.css" media="print">
+    <link rel="stylesheet" href="css/visual-validation.css">
 
     <!-- Manifest pour PWA (optionnel mais recommandé) -->
     <link rel="manifest" href="manifest.json">
@@ -82,12 +83,34 @@
     <script src="js/app.js"></script>
     <!-- ⚠️ RETIRER EN PRODUCTION -->
     <script src="js/validation-tests.js"></script>
+    <script src="js/visual-validation.js"></script>
 
+    <!-- Script d'initialisation -->
     <script>
-        // Initialiser l'app après le chargement du DOM
+        // Attendre que tout soit chargé
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM chargé, initialisation...');
+
+            // Initialiser l'application
             window.app = new BloodBowlApp();
+            window.app.init();
+
+            // NOUVEAU : Initialiser la validation visuelle après un délai
+            // (sera aussi appelé dans app.init() mais on double pour sécurité)
+            setTimeout(() => {
+                if (window.visualValidation && !window.visualValidation.initialized) {
+                    console.log('🎨 Initialisation manuelle de la validation visuelle');
+                    window.visualValidation.initialize();
+                }
+            }, 500);
+
+            console.log('✅ Application prête');
         });
+
+        // Gestion Cordova si nécessaire
+        document.addEventListener('deviceready', function() {
+            console.log('📱 Cordova prêt');
+        }, false);
     </script>
 
     <button class="manual-save-btn" onclick="app.saveState()" title="Sauvegarder maintenant">

@@ -226,7 +226,7 @@ class BloodBowlApp {
     }
 
     init() {
-    console.log('Initializing BloodBowl App...');
+        console.log('Initializing BloodBowl App...');
 
         // NOUVEAU : Initialiser le système d'erreurs
         if (window.initializeErrorManagement) {
@@ -244,6 +244,10 @@ class BloodBowlApp {
 
         // Démarrer l'auto-save
         this.startAutoSave();
+
+        setTimeout(() => {
+            this.initVisualValidation();
+        }, 200);
     }
 
     setupEventListeners() {
@@ -422,6 +426,15 @@ class BloodBowlApp {
             // Initialiser les éléments spécifiques à l'onglet
             this.initializeTab(tabId);
 
+            // NOUVEAU : Réinitialiser la validation visuelle pour l'onglet setup
+            if (tabId === 'setup') {
+                setTimeout(() => {
+                    if (window.visualValidation) {
+                        window.visualValidation.initialize();
+                    }
+                }, 100);
+            }
+
             // Mettre à jour la progression
             this.updateProgress(tabId);
 
@@ -435,21 +448,69 @@ class BloodBowlApp {
         }
     }
 
-    getTabContent(tabId) {
+    async getTabContent(tabId) {
+        console.log(`📄 Génération du contenu pour: ${tabId}`);
+
+        let html = '';
+
         switch(tabId) {
             case 'setup':
-                return this.getSetupTabHTML();
+                // Utiliser getSetupTabHTML si elle existe, sinon générer directement
+                if (this.getSetupTabHTML) {
+                    html = this.getSetupTabHTML();
+                } else {
+                    // Version de secours si getSetupTabHTML n'existe pas
+                    html = `
+                        <div class="tab-content active" id="setup">
+                            <h2 class="section-title">🏟️ Configuration du Match</h2>
+
+                            <div class="explanation-box">
+                                <h4>📝 À faire avant de commencer</h4>
+                                <p><strong>1.</strong> Renseignez les informations des deux équipes</p>
+                                <p><strong>2.</strong> La VEA (Valeur d'Équipe Actuelle) sert à calculer la petite monnaie</p>
+                                <p><strong>3.</strong> Chaque équipe commence avec 1 fan dévoué minimum</p>
+                                <p><strong>4.</strong> Une fois terminé, passez à l'onglet "Avant-Match"</p>
+                            </div>
+
+                            <div class="teams-setup">
+                                ${this.getTeamCardHTML(1, 'Domicile', '🏠')}
+                                ${this.getTeamCardHTML(2, 'Visiteur', '🚌')}
+                            </div>
+
+                            <div id="vea-comparison" class="result-box" style="display: none;"></div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-primary btn-next-tab"
+                                        onclick="app.switchTab('prematch')">
+                                    ➡️ Passer à l'Avant-Match
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                break;
+
             case 'prematch':
-                return this.getPrematchTabHTML();
+                html = this.getPrematchTabHTML ? this.getPrematchTabHTML() : '<div class="tab-content">Avant-Match</div>';
+                break;
+
             case 'match':
-                return this.getMatchTabHTML();
+                html = this.getMatchTabHTML ? this.getMatchTabHTML() : '<div class="tab-content">Match</div>';
+                break;
+
             case 'postmatch':
-                return this.getPostmatchTabHTML();
+                html = this.getPostmatchTabHTML ? this.getPostmatchTabHTML() : '<div class="tab-content">Après-Match</div>';
+                break;
+
             case 'summary':
-                return this.getSummaryTabHTML();
+                html = this.getSummaryTabHTML ? this.getSummaryTabHTML() : '<div class="tab-content">Résumé</div>';
+                break;
+
             default:
-                return '<p>Onglet non trouvé</p>';
+                html = '<div class="tab-content active"><p>Onglet non reconnu</p></div>';
         }
+
+        return html;
     }
 
     getMatchTabHTML() {
@@ -1372,6 +1433,18 @@ class BloodBowlApp {
             // Sauvegarder l'état vierge
             this.saveState();
 
+            // Réinitialiser la validation visuelle
+            if (window.visualValidation) {
+                window.visualValidation.reset();
+
+                // Réinitialiser après un court délai
+                setTimeout(() => {
+                    if (window.visualValidation) {
+                        window.visualValidation.initialize();
+                    }
+                }, 200);
+            }
+
             console.log('✅ Match complètement réinitialisé');
 
             // Notification de succès
@@ -2001,72 +2074,117 @@ class BloodBowlApp {
         };
     }
 
+    // méthode pour générer les options de roster
+    getRosterOptions(selectedRoster) {
+        const rosters = [
+            'Humains', 'Orcs', 'Nains', 'Elfes', 'Elfes Noirs', 'Skavens',
+            'Chaos', 'Morts-Vivants', 'Necromantiques', 'Nordiques', 'Amazones',
+            'Halflings', 'Gobelins', 'Ogres', 'Vampires', 'Khemri', 'Lizardmen',
+            'Bretonniens', 'Noblesse Impériale', 'Bas-Fonds', 'Snotlings',
+            'Autre'
+        ];
+
+        return rosters.map(roster =>
+            `<option value="${roster}" ${selectedRoster === roster ? 'selected' : ''}>${roster}</option>`
+        ).join('');
+    }
+
     getTeamCardHTML(teamNumber, type, icon) {
         const team = this.matchData[`team${teamNumber}`];
 
+        // Utiliser la structure HTML existante mais avec les wrappers pour la validation
         return `
             <div class="team-card">
-                <h3>${icon} Équipe ${type}</h3>
+                <div class="team-header">
+                    <h3>${icon} Équipe ${type}</h3>
+                </div>
 
-                <div class="form-group">
-                    <label>Nom de l'équipe *</label>
-                    <input type="text"
-                        id="team${teamNumber}-name"
-                        data-team="${teamNumber}"
-                        data-team-field="name"
-                        placeholder="Ex: ${teamNumber === 1 ? 'Les Orcs Verts' : 'Les Nains du Tonnerre'}"
-                        value="${team.name}">
-                    <div class="help-text">Ce nom apparaîtra partout dans l'application</div>
+                <div class="form-group has-validation">
+                    <label for="team${teamNumber}-name">Nom de l'équipe <span class="required-star">*</span></label>
+                    <div class="input-wrapper">
+                        <input type="text"
+                               id="team${teamNumber}-name"
+                               class="form-control"
+                               value="${team.name || ''}"
+                               onchange="app.updateTeamData(${teamNumber}, 'name', this.value)"
+                               placeholder="Ex: Les Orcs Verts"
+                               maxlength="50">
+                        <span class="field-validation-icon"></span>
+                    </div>
+                    <div class="field-feedback"></div>
                 </div>
 
                 <div class="form-group">
-                    <label>Type d'équipe (Roster)</label>
+                    <label for="team${teamNumber}-coach">Coach</label>
+                    <div class="input-wrapper">
+                        <input type="text"
+                               id="team${teamNumber}-coach"
+                               class="form-control"
+                               value="${team.coach || ''}"
+                               onchange="app.updateTeamData(${teamNumber}, 'coach', this.value)"
+                               placeholder="Nom du coach (optionnel)">
+                        <span class="field-validation-icon"></span>
+                    </div>
+                    <div class="field-feedback"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="team${teamNumber}-roster">Roster</label>
                     <select id="team${teamNumber}-roster"
-                        data-team="${teamNumber}"
-                        data-team-field="roster"
-                        value="${team.roster}">
-                        <option value="">-- Choisir --</option>
-                        ${AppConfig.gameData.teamRosters.map(roster =>
-                            `<option value="${roster}" ${team.roster === roster ? 'selected' : ''}>${roster}</option>`
-                        ).join('')}
+                            class="form-control"
+                            onchange="app.updateTeamData(${teamNumber}, 'roster', this.value)">
+                        <option value="">-- Sélectionner --</option>
+                        ${this.getRosterOptions(team.roster)}
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label>Nom du Coach</label>
-                    <input type="text"
-                        id="team${teamNumber}-coach"
-                        data-team="${teamNumber}"
-                        data-team-field="coach"
-                        placeholder="${teamNumber === 1 ? 'Votre nom' : 'Nom de l\'adversaire'}"
-                        value="${team.coach}">
+                <div class="form-group has-validation">
+                    <label for="team${teamNumber}-vea">VEA (PO) <span class="required-star">*</span></label>
+                    <div class="input-wrapper">
+                        <input type="number"
+                               id="team${teamNumber}-vea"
+                               class="form-control"
+                               value="${team.vea || 0}"
+                               onchange="app.updateTeamData(${teamNumber}, 'vea', this.value)"
+                               min="0"
+                               max="10000000"
+                               step="10000"
+                               placeholder="600000">
+                        <span class="field-validation-icon"></span>
+                    </div>
+                    <div class="field-feedback"></div>
+                </div>
+
+                <div class="form-group has-validation">
+                    <label for="team${teamNumber}-fans">Fans dévoués <span class="required-star">*</span></label>
+                    <div class="input-wrapper">
+                        <input type="number"
+                               id="team${teamNumber}-fans"
+                               class="form-control"
+                               value="${team.fans || 1}"
+                               onchange="app.updateTeamData(${teamNumber}, 'fans', this.value)"
+                               min="1"
+                               max="6"
+                               placeholder="1">
+                        <span class="field-validation-icon"></span>
+                    </div>
+                    <div class="field-feedback"></div>
                 </div>
 
                 <div class="form-group">
-                    <label class="tooltip" data-tooltip="Valeur totale de votre équipe moins les joueurs qui ratent le match">
-                        VEA (Valeur d'Équipe Actuelle) *
-                    </label>
-                    <input type="number"
-                        id="team${teamNumber}-vea"
-                        data-team="${teamNumber}"
-                        data-team-field="vea"
-                        placeholder="600000"
-                        min="0"
-                        step="1000"
-                        value="${team.vea || ''}">
-                    <div class="help-text">En PO. Exemple: 600000 pour une équipe de départ</div>
-                </div>
-
-                <div class="form-group">
-                    <label class="tooltip" data-tooltip="Entre 1 et 6 fans dévoués">Fans Dévoués</label>
-                    <input type="number"
-                        id="team${teamNumber}-fans"
-                        data-team="${teamNumber}"
-                        data-team-field="fans"
-                        value="${team.fans}"
-                        min="${AppConfig.limits.minFans}"
-                        max="${AppConfig.limits.maxFans}">
-                    <div class="help-text">Chaque équipe commence avec 1 fan, peut en gagner jusqu'à 6</div>
+                    <label for="team${teamNumber}-treasury">Trésorerie (PO)</label>
+                    <div class="input-wrapper">
+                        <input type="number"
+                               id="team${teamNumber}-treasury"
+                               class="form-control"
+                               value="${team.treasury || 0}"
+                               onchange="app.updateTeamData(${teamNumber}, 'treasury', this.value)"
+                               min="0"
+                               step="10000"
+                               placeholder="0">
+                        <span class="field-validation-icon"></span>
+                    </div>
+                    <div class="field-feedback"></div>
                 </div>
             </div>
         `;
@@ -2219,15 +2337,25 @@ class BloodBowlApp {
             // Appliquer la valeur
             this.matchData[`team${teamNumber}`][field] = validatedValue;
 
+            // NOUVEAU : Déclencher la validation visuelle
+            if (window.visualValidation) {
+                const elementId = `team${teamNumber}-${field}`;
+                const element = document.getElementById(elementId);
+                if (element) {
+                    const config = this.getFieldConfig(field);
+                    window.visualValidation.validateField(element, config);
+                }
+            }
+
+            // [GARDER LE RESTE DU CODE EXISTANT]
+
             // Mettre à jour les affichages
             if (field === 'name') {
                 this.updateTeamNamesDisplay();
-                this.updateNavigationState(); // NOUVEAU
             }
 
             if (field === 'vea' || field === 'fans') {
                 this.updateVEAComparison();
-                this.updateNavigationState(); // NOUVEAU
             }
 
             // Sauvegarde différée
@@ -4709,6 +4837,45 @@ class BloodBowlApp {
                 successDiv.remove();
             }
         }, 3000);
+    }
+
+    initVisualValidation() {
+        console.log('🎨 Activation de la validation visuelle...');
+
+        // S'assurer que le système est chargé
+        if (!window.visualValidation) {
+            console.warn('⚠️ Système de validation visuelle non chargé');
+            return;
+        }
+
+        // Réinitialiser et configurer
+        window.visualValidation.reset();
+        window.visualValidation.initialize();
+
+        // Écouter les changements de validation
+        window.addEventListener('validationUpdate', (e) => {
+            console.log('📊 Mise à jour validation:', e.detail);
+
+            // Mettre à jour l'interface si nécessaire
+            if (this.currentTab === 'setup') {
+                this.updateNavigationState();
+            }
+        });
+
+        console.log('✅ Validation visuelle activée');
+    }
+
+    getFieldConfig(field) {
+        const configs = {
+            'name': { type: 'teamName', required: true },
+            'coach': { type: 'coach', required: false },
+            'vea': { type: 'vea', required: true },
+            'fans': { type: 'fans', required: true },
+            'treasury': { type: 'treasury', required: false },
+            'popularity': { type: 'popularity', required: false }
+        };
+
+        return configs[field] || { type: field, required: false };
     }
 
 }
