@@ -356,6 +356,13 @@ class BloodBowlApp {
             this.currentTab = tabId;
             this.updateProgress(tabId);
 
+            // NOUVEAU: Scroll vers le haut de la page
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Alternative pour mobile si le smooth scroll ne fonctionne pas
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+
             // Vibration tactile
             if (window.Utils && Utils.vibrate) {
                 Utils.vibrate(10);
@@ -368,6 +375,69 @@ class BloodBowlApp {
             this.ensureCurrentTabSelected();
             return false;
         }
+    }
+
+    getScoreSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">6</div>
+                    <div class="step-title">Score du Match</div>
+                </div>
+                <div class="score-display">
+                    <div class="team-score">
+                        <h3>${this.matchData.team1.name || 'Équipe 1'}</h3>
+                        <div class="score-controls">
+                            <button class="btn-score-minus" onclick="app.updateScore(1, -1)" title="Retirer un TD">
+                                −
+                            </button>
+                            <div class="score-numbers" id="score1">${this.matchData.team1.score || 0}</div>
+                            <button class="btn-score-plus" onclick="app.updateScore(1, 1)" title="Ajouter un TD">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    <div class="vs-separator">VS</div>
+                    <div class="team-score">
+                        <h3>${this.matchData.team2.name || 'Équipe 2'}</h3>
+                        <div class="score-controls">
+                            <button class="btn-score-minus" onclick="app.updateScore(2, -1)" title="Retirer un TD">
+                                −
+                            </button>
+                            <div class="score-numbers" id="score2">${this.matchData.team2.score || 0}</div>
+                            <button class="btn-score-plus" onclick="app.updateScore(2, 1)" title="Ajouter un TD">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn btn-secondary" onclick="app.resetScore()">
+                        🔄 Réinitialiser le score
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Nouvelle méthode pour gérer les scores avec +1/-1
+    updateScore(team, delta) {
+        const currentScore = this.matchData[`team${team}`].score || 0;
+        const newScore = Math.max(0, currentScore + delta); // Empêcher les scores négatifs
+
+        this.matchData[`team${team}`].score = newScore;
+        document.getElementById(`score${team}`).textContent = newScore;
+        this.saveState();
+
+        // Vibration pour feedback
+        Utils.vibrate(30);
+
+        // Animation visuelle du changement
+        const scoreElement = document.getElementById(`score${team}`);
+        scoreElement.classList.add('score-updated');
+        setTimeout(() => {
+            scoreElement.classList.remove('score-updated');
+        }, 300);
     }
 
     ensureCurrentTabSelected() {
@@ -2655,9 +2725,17 @@ class BloodBowlApp {
         `;
     }
 
+
     getPrayerSection() {
         const prayer = this.matchData.prayer || { effect: '', rolled: false, dice: null };
         const prayerCount = this.calculatePrayerCount();
+
+        // Déterminer qui peut prier (l'outsider = équipe avec VEA la plus faible)
+        const team1VEA = parseInt(this.matchData.team1.vea) || 0;
+        const team2VEA = parseInt(this.matchData.team2.vea) || 0;
+        const canPray = team1VEA !== team2VEA; // Il faut une différence de VEA
+        const outsiderTeam = team1VEA < team2VEA ? this.matchData.team1.name :
+                             team2VEA < team1VEA ? this.matchData.team2.name : null;
 
         return `
             <div class="step-section">
@@ -2669,25 +2747,36 @@ class BloodBowlApp {
                     <p><strong>Règle :</strong> L'outsider (équipe avec VEA la plus faible) peut prier Nuffle</p>
                     <p>1 prière par tranche de 50 000 PO d'écart entre les VEA</p>
                     <p>Les effets durent généralement jusqu'à la fin de la phase (mi-temps ou TD)</p>
+                    ${!canPray ?
+                        '<p style="color: #dc3545; font-weight: bold;">⚠️ Aucune équipe ne peut prier (VEA identiques)</p>' :
+                        `<p style="color: #28a745; font-weight: bold;">✅ ${outsiderTeam} peut prier (${prayerCount} prière${prayerCount > 1 ? 's' : ''})</p>`
+                    }
                 </div>
                 <div class="dice-controls">
                     <button class="dice-btn" data-dice-type="prayer"
-                        ${prayerCount > 0 ? '' : 'disabled'}>
-                        🙏 Prière à Nuffle (D8)
+                        ${canPray && prayerCount > 0 ? '' : 'disabled'}
+                        ${!canPray ? 'title="Aucune équipe ne peut prier car les VEA sont identiques"' :
+                          prayerCount === 0 ? 'title="Pas assez d\'écart de VEA pour prier (minimum 50 000 PO)"' : ''}>
+                        🙏 Prière à Nuffle (D8) ${!canPray || prayerCount === 0 ? '(Non disponible)' : ''}
                     </button>
                     <input type="number" class="dice-result" id="prayer-result"
                         value="${prayer.dice || ''}" min="1" max="8"
-                        data-field="prayerDice">
+                        data-field="prayerDice"
+                        ${!canPray || prayerCount === 0 ? 'disabled' : ''}>
                 </div>
                 <div id="prayer-description" class="result-box" style="${prayer.effect ? '' : 'display: none;'}">
-                    ${prayer.effect ? `<p>Résultat de la Prière (${prayer.dice}) : <strong>${prayer.effect}</strong></p>` : ''}
-                </div>
-                <div id="prayer-info" class="help-text">
-                    ${this.getPrayerInfoText()}
+                    ${prayer.effect ? `<p>${prayer.effect}</p>` : ''}
                 </div>
             </div>
         `;
     }
+
+
+
+
+
+
+
 
     getCoinFlipSection() {
         const coinFlip = this.matchData.coinFlip;
