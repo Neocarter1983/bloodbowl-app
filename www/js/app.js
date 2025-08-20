@@ -377,7 +377,7 @@ class BloodBowlApp {
         }
     }
 
-    getScoreSection() {
+    getScoreDisplay() {
         return `
             <div class="step-section">
                 <div class="step-header">
@@ -3425,33 +3425,6 @@ class BloodBowlApp {
         return list;
     }
 
-    getScoreDisplay() {
-        const team1 = this.matchData.team1;
-        const team2 = this.matchData.team2;
-
-        return `
-            <div class="score-display">
-                <h2>⚽ SCORE ACTUEL</h2>
-                <div class="score-numbers">
-                    <div class="team-score">
-                        <div class="score" id="score1">${team1.score}</div>
-                        <div class="name">${team1.name || 'Équipe 1'}</div>
-                    </div>
-                    <div class="vs">VS</div>
-                    <div class="team-score">
-                        <div class="score" id="score2">${team2.score}</div>
-                        <div class="name">${team2.name || 'Équipe 2'}</div>
-                    </div>
-                </div>
-                <div class="score-controls">
-                    <button class="dice-btn" onclick="app.addTouchdown(1)">🏈 TD ${team1.name || 'Équipe 1'}</button>
-                    <button class="dice-btn" onclick="app.addTouchdown(2)">🏈 TD ${team2.name || 'Équipe 2'}</button>
-                    <button class="dice-btn" onclick="app.resetScore()" style="background: #dc3545;">🔄 Reset Score</button>
-                </div>
-            </div>
-        `;
-    }
-
     getKickoffSection() {
         const kickoffEvents = this.matchData.kickoffEvents || [];
 
@@ -4512,50 +4485,6 @@ class BloodBowlApp {
                 indicator.remove();
             }
         }, 1000);
-    }
-
-    getScoreDisplay() {
-        const team1 = this.matchData.team1;
-        const team2 = this.matchData.team2;
-
-        return `
-            <div class="score-display">
-                <h2>⚽ SCORE ACTUEL</h2>
-
-                <div class="match-timer">
-                    <div class="timer-display">
-                        <span class="timer-icon">⏱️</span>
-                        <span id="match-timer">00:00</span>
-                    </div>
-                    <div class="timer-controls">
-                        <button class="timer-btn ${this.matchData.timerRunning ? 'pause' : 'play'}"
-                            onclick="app.toggleTimer()">
-                            ${this.matchData.timerRunning ? '⏸️ Pause' : '▶️ Démarrer'}
-                        </button>
-                        <button class="timer-btn reset" onclick="app.resetTimer()">
-                            🔄 Reset
-                        </button>
-                    </div>
-                </div>
-
-                <div class="score-numbers">
-                    <div class="team-score">
-                        <div class="score" id="score1">${team1.score}</div>
-                        <div class="name">${team1.name || 'Équipe 1'}</div>
-                    </div>
-                    <div class="vs">VS</div>
-                    <div class="team-score">
-                        <div class="score" id="score2">${team2.score}</div>
-                        <div class="name">${team2.name || 'Équipe 2'}</div>
-                    </div>
-                </div>
-                <div class="score-controls">
-                    <button class="dice-btn" onclick="app.addTouchdown(1)">🏈 TD ${team1.name || 'Équipe 1'}</button>
-                    <button class="dice-btn" onclick="app.addTouchdown(2)">🏈 TD ${team2.name || 'Équipe 2'}</button>
-                    <button class="dice-btn" onclick="app.resetScore()" style="background: #dc3545;">🔄 Reset Score</button>
-                </div>
-            </div>
-        `;
     }
 
     // Gestion du chronomètre
