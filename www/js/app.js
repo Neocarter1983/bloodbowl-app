@@ -596,6 +596,7 @@ class BloodBowlApp {
                     <p><strong>4.</strong> Cliquez sur "TD" quand une équipe marque</p>
                 </div>
 
+                ${this.getDiceInfoBox()}
                 ${this.getScoreDisplay()}
                 ${this.getKickoffSection()}
                 ${this.getPlayersActionsSection()}
@@ -622,6 +623,7 @@ class BloodBowlApp {
                     <p><strong>5.</strong> Gestion des erreurs coûteuses si trop de trésorerie</p>
                 </div>
 
+                ${this.getDiceInfoBox()}
                 ${this.getMatchGainsSection()}
                 ${this.getFansUpdateSection()}
                 ${this.getExperienceSection()}
@@ -2103,14 +2105,6 @@ class BloodBowlApp {
                     <p><strong>4.</strong> Une fois terminé, passez à l'onglet "Avant-Match"</p>
                 </div>
 
-                ${validation.show ? `
-                    <div class="validation-status ${validation.canNavigate ? 'success' : 'warning'}">
-                        ${validation.canNavigate ?
-                            '✅ Toutes les informations requises sont remplies' :
-                            `⚠️ Informations manquantes : ${validation.missing.join(', ')}`}
-                    </div>
-                ` : ''}
-
                 <div class="teams-setup">
                     ${this.getTeamCardHTML(1, 'Domicile', '🏠')}
                     ${this.getTeamCardHTML(2, 'Visiteur', '🚌')}
@@ -2315,27 +2309,6 @@ class BloodBowlApp {
 
         const validation = window.navigationManager.canNavigateTo('prematch', this.matchData);
 
-        // Mettre à jour le message de validation
-        let statusDiv = document.querySelector('.validation-status');
-        if (!statusDiv) {
-            // Créer le div s'il n'existe pas
-            const container = document.querySelector('.teams-setup');
-            if (container) {
-                statusDiv = document.createElement('div');
-                statusDiv.className = 'validation-status';
-                container.parentNode.insertBefore(statusDiv, container);
-            }
-        }
-
-        if (statusDiv) {
-            statusDiv.className = `validation-status ${validation.canNavigate ? 'success' : 'warning'}`;
-            if (validation.canNavigate) {
-                statusDiv.innerHTML = '✅ Toutes les informations requises sont remplies';
-            } else {
-                statusDiv.innerHTML = `⚠️ Informations manquantes : <strong>${validation.missing.join(', ')}</strong>`;
-            }
-        }
-
         // Mettre à jour le bouton
         const nextButton = document.querySelector('.btn-next-tab');
         if (nextButton) {
@@ -2521,6 +2494,8 @@ class BloodBowlApp {
                 <p><strong>4.</strong> L'outsider peut invoquer Nuffle</p>
                 <p><strong>5.</strong> Déterminez qui engage en premier</p>
             </div>
+
+            ${this.getDiceInfoBox()}
         `;
 
         try {
@@ -3151,7 +3126,7 @@ class BloodBowlApp {
                         <label>Trésorerie disponible :</label>
                         <input type="number" id="team1-treasury"
                             placeholder="0" min="0" step="1000"
-                            value="${this.matchData.inducements.team1Treasury}"
+                            value="${this.matchData.inducements.team1Treasury || this.matchData.team1.treasury || 0}"
                             onchange="app.updateInducementBudget(1)">
                         <span>PO</span>
                     </div>
@@ -3188,7 +3163,7 @@ class BloodBowlApp {
                         <label>Trésorerie disponible :</label>
                         <input type="number" id="team2-treasury"
                             placeholder="0" min="0" step="1000"
-                            value="${this.matchData.inducements.team2Treasury}"
+                            value="${this.matchData.inducements.team2Treasury || this.matchData.team2.treasury || 0}"
                             onchange="app.updateInducementBudget(2)">
                         <span>PO</span>
                     </div>
@@ -4894,6 +4869,19 @@ class BloodBowlApp {
         };
 
         return configs[field] || { type: field, required: false };
+    }
+
+    // Fonction utilitaire pour la boîte d'information des dés
+    getDiceInfoBox() {
+        return `
+            <div class="dice-info-box">
+                <div class="info-icon">🎲</div>
+                <div class="info-text">
+                    <strong>Info :</strong> Tous les tirages automatiques peuvent être réalisés <strong>manuellement</strong> par les joueurs.
+                    Vous pouvez cliquer sur les boutons de dés ou saisir directement les résultats dans les champs.
+                </div>
+            </div>
+        `;
     }
 
 }

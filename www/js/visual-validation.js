@@ -347,9 +347,6 @@ class VisualValidationSystem {
             }
         });
 
-        // Mettre à jour le statut global
-        this.updateGlobalStatus(allValid, missingFields);
-
         // Mettre à jour les boutons de navigation
         this.updateNavigationButtons(allValid);
 
@@ -357,49 +354,6 @@ class VisualValidationSystem {
         window.dispatchEvent(new CustomEvent('validationUpdate', {
             detail: { valid: allValid, missing: missingFields }
         }));
-    }
-
-    // Mettre à jour le statut global
-    updateGlobalStatus(isValid, missingFields) {
-        let statusElement = document.querySelector('.global-validation-status');
-
-        if (!statusElement) {
-            // Créer l'élément s'il n'existe pas
-            const container = document.querySelector('.teams-setup');
-            if (container) {
-                statusElement = document.createElement('div');
-                statusElement.className = 'global-validation-status';
-                container.parentNode.insertBefore(statusElement, container);
-            }
-        }
-
-        if (statusElement) {
-            if (isValid) {
-                statusElement.className = 'global-validation-status status-valid';
-                statusElement.innerHTML = `
-                    <span class="status-icon">✅</span>
-                    <span class="status-text">Toutes les informations requises sont remplies</span>
-                `;
-            } else {
-                const fieldNames = {
-                    'team1-name': 'Nom équipe 1',
-                    'team2-name': 'Nom équipe 2',
-                    'team1-vea': 'VEA équipe 1',
-                    'team2-vea': 'VEA équipe 2'
-                };
-
-                const missingText = missingFields.map(f => fieldNames[f] || f).join(', ');
-
-                statusElement.className = 'global-validation-status status-invalid';
-                statusElement.innerHTML = `
-                    <span class="status-icon">⚠️</span>
-                    <span class="status-text">Champs requis manquants : <strong>${missingText}</strong></span>
-                `;
-            }
-
-            // Animation d'apparition
-            statusElement.style.animation = 'slideIn 0.3s ease';
-        }
     }
 
     // Mettre à jour les boutons de navigation
