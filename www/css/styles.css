@@ -3171,3 +3171,62 @@ html {
 .dice-info-box strong {
     color: #0d47a1;
 }
+
+/* Affichage séparé des budgets */
+.budget-display-separated {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.budget-display-separated .budget-item {
+    padding: 12px;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+}
+
+.budget-display-separated .budget-item.warning {
+    background: #fff3cd;
+    border-color: #ffc107;
+}
+
+.budget-display-separated .budget-item.neutral {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.remaining {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.remaining.used {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.spending-breakdown {
+    margin-top: 10px;
+    padding: 10px;
+    background: #e3f2fd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.spend-line {
+    margin: 3px 0;
+}
+
+.spend-warning {
+    color: #856404;
+    background: #fff3cd;
+    padding: 5px;
+    border-radius: 3px;
+    margin-top: 5px;
+    font-weight: bold;
+}

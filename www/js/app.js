@@ -3078,6 +3078,7 @@ class BloodBowlApp {
     showInducementsModal() {
         // Créer le HTML de la modal
         const modalHTML = `
+        this.syncTreasuries();
             <div id="inducements-modal" class="modal" style="display: block;">
                 <div class="modal-content" style="max-width: 900px;">
                     <div class="modal-header">
@@ -3131,15 +3132,21 @@ class BloodBowlApp {
                         <span>PO</span>
                     </div>
 
-                    <div class="budget-display">
-                        <div class="budget-item ${team1PetiteMonnaie > 0 ? 'warning' : ''}">
-                            <div class="label">Petite Monnaie</div>
+                    <div class="budget-display-separated">
+                        <div class="budget-item ${team1PetiteMonnaie > 0 ? 'warning' : 'neutral'}">
+                            <div class="label">💰 Petite Monnaie (prioritaire)</div>
                             <div class="value">${Utils.formatNumber(team1PetiteMonnaie)} PO</div>
+                            <div class="remaining" id="team1-remaining-petite">
+                                Restant : ${Utils.formatNumber(team1PetiteMonnaie)} PO
+                            </div>
                         </div>
                         <div class="budget-item">
-                            <div class="label">Budget Total</div>
-                            <div class="value" id="team1-total-budget">
-                                ${Utils.formatNumber(team1PetiteMonnaie + this.matchData.inducements.team1Treasury)} PO
+                            <div class="label">🏦 Trésorerie (après petite monnaie)</div>
+                            <div class="value" id="team1-treasury-display">
+                                ${Utils.formatNumber(this.matchData.inducements.team1Treasury || this.matchData.team1.treasury || 0)} PO
+                            </div>
+                            <div class="remaining" id="team1-remaining-treasury">
+                                Restant : ${Utils.formatNumber(this.matchData.inducements.team1Treasury || this.matchData.team1.treasury || 0)} PO
                             </div>
                         </div>
                     </div>
@@ -3154,6 +3161,9 @@ class BloodBowlApp {
                             ${Utils.formatNumber(team1PetiteMonnaie + this.matchData.inducements.team1Treasury)}
                         </span> PO</div>
                     </div>
+
+                    <div id="team1-spending-summary"></div>
+
                 </div>
 
                 <div class="team-inducements">
@@ -3168,15 +3178,21 @@ class BloodBowlApp {
                         <span>PO</span>
                     </div>
 
-                    <div class="budget-display">
-                        <div class="budget-item ${team2PetiteMonnaie > 0 ? 'warning' : ''}">
-                            <div class="label">Petite Monnaie</div>
+                    <div class="budget-display-separated">
+                        <div class="budget-item ${team2PetiteMonnaie > 0 ? 'warning' : 'neutral'}">
+                            <div class="label">💰 Petite Monnaie (prioritaire)</div>
                             <div class="value">${Utils.formatNumber(team2PetiteMonnaie)} PO</div>
+                            <div class="remaining" id="team2-remaining-petite">
+                                Restant : ${Utils.formatNumber(team2PetiteMonnaie)} PO
+                            </div>
                         </div>
                         <div class="budget-item">
-                            <div class="label">Budget Total</div>
-                            <div class="value" id="team2-total-budget">
-                                ${Utils.formatNumber(team2PetiteMonnaie + this.matchData.inducements.team2Treasury)} PO
+                            <div class="label">🏦 Trésorerie (après petite monnaie)</div>
+                            <div class="value" id="team2-treasury-display">
+                                ${Utils.formatNumber(this.matchData.inducements.team2Treasury || this.matchData.team2.treasury || 0)} PO
+                            </div>
+                            <div class="remaining" id="team2-remaining-treasury">
+                                Restant : ${Utils.formatNumber(this.matchData.inducements.team2Treasury || this.matchData.team2.treasury || 0)} PO
                             </div>
                         </div>
                     </div>
@@ -3191,6 +3207,9 @@ class BloodBowlApp {
                             ${Utils.formatNumber(team2PetiteMonnaie + this.matchData.inducements.team2Treasury)}
                         </span> PO</div>
                     </div>
+
+                    <div id="team2-spending-summary"></div>
+
                 </div>
             </div>
         `;
@@ -3221,6 +3240,29 @@ class BloodBowlApp {
         return html;
     }
 
+    showBudgetError(team, totalCost, budget) {
+        const remaining = budget - totalCost;
+        const teamName = this.matchData[`team${team}`].name || `Équipe ${team}`;
+
+        // Affichage temporaire d'une erreur
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'budget-error';
+        errorDiv.innerHTML = `
+            <div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                ⚠️ ${teamName} : Budget insuffisant !<br>
+                Coût: ${Utils.formatNumber(totalCost)} PO<br>
+                Budget: ${Utils.formatNumber(budget)} PO<br>
+                Manque: ${Utils.formatNumber(-remaining)} PO
+            </div>
+        `;
+
+        const container = document.getElementById(`team${team}-spending-summary`);
+        if (container) {
+            container.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 3000); // Supprime après 3 secondes
+        }
+    }
+
     changeInducementQty(team, inducementName, change) {
         const inducement = AppConfig.gameData.inducements.find(ind => ind.name === inducementName);
         if (!inducement) return;
@@ -3229,15 +3271,31 @@ class BloodBowlApp {
         const currentQty = items[inducementName] || 0;
         const newQty = Math.max(0, Math.min(inducement.max, currentQty + change));
 
-        // Vérifier le budget
-        const totalCost = this.calculateInducementsCost(team, inducementName, newQty);
+        // Vérifier le budget AVANT le changement
+        const totalCostAfterChange = this.calculateInducementsCost(team, inducementName, newQty);
         const budget = this.getTeamBudget(team);
 
-        if (totalCost <= budget) {
+        console.log(`🛒 Team ${team}: Coût total: ${totalCostAfterChange}, Budget: ${budget}`);
+
+        if (totalCostAfterChange <= budget) {
             items[inducementName] = newQty;
             this.updateInducementsDisplay(team);
+            this.saveState(); // ← CORRECTION: seulement si l'achat réussit
+        } else {
+            console.log(`❌ Budget insuffisant pour l'équipe ${team}`);
+            // Optionnel : Afficher un message à l'utilisateur
+            this.showBudgetError(team, totalCostAfterChange, budget);
         }
-        this.saveState();
+    }
+
+    // NOUVELLE FONCTION : Synchroniser les trésoreries au moment d'ouvrir la modal
+    syncTreasuries() {
+        if (!this.matchData.inducements.team1Treasury && this.matchData.team1.treasury) {
+            this.matchData.inducements.team1Treasury = this.matchData.team1.treasury;
+        }
+        if (!this.matchData.inducements.team2Treasury && this.matchData.team2.treasury) {
+            this.matchData.inducements.team2Treasury = this.matchData.team2.treasury;
+        }
     }
 
     calculateInducementsCost(team, excludeName = null, overrideQty = null) {
@@ -3259,13 +3317,58 @@ class BloodBowlApp {
         const petiteMonnaie = team === 1 ?
             this.matchData.inducements.team1PetiteMonnaie :
             this.matchData.inducements.team2PetiteMonnaie;
-        const treasury = this.matchData.inducements[`team${team}Treasury`];
+
+        // CORRECTION : Récupérer la trésorerie correctement
+        let treasury = this.matchData.inducements[`team${team}Treasury`];
+
+        // Si pas encore définie, prendre depuis la configuration
+        if (!treasury) {
+            treasury = this.matchData[`team${team}`].treasury || 0;
+            this.matchData.inducements[`team${team}Treasury`] = treasury;
+        }
+
+        console.log(`💰 Team ${team} - Petite monnaie: ${petiteMonnaie}, Trésorerie: ${treasury}`);
         return petiteMonnaie + treasury;
     }
 
+    // NOUVELLE FONCTION : Calculer les dépenses par priorité
+    calculateInducementSpending(team) {
+        const totalCost = this.calculateInducementsCost(team);
+        const petiteMonnaie = team === 1 ?
+            this.matchData.inducements.team1PetiteMonnaie :
+            this.matchData.inducements.team2PetiteMonnaie;
+        const treasury = this.matchData.inducements[`team${team}Treasury`];
+
+        // Logique de priorité : d'abord petite monnaie, puis trésorerie
+        const spentFromPetiteMonnaie = Math.min(totalCost, petiteMonnaie);
+        const spentFromTreasury = Math.max(0, totalCost - petiteMonnaie);
+
+        const remainingPetiteMonnaie = petiteMonnaie - spentFromPetiteMonnaie;
+        const remainingTreasury = treasury - spentFromTreasury;
+
+        return {
+            totalCost,
+            spentFromPetiteMonnaie,
+            spentFromTreasury,
+            remainingPetiteMonnaie,
+            remainingTreasury,
+            canAfford: totalCost <= (petiteMonnaie + treasury)
+        };
+    }
+
+//    updateInducementBudget(team) {
+//        const treasuryInput = document.getElementById(`team${team}-treasury`);
+//        this.matchData.inducements[`team${team}Treasury`] = parseInt(treasuryInput.value) || 0;
+//        this.updateInducementsDisplay(team);
+//    }
+
     updateInducementBudget(team) {
         const treasuryInput = document.getElementById(`team${team}-treasury`);
-        this.matchData.inducements[`team${team}Treasury`] = parseInt(treasuryInput.value) || 0;
+        const newValue = parseInt(treasuryInput.value) || 0;
+        this.matchData.inducements[`team${team}Treasury`] = newValue;
+
+        console.log(`🏦 Équipe ${team} trésorerie mise à jour: ${newValue}`);
+
         this.updateInducementsDisplay(team);
     }
 
@@ -3276,18 +3379,47 @@ class BloodBowlApp {
             listContainer.innerHTML = this.getInducementsListHTML(team);
         }
 
-        // Mettre à jour les totaux
-        const totalCost = this.calculateInducementsCost(team);
-        const budget = this.getTeamBudget(team);
-        const remaining = budget - totalCost;
+        // NOUVEAU : Utiliser la logique de priorité
+        const spending = this.calculateInducementSpending(team);
 
+        // Mettre à jour les affichages séparés
+        const petiteRemainingEl = document.getElementById(`team${team}-remaining-petite`);
+        const treasuryRemainingEl = document.getElementById(`team${team}-remaining-treasury`);
         const totalCostEl = document.getElementById(`team${team}-total-cost`);
-        const remainingEl = document.getElementById(`team${team}-remaining-budget`);
-        const budgetEl = document.getElementById(`team${team}-total-budget`);
 
-        if (totalCostEl) totalCostEl.textContent = Utils.formatNumber(totalCost);
-        if (remainingEl) remainingEl.textContent = Utils.formatNumber(remaining);
-        if (budgetEl) budgetEl.textContent = Utils.formatNumber(budget);
+        if (petiteRemainingEl) {
+            petiteRemainingEl.innerHTML = `Restant : ${Utils.formatNumber(spending.remainingPetiteMonnaie)} PO`;
+            petiteRemainingEl.className = spending.remainingPetiteMonnaie === 0 ? 'remaining used' : 'remaining';
+        }
+
+        if (treasuryRemainingEl) {
+            treasuryRemainingEl.innerHTML = `Restant : ${Utils.formatNumber(spending.remainingTreasury)} PO`;
+        }
+
+        if (totalCostEl) {
+            totalCostEl.textContent = Utils.formatNumber(spending.totalCost);
+        }
+
+        // Afficher un résumé des dépenses
+        const summaryEl = document.getElementById(`team${team}-spending-summary`);
+        if (summaryEl) {
+            summaryEl.innerHTML = `
+                <div class="spending-breakdown">
+                    <div class="spend-line">Petite monnaie utilisée : ${Utils.formatNumber(spending.spentFromPetiteMonnaie)} PO</div>
+                    <div class="spend-line">Trésorerie utilisée : ${Utils.formatNumber(spending.spentFromTreasury)} PO</div>
+                    ${spending.remainingPetiteMonnaie > 0 ?
+                        '<div class="spend-warning">⚠️ Petite monnaie restante sera perdue !</div>' :
+                        ''}
+                </div>
+            `;
+        }
+
+        // Empêcher les achats si budget insuffisant
+        const canAfford = spending.canAfford;
+        document.querySelectorAll(`#team${team}-inducements-list .qty-btn`).forEach(btn => {
+            // Logique pour désactiver les boutons si plus de budget
+            // (à implementer selon vos besoins)
+        });
     }
 
     validateInducements() {
