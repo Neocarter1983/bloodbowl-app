@@ -3230,3 +3230,139 @@ html {
     margin-top: 5px;
     font-weight: bold;
 }
+
+/* Styles pour le résumé des dépenses */
+.spending-breakdown {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 5px;
+}
+
+.spend-line {
+    padding: 5px 0;
+    font-size: 0.95em;
+}
+
+.spend-warning {
+    margin-top: 10px;
+    padding: 8px;
+    background: #fff3cd;
+    color: #856404;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.spend-error {
+    margin-top: 10px;
+    padding: 8px;
+    background: #f8d7da;
+    color: #721c24;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* Classes pour indiquer l'état des budgets */
+.remaining.used {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.remaining.partial {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+/* Styles pour la décomposition dans l'onglet Avant-Match */
+.inducement-summary-breakdown {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.breakdown-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 0.9em;
+}
+
+.breakdown-line:first-child {
+    color: #856404; /* Couleur pour petite monnaie */
+}
+
+.breakdown-line:last-child {
+    color: #004085; /* Couleur pour trésorerie */
+}
+
+.inducement-summary-total {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Animation pour mettre en évidence les changements */
+.inducement-summary-breakdown {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Style pour la trésorerie restante */
+.breakdown-line.treasury-remaining {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.breakdown-line.treasury-remaining span:first-child {
+    color: #2c3e50;
+}
+
+.breakdown-line.treasury-remaining span:last-child {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+/* Si la trésorerie est à zéro */
+.zero-treasury {
+    color: #e74c3c !important;
+}
+
+/* Avertissement pour la petite monnaie perdue */
+.petite-monnaie-warning {
+    margin-top: 10px;
+    padding: 8px;
+    background: #fff3cd;
+    color: #856404;
+    border-radius: 4px;
+    font-size: 0.85em;
+    text-align: center;
+    border: 1px solid #ffeeba;
+}
+
+/* Amélioration visuelle de la section décomposition */
+.inducement-summary-breakdown {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 5px;
+    border-left: 3px solid #3498db;
+}
+
+/* Icônes plus visibles */
+.breakdown-line span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}

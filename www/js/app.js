@@ -3337,14 +3337,24 @@ class BloodBowlApp {
         const petiteMonnaie = team === 1 ?
             this.matchData.inducements.team1PetiteMonnaie :
             this.matchData.inducements.team2PetiteMonnaie;
-        const treasury = this.matchData.inducements[`team${team}Treasury`];
+        const treasury = this.matchData.inducements[`team${team}Treasury`] || 0;
 
         // Logique de priorité : d'abord petite monnaie, puis trésorerie
         const spentFromPetiteMonnaie = Math.min(totalCost, petiteMonnaie);
         const spentFromTreasury = Math.max(0, totalCost - petiteMonnaie);
 
-        const remainingPetiteMonnaie = petiteMonnaie - spentFromPetiteMonnaie;
-        const remainingTreasury = treasury - spentFromTreasury;
+        const remainingPetiteMonnaie = Math.max(0, petiteMonnaie - spentFromPetiteMonnaie);
+        const remainingTreasury = Math.max(0, treasury - spentFromTreasury);
+
+        // Debug pour vérifier les calculs
+        console.log(`📊 Équipe ${team} - Calcul des dépenses:`);
+        console.log(`   Total à payer: ${totalCost} PO`);
+        console.log(`   Petite monnaie disponible: ${petiteMonnaie} PO`);
+        console.log(`   Trésorerie disponible: ${treasury} PO`);
+        console.log(`   → Petite monnaie utilisée: ${spentFromPetiteMonnaie} PO`);
+        console.log(`   → Trésorerie utilisée: ${spentFromTreasury} PO`);
+        console.log(`   → Petite monnaie restante: ${remainingPetiteMonnaie} PO`);
+        console.log(`   → Trésorerie restante: ${remainingTreasury} PO`);
 
         return {
             totalCost,
@@ -3379,47 +3389,70 @@ class BloodBowlApp {
             listContainer.innerHTML = this.getInducementsListHTML(team);
         }
 
-        // NOUVEAU : Utiliser la logique de priorité
+        // Utiliser la logique de priorité
         const spending = this.calculateInducementSpending(team);
 
-        // Mettre à jour les affichages séparés
+        // Mettre à jour les affichages séparés - Petite monnaie
         const petiteRemainingEl = document.getElementById(`team${team}-remaining-petite`);
-        const treasuryRemainingEl = document.getElementById(`team${team}-remaining-treasury`);
-        const totalCostEl = document.getElementById(`team${team}-total-cost`);
-
         if (petiteRemainingEl) {
             petiteRemainingEl.innerHTML = `Restant : ${Utils.formatNumber(spending.remainingPetiteMonnaie)} PO`;
-            petiteRemainingEl.className = spending.remainingPetiteMonnaie === 0 ? 'remaining used' : 'remaining';
+            // Ajouter une classe CSS pour indiquer si tout est utilisé
+            if (spending.remainingPetiteMonnaie === 0 && spending.spentFromPetiteMonnaie > 0) {
+                petiteRemainingEl.className = 'remaining used';
+            } else if (spending.spentFromPetiteMonnaie > 0) {
+                petiteRemainingEl.className = 'remaining partial';
+            } else {
+                petiteRemainingEl.className = 'remaining';
+            }
         }
 
+        // Mettre à jour les affichages séparés - Trésorerie
+        const treasuryRemainingEl = document.getElementById(`team${team}-remaining-treasury`);
         if (treasuryRemainingEl) {
             treasuryRemainingEl.innerHTML = `Restant : ${Utils.formatNumber(spending.remainingTreasury)} PO`;
+            // Ajouter une classe CSS pour indiquer si la trésorerie est utilisée
+            if (spending.spentFromTreasury > 0) {
+                treasuryRemainingEl.className = 'remaining partial';
+            } else {
+                treasuryRemainingEl.className = 'remaining';
+            }
         }
 
+        // Mettre à jour le coût total
+        const totalCostEl = document.getElementById(`team${team}-total-cost`);
         if (totalCostEl) {
             totalCostEl.textContent = Utils.formatNumber(spending.totalCost);
         }
 
-        // Afficher un résumé des dépenses
+        // Afficher un résumé détaillé des dépenses - PARTIE CORRIGÉE
         const summaryEl = document.getElementById(`team${team}-spending-summary`);
         if (summaryEl) {
-            summaryEl.innerHTML = `
-                <div class="spending-breakdown">
-                    <div class="spend-line">Petite monnaie utilisée : ${Utils.formatNumber(spending.spentFromPetiteMonnaie)} PO</div>
-                    <div class="spend-line">Trésorerie utilisée : ${Utils.formatNumber(spending.spentFromTreasury)} PO</div>
-                    ${spending.remainingPetiteMonnaie > 0 ?
-                        '<div class="spend-warning">⚠️ Petite monnaie restante sera perdue !</div>' :
-                        ''}
-                </div>
-            `;
+            let summaryHTML = '<div class="spending-breakdown">';
+
+            // Toujours afficher les deux lignes pour la clarté
+            summaryHTML += `<div class="spend-line">Petite monnaie utilisée : ${Utils.formatNumber(spending.spentFromPetiteMonnaie)} PO</div>`;
+            summaryHTML += `<div class="spend-line">Trésorerie utilisée : ${Utils.formatNumber(spending.spentFromTreasury)} PO</div>`;
+
+            // Avertissement si petite monnaie non utilisée
+            if (spending.remainingPetiteMonnaie > 0) {
+                summaryHTML += `<div class="spend-warning">⚠️ ${Utils.formatNumber(spending.remainingPetiteMonnaie)} PO de petite monnaie non utilisée seront perdues !</div>`;
+            }
+
+            // Avertissement si budget insuffisant
+            if (!spending.canAfford) {
+                summaryHTML += '<div class="spend-error">❌ Budget insuffisant !</div>';
+            }
+
+            summaryHTML += '</div>';
+            summaryEl.innerHTML = summaryHTML;
         }
 
-        // Empêcher les achats si budget insuffisant
-        const canAfford = spending.canAfford;
-        document.querySelectorAll(`#team${team}-inducements-list .qty-btn`).forEach(btn => {
-            // Logique pour désactiver les boutons si plus de budget
-            // (à implementer selon vos besoins)
-        });
+        // Mettre à jour le budget restant total
+        const remainingBudgetEl = document.getElementById(`team${team}-remaining-budget`);
+        if (remainingBudgetEl) {
+            const totalRemaining = spending.remainingPetiteMonnaie + spending.remainingTreasury;
+            remainingBudgetEl.textContent = Utils.formatNumber(totalRemaining);
+        }
     }
 
     validateInducements() {
@@ -3445,6 +3478,10 @@ class BloodBowlApp {
             return '';
         }
 
+        // Calculer les dépenses détaillées pour chaque équipe
+        const team1Spending = this.calculateInducementSpending(1);
+        const team2Spending = this.calculateInducementSpending(2);
+
         let html = '<div class="selected-inducements-display">';
 
         // Équipe 1
@@ -3465,11 +3502,43 @@ class BloodBowlApp {
                 `;
             });
 
-            const total1 = team1Inducements.reduce((sum, item) => sum + item.totalCost, 0);
+            // Afficher le total et la décomposition
             html += `
                         <div class="inducement-summary-total">
-                            <span>Total :</span>
-                            <span>${Utils.formatNumber(total1)} PO</span>
+                            <span>Total dépensé :</span>
+                            <span>${Utils.formatNumber(team1Spending.totalCost)} PO</span>
+                        </div>
+                        <div class="inducement-summary-breakdown">
+                            <div class="breakdown-line">
+                                <span>💰 Petite monnaie utilisée :</span>
+                                <span>${Utils.formatNumber(team1Spending.spentFromPetiteMonnaie)} PO</span>
+                            </div>
+                            <div class="breakdown-line">
+                                <span>🏦 Trésorerie utilisée :</span>
+                                <span>${Utils.formatNumber(team1Spending.spentFromTreasury)} PO</span>
+                            </div>
+            `;
+
+            // NOUVEAU : Ajouter la trésorerie restante
+            html += `
+                            <div class="breakdown-line treasury-remaining">
+                                <span>💎 Trésorerie restante :</span>
+                                <span class="${team1Spending.remainingTreasury === 0 ? 'zero-treasury' : ''}">
+                                    ${Utils.formatNumber(team1Spending.remainingTreasury)} PO
+                                </span>
+                            </div>
+            `;
+
+            // Avertissement si petite monnaie perdue
+            if (team1Spending.remainingPetiteMonnaie > 0) {
+                html += `
+                            <div class="petite-monnaie-warning">
+                                ⚠️ ${Utils.formatNumber(team1Spending.remainingPetiteMonnaie)} PO de petite monnaie non utilisée (perdue)
+                            </div>
+                `;
+            }
+
+            html += `
                         </div>
                     </div>
                 </div>
@@ -3494,11 +3563,43 @@ class BloodBowlApp {
                 `;
             });
 
-            const total2 = team2Inducements.reduce((sum, item) => sum + item.totalCost, 0);
+            // Afficher le total et la décomposition
             html += `
                         <div class="inducement-summary-total">
-                            <span>Total :</span>
-                            <span>${Utils.formatNumber(total2)} PO</span>
+                            <span>Total dépensé :</span>
+                            <span>${Utils.formatNumber(team2Spending.totalCost)} PO</span>
+                        </div>
+                        <div class="inducement-summary-breakdown">
+                            <div class="breakdown-line">
+                                <span>💰 Petite monnaie utilisée :</span>
+                                <span>${Utils.formatNumber(team2Spending.spentFromPetiteMonnaie)} PO</span>
+                            </div>
+                            <div class="breakdown-line">
+                                <span>🏦 Trésorerie utilisée :</span>
+                                <span>${Utils.formatNumber(team2Spending.spentFromTreasury)} PO</span>
+                            </div>
+            `;
+
+            // NOUVEAU : Ajouter la trésorerie restante
+            html += `
+                            <div class="breakdown-line treasury-remaining">
+                                <span>💎 Trésorerie restante :</span>
+                                <span class="${team2Spending.remainingTreasury === 0 ? 'zero-treasury' : ''}">
+                                    ${Utils.formatNumber(team2Spending.remainingTreasury)} PO
+                                </span>
+                            </div>
+            `;
+
+            // Avertissement si petite monnaie perdue
+            if (team2Spending.remainingPetiteMonnaie > 0) {
+                html += `
+                            <div class="petite-monnaie-warning">
+                                ⚠️ ${Utils.formatNumber(team2Spending.remainingPetiteMonnaie)} PO de petite monnaie non utilisée (perdue)
+                            </div>
+                `;
+            }
+
+            html += `
                         </div>
                     </div>
                 </div>
