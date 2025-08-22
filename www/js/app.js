@@ -3995,13 +3995,138 @@ class BloodBowlApp {
                         🎲 Lancer 2D6 pour l'Événement
                     </button>
                     <input type="number" class="dice-result" id="kickoff-result"
-                        value="" min="2" max="12" onchange="app.updateKickoffEvent()">
+                        value="" min="2" max="12"
+                        onchange="app.updateKickoffEvent()">
                 </div>
                 <div id="kickoff-description" class="result-box" style="display: none;"></div>
 
                 ${this.getKickoffHistory()}
             </div>
         `;
+    }
+
+    rollKickoffEvent() {
+        const roll = Utils.getRandomInt(2, 12);
+        const resultInput = document.getElementById('kickoff-result');
+
+        if (resultInput) {
+            // Animation visuelle du dé
+            resultInput.style.backgroundColor = '#fffacd';
+            resultInput.value = roll;
+
+            // Déclencher manuellement l'événement onchange
+            this.updateKickoffEvent();
+
+            // Remettre la couleur normale après l'animation
+            setTimeout(() => {
+                resultInput.style.backgroundColor = '';
+            }, 500);
+        }
+
+        // Feedback tactile
+        Utils.vibrate(50);
+    }
+
+// === CORRECTIONS POUR www/js/app.js ===
+
+// 1. REMPLACER la méthode getKickoffSection() par cette version corrigée :
+
+    getKickoffSection() {
+        const kickoffEvents = this.matchData.kickoffEvents || [];
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">6</div>
+                    <div class="step-title">Événements du Coup d'Envoi</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> À chaque coup d'envoi (début de match, après un TD), lancez 2D6</p>
+                    <p>L'événement peut donner des bonus, permettre des actions spéciales, ou modifier le jeu</p>
+                </div>
+                <div class="dice-controls">
+                    <button class="dice-btn" data-dice-type="kickoff" onclick="app.rollKickoffEvent()">
+                        🎲 Lancer 2D6 pour l'Événement
+                    </button>
+                    <input type="number" class="dice-result" id="kickoff-result"
+                        value="" min="2" max="12"
+                        onchange="app.updateKickoffEvent()">
+                </div>
+                <div id="kickoff-description" class="result-box" style="display: none;"></div>
+
+                ${this.getKickoffHistory()}
+            </div>
+        `;
+    }
+
+// 2. REMPLACER la méthode updateKickoffEvent() pour éviter le rechargement complet :
+
+    updateKickoffEvent() {
+        const roll = parseInt(document.getElementById('kickoff-result').value) || 0;
+
+        const kickoffEvents = {
+            2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
+            3: "⏱️ Temps mort : si l'une des 2 équipes est au tour 4,5,6 le curseur est reculé d'une case. Sinon le curseur avance d'1 case.",
+            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être placés différemment.",
+            5: "⬆️ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle.",
+            6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders, le meilleur a droit à un jet sur le tableau des prières à Nuffle.",
+            7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants, le meilleur a droit à une relance pour la phase.",
+            8: "🌤️ Météo capricieuse : refaire le jet de météo ; si le résultat est condition idéale, le ballon ricoche.",
+            9: "⚡ Surprise : 1d3+1 joueurs de l'équipe en réception peuvent bouger d'une case.",
+            10: "💥 Blitz : 1d3+1 joueurs « démarqués » de l'équipe qui engage peuvent être activés pour une action de M.",
+            11: "🎭 Arbitre officieux : chaque coach jette 1d6+FP, le plus mauvais résultat désigne 1 joueur au hasard.",
+            12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP, le plus mauvais désigne 1d3 de ses joueurs au hasard."
+        };
+
+        if (roll >= 2 && roll <= 12) {
+            const event = kickoffEvents[roll] || "Événement inconnu.";
+
+            // Ajouter à l'historique
+            if (!this.matchData.kickoffEvents) {
+                this.matchData.kickoffEvents = [];
+            }
+            this.matchData.kickoffEvents.push(event);
+
+            // Mettre à jour l'affichage de la description
+            const descDiv = document.getElementById('kickoff-description');
+            if (descDiv) {
+                descDiv.style.display = 'block';
+                descDiv.className = 'result-box warning';
+                descDiv.innerHTML = `<p>Événement du Coup d'Envoi (${roll}) : <strong>${event}</strong></p>`;
+            }
+
+            // Mettre à jour UNIQUEMENT l'historique sans recharger tout l'onglet
+            const historyContainer = document.querySelector('.kickoff-history');
+            if (historyContainer) {
+                historyContainer.outerHTML = this.getKickoffHistory();
+            }
+
+            this.saveState();
+        }
+    }
+
+// 3. AMÉLIORER la méthode rollKickoffEvent() pour un meilleur feedback :
+
+    rollKickoffEvent() {
+        const roll = Utils.getRandomInt(2, 12);
+        const resultInput = document.getElementById('kickoff-result');
+
+        if (resultInput) {
+            // Animation visuelle du dé
+            resultInput.style.backgroundColor = '#fffacd';
+            resultInput.value = roll;
+
+            // Déclencher manuellement l'événement onchange
+            this.updateKickoffEvent();
+
+            // Remettre la couleur normale après l'animation
+            setTimeout(() => {
+                resultInput.style.backgroundColor = '';
+            }, 500);
+        }
+
+        // Feedback tactile
+        Utils.vibrate(50);
     }
 
     getKickoffHistory() {
@@ -4015,17 +4140,32 @@ class BloodBowlApp {
             <div class="kickoff-history">
                 <h5>📜 Historique des événements</h5>
                 <div class="history-list">
-                    ${events.map((event, index) => `
-                        <div class="history-item">
-                            <span class="history-number">${index + 1}</span>
-                            <span class="history-text">${event}</span>
-                            <button class="btn-remove-event"
-                                onclick="app.removeKickoffEvent(${index})"
-                                title="Supprimer cet événement">
-                                ❌
-                            </button>
-                        </div>
-                    `).join('')}
+                    ${events.map((event, index) => {
+                        // Extraire le numéro du jet de l'événement s'il existe
+                        const match = event.match(/\((\d+)\)/);
+                        const rollNumber = match ? match[1] : '';
+
+                        return `
+                            <div class="history-item">
+                                <span class="history-number">
+                                    ${index + 1}${rollNumber ? ` (${rollNumber})` : ''}
+                                </span>
+                                <span class="history-text">${event}</span>
+                                <div class="history-actions">
+                                    <button class="btn-edit-event"
+                                        onclick="app.editKickoffEvent(${index})"
+                                        title="Modifier cet événement">
+                                        ✏️
+                                    </button>
+                                    <button class="btn-remove-event"
+                                        onclick="app.removeKickoffEvent(${index})"
+                                        title="Supprimer cet événement">
+                                        ❌
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
@@ -4044,6 +4184,40 @@ class BloodBowlApp {
 
             // Feedback tactile
             Utils.vibrate(20);
+        }
+    }
+
+    editKickoffEvent(index) {
+        const events = this.matchData.kickoffEvents || [];
+        if (index >= 0 && index < events.length) {
+            const newRoll = prompt("Entrez le nouveau résultat (2-12) :", "");
+            if (newRoll) {
+                const roll = parseInt(newRoll);
+                if (roll >= 2 && roll <= 12) {
+                    const kickoffEvents = {
+                        2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
+                        3: "⏱️ Temps mort : si l'une des 2 équipes est au tour 4,5,6 le curseur est reculé d'une case.",
+                        4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être placés différemment.",
+                        5: "⬆️ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle.",
+                        6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders.",
+                        7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants.",
+                        8: "🌤️ Météo capricieuse : refaire le jet de météo.",
+                        9: "⚡ Surprise : 1d3+1 joueurs de l'équipe en réception peuvent bouger d'une case.",
+                        10: "💥 Blitz : 1d3+1 joueurs « démarqués » de l'équipe qui engage peuvent être activés.",
+                        11: "🎭 Arbitre officieux : chaque coach jette 1d6+FP.",
+                        12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP."
+                    };
+
+                    this.matchData.kickoffEvents[index] = kickoffEvents[roll];
+                    this.saveState();
+
+                    // Rafraîchir l'affichage
+                    const historyContainer = document.querySelector('.kickoff-history');
+                    if (historyContainer) {
+                        historyContainer.outerHTML = this.getKickoffHistory();
+                    }
+                }
+            }
         }
     }
 
@@ -4233,16 +4407,16 @@ class BloodBowlApp {
 
         const kickoffEvents = {
             2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
-            3: "💥 Temps mort : si l'une des 2 équipes est au tour 4,5,6 le curseur est reculé d'une case. Sinon le curseur avance d'1 case.",
-            4: "🤩 Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être placés différemment mais dans le respect des règles de placement.",
-            5: "➡ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle sans tenir compte de son mouvement.",
-            6: "🏈 Fan en folie : chaque coach jette 1d6+cheerleaders, le meilleur a droit a un jet sur le tableau des prières a Nuffle.",
-            7: "🙌 Coaching brillant : chaque coach jette 1d6+assistants, le meilleur a droit à une relance pour la phase (aucun si égalité).",
-            8: "📣 Météo capricieuse : refaire le jet de météo ; si le résultat est condition idéale, le ballon ricoche.",
-            9: "🚧 Surprise : 1d3+1 joueurs de l'équipe en réception peuvent bouger d'une case.",
-            10: "⭐ Blitz : 1d3+1 joueurs « démarqués » de l'équipe qui engage peuvent être activés pour une action de M, l'un d'entre eux peut faire 1 blitz, un autre peut lancer un coéquipier. Ce tour gratuit s'arrête si un joueur chute ou est plaqué.",
-            11: "🚨 Arbitre officieux : chaque coach jette 1d6+FP, le coach ayant le plus mauvais résultat désigne 1 joueur de ses joueurs, sur le terrain, au hasard (si égalité les deux coachs choisissent au hasard). Sur 2+ avec 1d6, ce joueur est « mis a terre » « sonné ». Sur un 1 il est expulsé.",
-            12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP, le plus mauvais désigne 1d3 de ses joueurs, sur le terrain, au hasard (si égalité les deux coachs désignent 1d3 joueurs au hasard). Ces joueurs sont « mis à terre » « sonnés »."
+            3: "⏱️ Temps mort : si l'une des 2 équipes est au tour 4,5,6 le curseur est reculé d'une case. Sinon le curseur avance d'1 case.",
+            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être placés différemment.",
+            5: "⬆️ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle.",
+            6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders, le meilleur a droit à un jet sur le tableau des prières à Nuffle.",
+            7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants, le meilleur a droit à une relance pour la phase.",
+            8: "🌤️ Météo capricieuse : refaire le jet de météo ; si le résultat est condition idéale, le ballon ricoche.",
+            9: "⚡ Surprise : 1d3+1 joueurs de l'équipe en réception peuvent bouger d'une case.",
+            10: "💥 Blitz : 1d3+1 joueurs « démarqués » de l'équipe qui engage peuvent être activés pour une action de M.",
+            11: "🎭 Arbitre officieux : chaque coach jette 1d6+FP, le plus mauvais résultat désigne 1 joueur au hasard.",
+            12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP, le plus mauvais désigne 1d3 de ses joueurs au hasard."
         };
 
         if (roll >= 2 && roll <= 12) {
@@ -4254,14 +4428,19 @@ class BloodBowlApp {
             }
             this.matchData.kickoffEvents.push(event);
 
-            // Mettre à jour l'affichage
+            // Mettre à jour l'affichage de la description
             const descDiv = document.getElementById('kickoff-description');
-            descDiv.style.display = 'block';
-            descDiv.className = 'result-box warning';
-            descDiv.innerHTML = `<p>Événement du Coup d'Envoi (${roll}) : <strong>${event}</strong></p>`;
+            if (descDiv) {
+                descDiv.style.display = 'block';
+                descDiv.className = 'result-box warning';
+                descDiv.innerHTML = `<p>Événement du Coup d'Envoi (${roll}) : <strong>${event}</strong></p>`;
+            }
 
-            // Rafraîchir l'historique
-            this.loadTab('match');
+            // Mettre à jour UNIQUEMENT l'historique sans recharger tout l'onglet
+            const historyContainer = document.querySelector('.kickoff-history');
+            if (historyContainer) {
+                historyContainer.outerHTML = this.getKickoffHistory();
+            }
 
             this.saveState();
         }

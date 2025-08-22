@@ -3562,3 +3562,158 @@ html {
     font-weight: bold;
     color: #2e7d32;
 }
+
+/* === STYLES À AJOUTER DANS www/css/styles.css === */
+
+/* Historique des événements de coup d'envoi */
+.kickoff-history {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.kickoff-history h5 {
+    color: var(--primary-color);
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s ease;
+}
+
+.history-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.history-number {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.9em;
+    min-width: 30px;
+    text-align: center;
+}
+
+.history-text {
+    flex: 1;
+    font-size: 0.95em;
+    line-height: 1.4;
+}
+
+.history-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.btn-edit-event,
+.btn-remove-event {
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-edit-event {
+    color: #1976d2;
+}
+
+.btn-edit-event:hover {
+    background: #e3f2fd;
+    border-color: #1976d2;
+}
+
+.btn-remove-event {
+    color: #d32f2f;
+}
+
+.btn-remove-event:hover {
+    background: #ffebee;
+    border-color: #d32f2f;
+}
+
+/* Animation pour le jet de dé */
+@keyframes diceRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(1.1); }
+    50% { transform: rotate(180deg) scale(1); }
+    75% { transform: rotate(270deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+.dice-rolling {
+    animation: diceRoll 0.5s ease-in-out;
+}
+
+/* Style pour l'input quand il est modifié automatiquement */
+#kickoff-result {
+    transition: background-color 0.3s ease;
+}
+
+#kickoff-result.highlight {
+    background-color: #fffacd !important;
+}
+
+/* Amélioration du résultat d'événement */
+#kickoff-description {
+    margin-top: 15px;
+}
+
+#kickoff-description.warning {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border: 2px solid #ff9800;
+}
+
+#kickoff-description p {
+    margin: 0;
+    color: #333;
+}
+
+#kickoff-description strong {
+    color: #e65100;
+}
+
+/* Responsive pour mobile */
+@media (max-width: 768px) {
+    .history-item {
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+
+    .history-text {
+        flex: 1 1 100%;
+        margin-top: 5px;
+        font-size: 0.9em;
+    }
+
+    .history-actions {
+        margin-left: auto;
+    }
+
+    .btn-edit-event,
+    .btn-remove-event {
+        padding: 6px 8px;
+        font-size: 16px;
+    }
+}
