@@ -3366,3 +3366,199 @@ html {
     align-items: center;
     gap: 5px;
 }
+
+/* === STYLES À AJOUTER DANS www/css/styles.css === */
+
+/* Compteurs d'actions */
+.action-counter-cell {
+    padding: 4px !important;
+}
+
+.action-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.counter-btn {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    color: #333;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.counter-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.counter-btn.minus {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.counter-btn.minus:hover {
+    background: #c62828;
+    color: white;
+}
+
+.counter-btn.plus {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.counter-btn.plus:hover {
+    background: #2e7d32;
+    color: white;
+}
+
+.counter-value {
+    min-width: 20px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+    padding: 0 2px;
+}
+
+/* Style spécial pour les TD (plus visible) */
+.td-counter .counter-value {
+    color: var(--primary-color);
+    font-size: 16px;
+}
+
+.td-counter .counter-btn.plus {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.td-counter .counter-btn.plus:hover {
+    background: #e65100;
+    color: white;
+}
+
+/* Modal pour sélection de TD */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 90%;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+
+.modal-content select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Ajustements pour mobile */
+@media (max-width: 768px) {
+    .action-counter {
+        gap: 2px;
+    }
+
+    .counter-btn {
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+    }
+
+    .counter-value {
+        font-size: 12px;
+        min-width: 16px;
+    }
+
+    .td-counter .counter-value {
+        font-size: 14px;
+    }
+}
+
+/* Animation pour les changements de valeur */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.counter-value.updated {
+    animation: pulse 0.3s ease;
+}
+
+/* Indicateur de total XP par équipe */
+.team-xp-total {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* Style pour le tableau récapitulatif d'XP */
+.experience-summary-table {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+}
+
+.experience-summary-table th,
+.experience-summary-table td {
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.experience-summary-table th {
+    background: var(--primary-color);
+    color: white;
+}
+
+.experience-summary-table tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.experience-summary-table .player-name {
+    text-align: left;
+    font-weight: bold;
+}
+
+.experience-summary-table .xp-total {
+    background: #e8f5e9;
+    font-weight: bold;
+    color: #2e7d32;
+}

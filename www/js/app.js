@@ -712,35 +712,330 @@ class BloodBowlApp {
     }
 
     getMatchStatsSection() {
-        const totalTD = this.matchData.team1.score + this.matchData.team2.score;
-        const totalXP = this.calculateTotalMatchXP();
-        const kickoffEventsCount = (this.matchData.kickoffEvents || []).length;
+        const team1Players = this.matchData.team1.players || [];
+        const team2Players = this.matchData.team2.players || [];
+
+        // Calculer les statistiques totales
+        let stats = {
+            team1: { td: 0, elim: 0, int: 0, reu: 0, det: 0 },
+            team2: { td: 0, elim: 0, int: 0, reu: 0, det: 0 }
+        };
+
+        team1Players.forEach(p => {
+            if (p.actions) {
+                stats.team1.td += p.actions.td || 0;
+                stats.team1.elim += p.actions.elim || 0;
+                stats.team1.int += p.actions.int || 0;
+                stats.team1.reu += p.actions.reu || 0;
+                stats.team1.det += p.actions.det || 0;
+            }
+        });
+
+        team2Players.forEach(p => {
+            if (p.actions) {
+                stats.team2.td += p.actions.td || 0;
+                stats.team2.elim += p.actions.elim || 0;
+                stats.team2.int += p.actions.int || 0;
+                stats.team2.reu += p.actions.reu || 0;
+                stats.team2.det += p.actions.det || 0;
+            }
+        });
+
+        // Trouver les meilleurs joueurs
+        const topScorers = this.getTopScorers();
+        const topEliminator = this.getTopEliminator();
 
         return `
             <div class="match-stats-section">
                 <h3>📊 Statistiques du Match</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value">${totalTD}</div>
-                        <div class="stat-label">Touchdowns totaux</div>
+
+                <div class="stats-comparison">
+                    <div class="stat-row">
+                        <span class="stat-label">${this.matchData.team1.name || 'Équipe 1'}</span>
+                        <span class="stat-name">Touchdowns</span>
+                        <span class="stat-value">${stats.team1.td} - ${stats.team2.td}</span>
+                        <span class="stat-label">${this.matchData.team2.name || 'Équipe 2'}</span>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${totalXP}</div>
-                        <div class="stat-label">XP distribuée</div>
+                    <div class="stat-row">
+                        <span class="stat-label">${stats.team1.elim}</span>
+                        <span class="stat-name">Éliminations</span>
+                        <span class="stat-value">vs</span>
+                        <span class="stat-label">${stats.team2.elim}</span>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${kickoffEventsCount}</div>
-                        <div class="stat-label">Événements</div>
+                    <div class="stat-row">
+                        <span class="stat-label">${stats.team1.int}</span>
+                        <span class="stat-name">Interceptions</span>
+                        <span class="stat-value">vs</span>
+                        <span class="stat-label">${stats.team2.int}</span>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${this.countTotalPlayers()}</div>
-                        <div class="stat-label">Joueurs totaux</div>
+                    <div class="stat-row">
+                        <span class="stat-label">${stats.team1.reu}</span>
+                        <span class="stat-name">Passes réussies</span>
+                        <span class="stat-value">vs</span>
+                        <span class="stat-label">${stats.team2.reu}</span>
                     </div>
                 </div>
 
-                ${this.matchData.mvp && this.matchData.mvp.playerId ? this.getMVPSummary() : ''}
+                <div class="top-performers">
+                    <h4>🏆 Meilleurs Joueurs</h4>
+                    ${topScorers.length > 0 ? `
+                        <div class="performer-item">
+                            <strong>Meilleur(s) marqueur(s) :</strong>
+                            ${topScorers.map(p => `${p.name} (${p.td} TD)`).join(', ')}
+                        </div>
+                    ` : ''}
+                    ${topEliminator ? `
+                        <div class="performer-item">
+                            <strong>Plus violent :</strong>
+                            ${topEliminator.name} (${topEliminator.elim} éliminations)
+                        </div>
+                    ` : ''}
+                </div>
             </div>
         `;
+    }
+
+// === AMÉLIORATION DE L'AFFICHAGE DANS L'ONGLET APRÈS-MATCH ===
+
+// REMPLACER la méthode getExperienceSection par cette version améliorée :
+
+    getExperienceSection() {
+        const team1Players = this.matchData.team1.players || [];
+        const team2Players = this.matchData.team2.players || [];
+
+        // Calculer les totaux XP
+        let team1TotalXP = 0;
+        let team2TotalXP = 0;
+
+        team1Players.forEach(p => {
+            team1TotalXP += this.calculatePlayerXP(1, p.id);
+        });
+
+        team2Players.forEach(p => {
+            team2TotalXP += this.calculatePlayerXP(2, p.id);
+        });
+
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Expérience des Joueurs</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Calcul automatique de l'XP basé sur les actions du match</strong></p>
+                    <p>REU/DET = 1 XP | INT/ELIM = 2 XP | TD = 3 XP | JDM = 4 XP</p>
+                </div>
+
+                <!-- Équipe 1 -->
+                <div class="team-experience-section">
+                    <h4>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h4>
+                    ${this.getTeamExperienceTable(1, team1Players)}
+                    <div class="team-xp-total">
+                        Total XP équipe : ${team1TotalXP} XP
+                    </div>
+                </div>
+
+                <!-- Équipe 2 -->
+                <div class="team-experience-section" style="margin-top: 20px;">
+                    <h4>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h4>
+                    ${this.getTeamExperienceTable(2, team2Players)}
+                    <div class="team-xp-total">
+                        Total XP équipe : ${team2TotalXP} XP
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getTeamExperienceTable(team, players) {
+        if (players.length === 0) {
+            return '<p style="text-align: center; color: #666;">Aucun joueur dans cette équipe</p>';
+        }
+
+        // Filtrer uniquement les joueurs qui ont fait des actions
+        const activePlayers = players.filter(p => {
+            const actions = p.actions || {};
+            return actions.reu > 0 || actions.det > 0 || actions.int > 0 ||
+                   actions.elim > 0 || actions.td > 0 || actions.jdm;
+        });
+
+        if (activePlayers.length === 0) {
+            return '<p style="text-align: center; color: #666;">Aucun joueur n\'a réalisé d\'action durant ce match</p>';
+        }
+
+        let html = `
+            <table class="experience-summary-table">
+                <thead>
+                    <tr>
+                        <th class="player-name">Joueur</th>
+                        <th>REU</th>
+                        <th>DET</th>
+                        <th>INT</th>
+                        <th>ELIM</th>
+                        <th>TD</th>
+                        <th>JDM</th>
+                        <th class="xp-total">Total XP</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        activePlayers.forEach(player => {
+            const actions = player.actions || {};
+            const xp = this.calculatePlayerXP(team, player.id);
+
+            html += `
+                <tr>
+                    <td class="player-name">${player.name || 'Joueur sans nom'}</td>
+                    <td>${actions.reu > 0 ? actions.reu : '-'}</td>
+                    <td>${actions.det > 0 ? actions.det : '-'}</td>
+                    <td>${actions.int > 0 ? actions.int : '-'}</td>
+                    <td>${actions.elim > 0 ? actions.elim : '-'}</td>
+                    <td>${actions.td > 0 ? `<strong>${actions.td}</strong>` : '-'}</td>
+                    <td>${actions.jdm ? '⭐' : '-'}</td>
+                    <td class="xp-total">${xp} XP</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        return html;
+    }
+
+// === AMÉLIORATION DU RÉSUMÉ DES STATISTIQUES ===
+
+    getMatchStatsSection() {
+        const team1Players = this.matchData.team1.players || [];
+        const team2Players = this.matchData.team2.players || [];
+
+        // Calculer les statistiques totales
+        let stats = {
+            team1: { td: 0, elim: 0, int: 0, reu: 0, det: 0 },
+            team2: { td: 0, elim: 0, int: 0, reu: 0, det: 0 }
+        };
+
+        team1Players.forEach(p => {
+            if (p.actions) {
+                stats.team1.td += p.actions.td || 0;
+                stats.team1.elim += p.actions.elim || 0;
+                stats.team1.int += p.actions.int || 0;
+                stats.team1.reu += p.actions.reu || 0;
+                stats.team1.det += p.actions.det || 0;
+            }
+        });
+
+        team2Players.forEach(p => {
+            if (p.actions) {
+                stats.team2.td += p.actions.td || 0;
+                stats.team2.elim += p.actions.elim || 0;
+                stats.team2.int += p.actions.int || 0;
+                stats.team2.reu += p.actions.reu || 0;
+                stats.team2.det += p.actions.det || 0;
+            }
+        });
+
+        // Trouver les meilleurs joueurs
+        const topScorers = this.getTopScorers();
+        const topEliminator = this.getTopEliminator();
+
+        return `
+            <div class="match-stats-section">
+                <h3>📊 Statistiques du Match</h3>
+
+                <div class="stats-comparison">
+                    <div class="stat-row">
+                        <span class="stat-label">${this.matchData.team1.name || 'Équipe 1'}</span>
+                        <span class="stat-name">Touchdowns</span>
+                        <span class="stat-value">${stats.team1.td} - ${stats.team2.td}</span>
+                        <span class="stat-label">${this.matchData.team2.name || 'Équipe 2'}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">${stats.team1.elim}</span>
+                        <span class="stat-name">Éliminations</span>
+                        <span class="stat-value">vs</span>
+                        <span class="stat-label">${stats.team2.elim}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">${stats.team1.int}</span>
+                        <span class="stat-name">Interceptions</span>
+                        <span class="stat-value">vs</span>
+                        <span class="stat-label">${stats.team2.int}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">${stats.team1.reu}</span>
+                        <span class="stat-name">Passes réussies</span>
+                        <span class="stat-value">vs</span>
+                        <span class="stat-label">${stats.team2.reu}</span>
+                    </div>
+                </div>
+
+                <div class="top-performers">
+                    <h4>🏆 Meilleurs Joueurs</h4>
+                    ${topScorers.length > 0 ? `
+                        <div class="performer-item">
+                            <strong>Meilleur(s) marqueur(s) :</strong>
+                            ${topScorers.map(p => `${p.name} (${p.td} TD)`).join(', ')}
+                        </div>
+                    ` : ''}
+                    ${topEliminator ? `
+                        <div class="performer-item">
+                            <strong>Plus violent :</strong>
+                            ${topEliminator.name} (${topEliminator.elim} éliminations)
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getTopScorers() {
+        const allPlayers = [
+            ...this.matchData.team1.players.map(p => ({...p, team: 1})),
+            ...this.matchData.team2.players.map(p => ({...p, team: 2}))
+        ];
+
+        let maxTD = 0;
+        allPlayers.forEach(p => {
+            if (p.actions && p.actions.td > maxTD) {
+                maxTD = p.actions.td;
+            }
+        });
+
+        if (maxTD === 0) return [];
+
+        return allPlayers.filter(p => p.actions && p.actions.td === maxTD)
+                        .map(p => ({
+                            name: p.name || 'Joueur sans nom',
+                            td: p.actions.td,
+                            team: p.team
+                        }));
+    }
+
+    getTopEliminator() {
+        const allPlayers = [
+            ...this.matchData.team1.players.map(p => ({...p, team: 1})),
+            ...this.matchData.team2.players.map(p => ({...p, team: 2}))
+        ];
+
+        let topPlayer = null;
+        let maxElim = 0;
+
+        allPlayers.forEach(p => {
+            if (p.actions && p.actions.elim > maxElim) {
+                maxElim = p.actions.elim;
+                topPlayer = {
+                    name: p.name || 'Joueur sans nom',
+                    elim: p.actions.elim,
+                    team: p.team
+                };
+            }
+        });
+
+        return topPlayer;
     }
 
     getTeamsSummarySection() {
@@ -3823,6 +4118,18 @@ class BloodBowlApp {
     }
 
     getPlayerRowHTML(team, player) {
+        // S'assurer que les actions existent avec des valeurs par défaut
+        if (!player.actions) {
+            player.actions = {
+                reu: 0,
+                det: 0,
+                int: 0,
+                elim: 0,
+                td: 0,
+                jdm: false
+            };
+        }
+
         return `
             <tr data-player-id="${player.id}">
                 <td>
@@ -3833,50 +4140,40 @@ class BloodBowlApp {
                         data-player="${player.id}"
                         onchange="app.updatePlayerName(${team}, '${player.id}', this.value)">
                 </td>
-                <td>
-                    <input type="checkbox" class="action-checkbox"
-                        data-team="${team}"
-                        data-player="${player.id}"
-                        data-action="reu"
-                        data-xp="1"
-                        ${player.actions && player.actions.reu ? 'checked' : ''}
-                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'reu', this.checked)">
+                <td class="action-counter-cell">
+                    <div class="action-counter">
+                        <button class="counter-btn minus" onclick="app.changePlayerAction(${team}, '${player.id}', 'reu', -1)">-</button>
+                        <span class="counter-value" id="reu-${team}-${player.id}">${player.actions.reu || 0}</span>
+                        <button class="counter-btn plus" onclick="app.changePlayerAction(${team}, '${player.id}', 'reu', 1)">+</button>
+                    </div>
                 </td>
-                <td>
-                    <input type="checkbox" class="action-checkbox"
-                        data-team="${team}"
-                        data-player="${player.id}"
-                        data-action="det"
-                        data-xp="1"
-                        ${player.actions && player.actions.det ? 'checked' : ''}
-                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'det', this.checked)">
+                <td class="action-counter-cell">
+                    <div class="action-counter">
+                        <button class="counter-btn minus" onclick="app.changePlayerAction(${team}, '${player.id}', 'det', -1)">-</button>
+                        <span class="counter-value" id="det-${team}-${player.id}">${player.actions.det || 0}</span>
+                        <button class="counter-btn plus" onclick="app.changePlayerAction(${team}, '${player.id}', 'det', 1)">+</button>
+                    </div>
                 </td>
-                <td>
-                    <input type="checkbox" class="action-checkbox"
-                        data-team="${team}"
-                        data-player="${player.id}"
-                        data-action="int"
-                        data-xp="2"
-                        ${player.actions && player.actions.int ? 'checked' : ''}
-                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'int', this.checked)">
+                <td class="action-counter-cell">
+                    <div class="action-counter">
+                        <button class="counter-btn minus" onclick="app.changePlayerAction(${team}, '${player.id}', 'int', -1)">-</button>
+                        <span class="counter-value" id="int-${team}-${player.id}">${player.actions.int || 0}</span>
+                        <button class="counter-btn plus" onclick="app.changePlayerAction(${team}, '${player.id}', 'int', 1)">+</button>
+                    </div>
                 </td>
-                <td>
-                    <input type="checkbox" class="action-checkbox"
-                        data-team="${team}"
-                        data-player="${player.id}"
-                        data-action="elim"
-                        data-xp="2"
-                        ${player.actions && player.actions.elim ? 'checked' : ''}
-                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'elim', this.checked)">
+                <td class="action-counter-cell">
+                    <div class="action-counter">
+                        <button class="counter-btn minus" onclick="app.changePlayerAction(${team}, '${player.id}', 'elim', -1)">-</button>
+                        <span class="counter-value" id="elim-${team}-${player.id}">${player.actions.elim || 0}</span>
+                        <button class="counter-btn plus" onclick="app.changePlayerAction(${team}, '${player.id}', 'elim', 1)">+</button>
+                    </div>
                 </td>
-                <td>
-                    <input type="checkbox" class="action-checkbox"
-                        data-team="${team}"
-                        data-player="${player.id}"
-                        data-action="td"
-                        data-xp="3"
-                        ${player.actions && player.actions.td ? 'checked' : ''}
-                        onchange="app.updatePlayerAction(${team}, '${player.id}', 'td', this.checked)">
+                <td class="action-counter-cell">
+                    <div class="action-counter td-counter">
+                        <button class="counter-btn minus" onclick="app.changePlayerAction(${team}, '${player.id}', 'td', -1)">-</button>
+                        <span class="counter-value" id="td-${team}-${player.id}">${player.actions.td || 0}</span>
+                        <button class="counter-btn plus" onclick="app.changePlayerAction(${team}, '${player.id}', 'td', 1)">+</button>
+                    </div>
                 </td>
                 <td>
                     <input type="checkbox" class="action-checkbox"
@@ -3896,30 +4193,39 @@ class BloodBowlApp {
 
     // Gestion du score
     addTouchdown(team) {
-        this.matchData[`team${team}`].score++;
-        document.getElementById(`score${team}`).textContent = this.matchData[`team${team}`].score;
-        this.saveState();
+        // Afficher une modal ou une liste pour sélectionner le joueur qui a marqué
+        const players = this.matchData[`team${team}`].players || [];
 
-        // Vibration pour feedback
-        Utils.vibrate(50);
-    }
-
-    resetScore() {
-        if (confirm('Êtes-vous sûr de vouloir réinitialiser le score ?')) {
-            this.matchData.team1.score = 0;
-            this.matchData.team2.score = 0;
-            document.getElementById('score1').textContent = '0';
-            document.getElementById('score2').textContent = '0';
-            this.saveState();
+        if (players.length === 0) {
+            alert("Ajoutez d'abord des joueurs à l'équipe !");
+            return;
         }
-    }
 
-    // Gestion des événements de coup d'envoi
-    rollKickoffEvent() {
-        const roll = Utils.getRandomInt(2, 12);
-        document.getElementById('kickoff-result').value = roll;
-        this.updateKickoffEvent();
-        this.saveState();
+        // Créer une liste de sélection simple
+        let playerOptions = players.map(p =>
+            `<option value="${p.id}">${p.name || 'Joueur sans nom'}</option>`
+        ).join('');
+
+        const modalHTML = `
+            <div class="modal-overlay" id="td-modal">
+                <div class="modal-content" style="max-width: 400px;">
+                    <h3>Qui a marqué le touchdown ?</h3>
+                    <select id="td-player-select" style="width: 100%; padding: 8px; margin: 10px 0;">
+                        <option value="">-- Sélectionner un joueur --</option>
+                        ${playerOptions}
+                    </select>
+                    <div style="margin-top: 15px; text-align: center;">
+                        <button class="btn btn-primary" onclick="app.confirmTouchdown(${team})">Confirmer</button>
+                        <button class="btn btn-secondary" onclick="app.closeTDModal()">Annuler</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Ajouter la modal au DOM
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = modalHTML;
+        document.body.appendChild(modalContainer);
     }
 
     updateKickoffEvent() {
@@ -4030,27 +4336,111 @@ class BloodBowlApp {
         }
     }
 
-    calculatePlayerXP(team, playerId) {
+    changePlayerAction(team, playerId, action, change) {
         const player = this.matchData[`team${team}`].players.find(p => p.id === playerId);
         if (!player) return;
 
-        let xp = 0;
-        const xpValues = {
-            reu: 1,
-            det: 1,
-            int: 2,
-            elim: 2,
-            td: 3,
-            jdm: 4
-        };
+        if (!player.actions) {
+            player.actions = {
+                reu: 0,
+                det: 0,
+                int: 0,
+                elim: 0,
+                td: 0,
+                jdm: false
+            };
+        }
 
-        Object.keys(xpValues).forEach(action => {
-            if (player.actions && player.actions[action]) {
-                xp += xpValues[action];
+        // Augmenter ou diminuer le compteur (minimum 0)
+        const currentValue = player.actions[action] || 0;
+        const newValue = Math.max(0, currentValue + change);
+        player.actions[action] = newValue;
+
+        // Mettre à jour l'affichage
+        const counterElement = document.getElementById(`${action}-${team}-${playerId}`);
+        if (counterElement) {
+            counterElement.textContent = newValue;
+        }
+
+        // Si c'est un TD, mettre à jour le score automatiquement
+        if (action === 'td') {
+            this.updateTeamScore(team);
+        }
+
+        // Recalculer l'XP total du joueur
+        this.calculatePlayerXP(team, playerId);
+
+        // Sauvegarder
+        this.saveState();
+
+        // Feedback tactile
+        Utils.vibrate(10);
+    }
+
+    updateTeamScore(team) {
+        const players = this.matchData[`team${team}`].players || [];
+        let totalTDs = 0;
+
+        players.forEach(player => {
+            if (player.actions && player.actions.td) {
+                totalTDs += player.actions.td;
             }
         });
 
-        player.xp = xp;
+        this.matchData[`team${team}`].score = totalTDs;
+
+        // Mettre à jour l'affichage du score
+        const scoreElement = document.getElementById(`score${team}`);
+        if (scoreElement) {
+            scoreElement.textContent = totalTDs;
+        }
+    }
+
+    confirmTouchdown(team) {
+        const select = document.getElementById('td-player-select');
+        const playerId = select.value;
+
+        if (!playerId) {
+            alert("Veuillez sélectionner un joueur !");
+            return;
+        }
+
+        // Ajouter le TD au joueur
+        this.changePlayerAction(team, playerId, 'td', 1);
+
+        // Fermer la modal
+        this.closeTDModal();
+
+        // Animation de célébration
+        Utils.vibrate(100);
+    }
+
+    closeTDModal() {
+        const modal = document.getElementById('td-modal');
+        if (modal && modal.parentElement) {
+            modal.parentElement.remove();
+        }
+    }
+
+
+
+
+    calculatePlayerXP(team, playerId) {
+        const player = this.matchData[`team${team}`].players.find(p => p.id === playerId);
+        if (!player || !player.actions) return 0;
+
+        let totalXP = 0;
+
+        // Calculer l'XP basé sur les compteurs
+        totalXP += (player.actions.reu || 0) * 1;   // REU = 1 XP chacun
+        totalXP += (player.actions.det || 0) * 1;   // DET = 1 XP chacun
+        totalXP += (player.actions.int || 0) * 2;   // INT = 2 XP chacun
+        totalXP += (player.actions.elim || 0) * 2;  // ELIM = 2 XP chacun
+        totalXP += (player.actions.td || 0) * 3;    // TD = 3 XP chacun
+        totalXP += player.actions.jdm ? 4 : 0;      // JDM = 4 XP (unique)
+
+        player.xp = totalXP;
+        return totalXP;
     }
 
     showPlayersTab(team) {
@@ -4149,29 +4539,112 @@ class BloodBowlApp {
     }
 
     getExperienceSection() {
+        const team1Players = this.matchData.team1.players || [];
+        const team2Players = this.matchData.team2.players || [];
+
+        // Calculer les totaux XP
+        let team1TotalXP = 0;
+        let team2TotalXP = 0;
+
+        team1Players.forEach(p => {
+            team1TotalXP += this.calculatePlayerXP(1, p.id);
+        });
+
+        team2Players.forEach(p => {
+            team2TotalXP += this.calculatePlayerXP(2, p.id);
+        });
+
         return `
             <div class="step-section">
                 <div class="step-header">
-                    <div class="step-number">10</div>
-                    <div class="step-title">Calcul de l'Expérience</div>
+                    <div class="step-number">3</div>
+                    <div class="step-title">Expérience des Joueurs</div>
                 </div>
                 <div class="explanation-box">
-                    <p><strong>Barème XP :</strong> REU/DET (1XP), INT/ELIM (2XP), TD (3XP), JDM (4XP)</p>
-                    <p>L'expérience est calculée automatiquement selon les cases cochées pendant le match</p>
+                    <p><strong>Calcul automatique de l'XP basé sur les actions du match</strong></p>
+                    <p>REU/DET = 1 XP | INT/ELIM = 2 XP | TD = 3 XP | JDM = 4 XP</p>
                 </div>
-                <div class="xp-summary-grid">
-                    <div class="team-xp-section">
-                        <h5>${this.matchData.team1.name || 'Équipe 1'}</h5>
-                        ${this.getTeamXPSummary(1)}
+
+                <!-- Équipe 1 -->
+                <div class="team-experience-section">
+                    <h4>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h4>
+                    ${this.getTeamExperienceTable(1, team1Players)}
+                    <div class="team-xp-total">
+                        Total XP équipe : ${team1TotalXP} XP
                     </div>
-                    <div class="team-xp-section">
-                        <h5>${this.matchData.team2.name || 'Équipe 2'}</h5>
-                        ${this.getTeamXPSummary(2)}
+                </div>
+
+                <!-- Équipe 2 -->
+                <div class="team-experience-section" style="margin-top: 20px;">
+                    <h4>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h4>
+                    ${this.getTeamExperienceTable(2, team2Players)}
+                    <div class="team-xp-total">
+                        Total XP équipe : ${team2TotalXP} XP
                     </div>
                 </div>
             </div>
         `;
     }
+
+    getTeamExperienceTable(team, players) {
+        if (players.length === 0) {
+            return '<p style="text-align: center; color: #666;">Aucun joueur dans cette équipe</p>';
+        }
+
+        // Filtrer uniquement les joueurs qui ont fait des actions
+        const activePlayers = players.filter(p => {
+            const actions = p.actions || {};
+            return actions.reu > 0 || actions.det > 0 || actions.int > 0 ||
+                   actions.elim > 0 || actions.td > 0 || actions.jdm;
+        });
+
+        if (activePlayers.length === 0) {
+            return '<p style="text-align: center; color: #666;">Aucun joueur n\'a réalisé d\'action durant ce match</p>';
+        }
+
+        let html = `
+            <table class="experience-summary-table">
+                <thead>
+                    <tr>
+                        <th class="player-name">Joueur</th>
+                        <th>REU</th>
+                        <th>DET</th>
+                        <th>INT</th>
+                        <th>ELIM</th>
+                        <th>TD</th>
+                        <th>JDM</th>
+                        <th class="xp-total">Total XP</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        activePlayers.forEach(player => {
+            const actions = player.actions || {};
+            const xp = this.calculatePlayerXP(team, player.id);
+
+            html += `
+                <tr>
+                    <td class="player-name">${player.name || 'Joueur sans nom'}</td>
+                    <td>${actions.reu > 0 ? actions.reu : '-'}</td>
+                    <td>${actions.det > 0 ? actions.det : '-'}</td>
+                    <td>${actions.int > 0 ? actions.int : '-'}</td>
+                    <td>${actions.elim > 0 ? actions.elim : '-'}</td>
+                    <td>${actions.td > 0 ? `<strong>${actions.td}</strong>` : '-'}</td>
+                    <td>${actions.jdm ? '⭐' : '-'}</td>
+                    <td class="xp-total">${xp} XP</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        return html;
+    }
+
 
     getPlayerSalesSection() {
         return `
