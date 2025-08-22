@@ -3978,8 +3978,6 @@ class BloodBowlApp {
     }
 
     getKickoffSection() {
-        const kickoffEvents = this.matchData.kickoffEvents || [];
-
         return `
             <div class="step-section">
                 <div class="step-header">
@@ -4059,15 +4057,13 @@ class BloodBowlApp {
         `;
     }
 
-// 2. REMPLACER la méthode updateKickoffEvent() pour éviter le rechargement complet :
-
     updateKickoffEvent() {
         const roll = parseInt(document.getElementById('kickoff-result').value) || 0;
 
         const kickoffEvents = {
             2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
             3: "⏱️ Temps mort : si le pion de l'équipe qui engage indique le tour 4,5 ou 6 (6,7 ou 8 au Blood Bowl à 11), les 2 coachs reculent leur pion de tour d'une case. Sinon, les 2 coachs avancent leur pion d'une case.",
-            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être retirés et replacés à dfes emplacements différents en suivant les règles de positionnement habituelles.",
+            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être retirés et replacés à des emplacements différents en suivant les règles de positionnement habituelles.",
             5: "⬆️ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle.",
             6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders. Le coach avec le résultat le plus élevé gagne un jet sur le tableau de prières à Nuffle. En cas d'égalité, il n'y a pas de jet de prières.",
             7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants. Le coach avec le résultat le plus élevé gagne une relance d'équipe supplémentaire pour la phase à venir. Si non utilisée, elle est perdue. En cas d'égalité, aucun coach ne gagne de relance.",
@@ -4079,20 +4075,27 @@ class BloodBowlApp {
         };
 
         if (roll >= 2 && roll <= 12) {
-            const event = kickoffEvents[roll] || "Événement inconnu.";
+            const eventText = kickoffEvents[roll] || "Événement inconnu.";
+
+            // Créer l'objet événement avec le jet et le texte
+            const eventObj = {
+                roll: roll,
+                text: eventText,
+                timestamp: Date.now()
+            };
 
             // Ajouter à l'historique
             if (!this.matchData.kickoffEvents) {
                 this.matchData.kickoffEvents = [];
             }
-            this.matchData.kickoffEvents.push(event);
+            this.matchData.kickoffEvents.push(eventObj);
 
             // Mettre à jour l'affichage de la description
             const descDiv = document.getElementById('kickoff-description');
             if (descDiv) {
                 descDiv.style.display = 'block';
                 descDiv.className = 'result-box warning';
-                descDiv.innerHTML = `<p>Événement du Coup d'Envoi (${roll}) : <strong>${event}</strong></p>`;
+                descDiv.innerHTML = `<p><strong>Résultat (${roll}):</strong> ${eventText}</p>`;
             }
 
             // Mettre à jour UNIQUEMENT l'historique sans recharger tout l'onglet
@@ -4105,23 +4108,21 @@ class BloodBowlApp {
         }
     }
 
-// 3. AMÉLIORER la méthode rollKickoffEvent() pour un meilleur feedback :
-
     rollKickoffEvent() {
         const roll = Utils.getRandomInt(2, 12);
         const resultInput = document.getElementById('kickoff-result');
 
         if (resultInput) {
             // Animation visuelle du dé
-            resultInput.style.backgroundColor = '#fffacd';
+            resultInput.classList.add('dice-rolling');
             resultInput.value = roll;
 
             // Déclencher manuellement l'événement onchange
             this.updateKickoffEvent();
 
-            // Remettre la couleur normale après l'animation
+            // Retirer l'animation après 500ms
             setTimeout(() => {
-                resultInput.style.backgroundColor = '';
+                resultInput.classList.remove('dice-rolling');
             }, 500);
         }
 
@@ -4141,16 +4142,16 @@ class BloodBowlApp {
                 <h5>📜 Historique des événements</h5>
                 <div class="history-list">
                     ${events.map((event, index) => {
-                        // Extraire le numéro du jet de l'événement s'il existe
-                        const match = event.match(/\((\d+)\)/);
-                        const rollNumber = match ? match[1] : '';
+                        // Support pour l'ancien format (string) et le nouveau format (objet)
+                        const roll = event.roll || '';
+                        const text = event.text || event;
 
                         return `
-                            <div class="history-item">
+                            <div class="history-item" data-index="${index}">
                                 <span class="history-number">
-                                    ${index + 1}${rollNumber ? ` (${rollNumber})` : ''}
+                                    ${roll ? `🎲 ${roll}` : `#${index + 1}`}
                                 </span>
-                                <span class="history-text">${event}</span>
+                                <span class="history-text">${text}</span>
                                 <div class="history-actions">
                                     <button class="btn-edit-event"
                                         onclick="app.editKickoffEvent(${index})"
@@ -4167,22 +4168,35 @@ class BloodBowlApp {
                         `;
                     }).join('')}
                 </div>
+                <div class="history-summary">
+                    <small>Total: ${events.length} événement${events.length > 1 ? 's' : ''}</small>
+                </div>
             </div>
         `;
     }
 
     removeKickoffEvent(index) {
-        if (confirm('Supprimer cet événement de l\'historique ?')) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer cet événement de l\'historique ?')) {
             // Supprimer l'événement de la liste
             this.matchData.kickoffEvents.splice(index, 1);
 
             // Sauvegarder les changements
             this.saveState();
 
-            // Rafraîchir l'affichage
-            this.loadTab('match');
+            // Mettre à jour UNIQUEMENT l'historique
+            const historyContainer = document.querySelector('.kickoff-history');
+            if (historyContainer) {
+                if (this.matchData.kickoffEvents.length === 0) {
+                    // Si plus d'événements, retirer tout le conteneur
+                    historyContainer.remove();
+                } else {
+                    // Sinon, mettre à jour le contenu
+                    historyContainer.outerHTML = this.getKickoffHistory();
+                }
+            }
 
-            // Feedback tactile
+            // Feedback
+            Utils.showNotification('Événement supprimé', 'success');
             Utils.vibrate(20);
         }
     }
@@ -4190,14 +4204,20 @@ class BloodBowlApp {
     editKickoffEvent(index) {
         const events = this.matchData.kickoffEvents || [];
         if (index >= 0 && index < events.length) {
-            const newRoll = prompt("Entrez le nouveau résultat (2-12) :", "");
-            if (newRoll) {
+            const currentEvent = events[index];
+            const currentRoll = currentEvent.roll || '';
+
+            // Demander le nouveau jet
+            const newRoll = prompt("Entrez le nouveau résultat du jet (2-12) :", currentRoll);
+
+            if (newRoll !== null && newRoll !== '') {
                 const roll = parseInt(newRoll);
+
                 if (roll >= 2 && roll <= 12) {
-                    const kickoffEvents = {
+                    const kickoffEventsMap = {
                         2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
                         3: "⏱️ Temps mort : si le pion de l'équipe qui engage indique le tour 4,5 ou 6 (6,7 ou 8 au Blood Bowl à 11), les 2 coachs reculent leur pion de tour d'une case. Sinon, les 2 coachs avancent leur pion d'une case.",
-                        4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être retirés et replacés à dfes emplacements différents en suivant les règles de positionnement habituelles.",
+                        4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être retirés et replacés à des emplacements différents en suivant les règles de positionnement habituelles.",
                         5: "⬆️ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle.",
                         6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders. Le coach avec le résultat le plus élevé gagne un jet sur le tableau de prières à Nuffle. En cas d'égalité, il n'y a pas de jet de prières.",
                         7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants. Le coach avec le résultat le plus élevé gagne une relance d'équipe supplémentaire pour la phase à venir. Si non utilisée, elle est perdue. En cas d'égalité, aucun coach ne gagne de relance.",
@@ -4208,16 +4228,57 @@ class BloodBowlApp {
                         12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP. Le coach qui obtient le plus bas résultat désigne au hasard D3 joueurs de son équipe qui sont sur le terrain. Tous les joueurs désignés sont mis à terre et sonnés. En cas d'égalité, les 2 coachs désignent D3 joueurs."
                     };
 
-                    this.matchData.kickoffEvents[index] = kickoffEvents[roll];
+                    // Mettre à jour l'événement
+                    events[index] = {
+                        roll: roll,
+                        text: kickoffEventsMap[roll] || "Événement inconnu.",
+                        timestamp: currentEvent.timestamp || Date.now()
+                    };
+
+                    // Sauvegarder
                     this.saveState();
 
-                    // Rafraîchir l'affichage
+                    // Mettre à jour l'affichage
                     const historyContainer = document.querySelector('.kickoff-history');
                     if (historyContainer) {
                         historyContainer.outerHTML = this.getKickoffHistory();
                     }
+
+                    // Feedback
+                    Utils.showNotification('Événement modifié', 'success');
+                    Utils.vibrate(20);
+                } else {
+                    alert('Veuillez entrer un nombre entre 2 et 12');
                 }
             }
+        }
+    }
+
+    clearKickoffHistory() {
+        if (confirm('Êtes-vous sûr de vouloir effacer tout l\'historique des événements ?')) {
+            this.matchData.kickoffEvents = [];
+            this.saveState();
+
+            // Retirer l'historique de l'affichage
+            const historyContainer = document.querySelector('.kickoff-history');
+            if (historyContainer) {
+                historyContainer.remove();
+            }
+
+            // Réinitialiser le champ de résultat
+            const resultInput = document.getElementById('kickoff-result');
+            if (resultInput) {
+                resultInput.value = '';
+            }
+
+            // Cacher la description
+            const descDiv = document.getElementById('kickoff-description');
+            if (descDiv) {
+                descDiv.style.display = 'none';
+            }
+
+            Utils.showNotification('Historique effacé', 'info');
+            Utils.vibrate(20);
         }
     }
 
@@ -4408,7 +4469,7 @@ class BloodBowlApp {
         const kickoffEvents = {
             2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
             3: "⏱️ Temps mort : si le pion de l'équipe qui engage indique le tour 4,5 ou 6 (6,7 ou 8 au Blood Bowl à 11), les 2 coachs reculent leur pion de tour d'une case. Sinon, les 2 coachs avancent leur pion d'une case.",
-            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être retirés et replacés à dfes emplacements différents en suivant les règles de positionnement habituelles.",
+            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être retirés et replacés à des emplacements différents en suivant les règles de positionnement habituelles.",
             5: "⬆️ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle.",
             6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders. Le coach avec le résultat le plus élevé gagne un jet sur le tableau de prières à Nuffle. En cas d'égalité, il n'y a pas de jet de prières.",
             7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants. Le coach avec le résultat le plus élevé gagne une relance d'équipe supplémentaire pour la phase à venir. Si non utilisée, elle est perdue. En cas d'égalité, aucun coach ne gagne de relance.",

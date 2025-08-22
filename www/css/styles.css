@@ -3717,3 +3717,335 @@ html {
         font-size: 16px;
     }
 }
+
+/* === AJOUTS POUR www/css/styles.css === */
+
+/* Historique des événements de coup d'envoi */
+.kickoff-history {
+    margin-top: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.kickoff-history h5 {
+    color: var(--primary-color, #2e7d32);
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    animation: slideInFromLeft 0.3s ease;
+}
+
+.history-item:hover {
+    border-color: var(--primary-color, #2e7d32);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    transform: translateX(2px);
+}
+
+.history-number {
+    background: linear-gradient(135deg, var(--primary-color, #2e7d32) 0%, #4caf50 100%);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.9em;
+    min-width: 50px;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.history-text {
+    flex: 1;
+    font-size: 0.95em;
+    line-height: 1.5;
+    color: #333;
+}
+
+.history-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.history-item:hover .history-actions {
+    opacity: 1;
+}
+
+.btn-edit-event,
+.btn-remove-event {
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.btn-edit-event {
+    color: #1976d2;
+}
+
+.btn-edit-event:hover {
+    background: #e3f2fd;
+    border-color: #1976d2;
+    transform: scale(1.1);
+}
+
+.btn-remove-event {
+    color: #d32f2f;
+}
+
+.btn-remove-event:hover {
+    background: #ffebee;
+    border-color: #d32f2f;
+    transform: scale(1.1);
+}
+
+.history-summary {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+    text-align: center;
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Animation pour le jet de dé */
+@keyframes diceRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(1.1); }
+    50% { transform: rotate(180deg) scale(1); }
+    75% { transform: rotate(270deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+.dice-rolling {
+    animation: diceRoll 0.5s ease-in-out;
+    background-color: #fffacd !important;
+}
+
+/* Style pour l'input quand il est modifié */
+#kickoff-result {
+    transition: all 0.3s ease;
+}
+
+#kickoff-result:focus {
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+    border-color: var(--primary-color, #2e7d32);
+}
+
+/* Amélioration du résultat d'événement */
+#kickoff-description {
+    margin-top: 15px;
+    animation: fadeIn 0.3s ease;
+}
+
+#kickoff-description.warning {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border: 2px solid #ff9800;
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+#kickoff-description p {
+    margin: 0;
+    color: #333;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+#kickoff-description strong {
+    color: #e65100;
+    font-weight: 600;
+}
+
+/* Animations */
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 300px;
+}
+
+.notification-success {
+    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    color: white;
+}
+
+.notification-error {
+    background: linear-gradient(135deg, #f44336 0%, #ef5350 100%);
+    color: white;
+}
+
+.notification-info {
+    background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%);
+    color: white;
+}
+
+/* Bouton pour effacer l'historique (optionnel) */
+.clear-history-btn {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+}
+
+.clear-history-btn:hover {
+    background: #d32f2f;
+    transform: scale(1.05);
+}
+
+/* Responsive pour mobile */
+@media (max-width: 768px) {
+    .history-item {
+        flex-wrap: wrap;
+        padding: 12px;
+        gap: 8px;
+    }
+
+    .history-number {
+        font-size: 0.85em;
+        padding: 5px 8px;
+    }
+
+    .history-text {
+        flex: 1 1 100%;
+        order: 3;
+        margin-top: 8px;
+        font-size: 0.9em;
+    }
+
+    .history-actions {
+        margin-left: auto;
+        order: 2;
+    }
+
+    .btn-edit-event,
+    .btn-remove-event {
+        padding: 8px 10px;
+        font-size: 18px;
+    }
+
+    .notification {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}
+
+/* Mode sombre (si votre app le supporte) */
+@media (prefers-color-scheme: dark) {
+    .kickoff-history {
+        background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+        border-color: #444;
+    }
+
+    .history-item {
+        background: #333;
+        border-color: #555;
+        color: #e0e0e0;
+    }
+
+    .history-item:hover {
+        border-color: #4caf50;
+    }
+
+    .history-text {
+        color: #e0e0e0;
+    }
+
+    .history-summary {
+        color: #999;
+        border-top-color: #555;
+    }
+
+    #kickoff-description.warning {
+        background: linear-gradient(135deg, #3e2723 0%, #4e342e 100%);
+        border-color: #ff6f00;
+    }
+
+    #kickoff-description p {
+        color: #e0e0e0;
+    }
+}
