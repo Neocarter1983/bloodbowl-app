@@ -2700,17 +2700,39 @@ class BloodBowlApp {
         `;
     }
 
-
     getPrayerSection() {
         const prayer = this.matchData.prayer || { effect: '', rolled: false, dice: null };
+
+        // Calculer les VEA ajustées
+        const team1AdjustedVEA = this.calculateAdjustedVEA(1);
+        const team2AdjustedVEA = this.calculateAdjustedVEA(2);
+
+        // Calculer le nombre de prières basé sur les VEA ajustées
         const prayerCount = this.calculatePrayerCount();
 
-        // Déterminer qui peut prier (l'outsider = équipe avec VEA la plus faible)
-        const team1VEA = parseInt(this.matchData.team1.vea) || 0;
-        const team2VEA = parseInt(this.matchData.team2.vea) || 0;
-        const canPray = team1VEA !== team2VEA; // Il faut une différence de VEA
-        const outsiderTeam = team1VEA < team2VEA ? this.matchData.team1.name :
-                             team2VEA < team1VEA ? this.matchData.team2.name : null;
+        // Déterminer qui est l'outsider (équipe avec VEA ajustée la plus faible)
+        const outsiderTeam = team1AdjustedVEA < team2AdjustedVEA ? this.matchData.team1.name :
+                             team2AdjustedVEA < team1AdjustedVEA ? this.matchData.team2.name : null;
+
+        // Calculer les coûts des coups de pouce pour l'affichage
+        const team1InducementsCost = this.calculateInducementsCost(1);
+        const team2InducementsCost = this.calculateInducementsCost(2);
+
+        // Calculer la différence de VEA pour l'affichage
+        const veaDifference = Math.abs(team1AdjustedVEA - team2AdjustedVEA);
+
+        // Déterminer le message d'état approprié
+        let statusMessage = '';
+        if (team1AdjustedVEA === team2AdjustedVEA) {
+            statusMessage = '<p style="color: #dc3545; font-weight: bold; margin-top: 10px;">⚠️ Aucune équipe ne peut prier (VEA ajustées identiques)</p>';
+        } else if (prayerCount === 0) {
+            statusMessage = `<p style="color: #ffc107; font-weight: bold; margin-top: 10px;">⚠️ ${outsiderTeam} est l'outsider mais ne peut pas prier (écart de ${Utils.formatNumber(veaDifference)} PO, minimum 50 000 PO requis)</p>`;
+        } else {
+            statusMessage = `<p style="color: #28a745; font-weight: bold; margin-top: 10px;">✅ ${outsiderTeam} peut prier (${prayerCount} prière${prayerCount > 1 ? 's' : ''})</p>`;
+        }
+
+        // Déterminer si le bouton doit être activé
+        const canPray = prayerCount > 0;
 
         return `
             <div class="step-section">
@@ -2719,39 +2741,46 @@ class BloodBowlApp {
                     <div class="step-title">Prières à Nuffle</div>
                 </div>
                 <div class="explanation-box">
-                    <p><strong>Règle :</strong> L'outsider (équipe avec VEA la plus faible) peut prier Nuffle</p>
-                    <p>1 prière par tranche de 50 000 PO d'écart entre les VEA</p>
-                    <p>Les effets durent généralement jusqu'à la fin de la phase (mi-temps ou TD)</p>
-                    ${!canPray ?
-                        '<p style="color: #dc3545; font-weight: bold;">⚠️ Aucune équipe ne peut prier (VEA identiques)</p>' :
-                        `<p style="color: #28a745; font-weight: bold;">✅ ${outsiderTeam} peut prier (${prayerCount} prière${prayerCount > 1 ? 's' : ''})</p>`
-                    }
+                    <p><strong>Règle :</strong> Après l'achat des coups de pouce, on recalcule les VEA</p>
+                    <p>L'outsider (équipe avec VEA recalculée la plus faible) peut prier Nuffle</p>
+                    <p>1 prière par tranche de 50 000 PO d'écart entre les VEA recalculées</p>
+
+                    <!-- Affichage des VEA ajustées -->
+                    <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                        <p style="margin: 5px 0;"><strong>VEA après coups de pouce :</strong></p>
+                        <p style="margin: 5px 0;">
+                            ${this.matchData.team1.name || 'Équipe 1'} :
+                            ${Utils.formatNumber(this.matchData.team1.vea)} PO
+                            ${team1InducementsCost > 0 ? ` + ${Utils.formatNumber(team1InducementsCost)} PO (coups de pouce)` : ''}
+                            = <strong>${Utils.formatNumber(team1AdjustedVEA)} PO</strong>
+                        </p>
+                        <p style="margin: 5px 0;">
+                            ${this.matchData.team2.name || 'Équipe 2'} :
+                            ${Utils.formatNumber(this.matchData.team2.vea)} PO
+                            ${team2InducementsCost > 0 ? ` + ${Utils.formatNumber(team2InducementsCost)} PO (coups de pouce)` : ''}
+                            = <strong>${Utils.formatNumber(team2AdjustedVEA)} PO</strong>
+                        </p>
+                    </div>
+
+                    ${statusMessage}
                 </div>
                 <div class="dice-controls">
                     <button class="dice-btn" data-dice-type="prayer"
-                        ${canPray && prayerCount > 0 ? '' : 'disabled'}
-                        ${!canPray ? 'title="Aucune équipe ne peut prier car les VEA sont identiques"' :
-                          prayerCount === 0 ? 'title="Pas assez d\'écart de VEA pour prier (minimum 50 000 PO)"' : ''}>
-                        🙏 Prière à Nuffle (D8) ${!canPray || prayerCount === 0 ? '(Non disponible)' : ''}
+                        ${canPray ? '' : 'disabled'}
+                        ${!canPray ? 'title="Pas assez d\'écart de VEA pour prier (minimum 50 000 PO)"' : ''}>
+                        🙏 Prière à Nuffle (D8) ${!canPray ? '(Non disponible)' : ''}
                     </button>
                     <input type="number" class="dice-result" id="prayer-result"
                         value="${prayer.dice || ''}" min="1" max="8"
                         data-field="prayerDice"
-                        ${!canPray || prayerCount === 0 ? 'disabled' : ''}>
+                        ${!canPray ? 'disabled' : ''}>
                 </div>
                 <div id="prayer-description" class="result-box" style="${prayer.effect ? '' : 'display: none;'}">
-                    ${prayer.effect ? `<p>${prayer.effect}</p>` : ''}
+                    ${prayer.effect ? `<p>Effet de la prière (${prayer.dice}) : <strong>${prayer.effect}</strong></p>` : ''}
                 </div>
             </div>
         `;
     }
-
-
-
-
-
-
-
 
     getCoinFlipSection() {
         const coinFlip = this.matchData.coinFlip;
@@ -2800,7 +2829,11 @@ class BloodBowlApp {
     }
 
     calculatePrayerCount() {
-        const diff = Math.abs(this.matchData.team1.vea - this.matchData.team2.vea);
+        // Utiliser les VEA ajustées (après achat des coups de pouce)
+        const team1AdjustedVEA = this.calculateAdjustedVEA(1);
+        const team2AdjustedVEA = this.calculateAdjustedVEA(2);
+
+        const diff = Math.abs(team1AdjustedVEA - team2AdjustedVEA);
         return Math.floor(diff / 50000);
     }
 
@@ -2835,15 +2868,25 @@ class BloodBowlApp {
 
     getPrayerInfoText() {
         const prayerCount = this.calculatePrayerCount();
+        const team1AdjustedVEA = this.calculateAdjustedVEA(1);
+        const team2AdjustedVEA = this.calculateAdjustedVEA(2);
+        const veaDifference = Math.abs(team1AdjustedVEA - team2AdjustedVEA);
 
-        if (prayerCount === 0) {
-            return 'Les VEA sont égales ou trop proches, pas de prière à Nuffle.';
+        // Cas où les VEA sont identiques
+        if (team1AdjustedVEA === team2AdjustedVEA) {
+            return 'Les VEA ajustées sont identiques, pas de prière à Nuffle.';
         }
 
-        const outsider = this.matchData.team1.vea < this.matchData.team2.vea ?
+        const outsider = team1AdjustedVEA < team2AdjustedVEA ?
             this.matchData.team1.name : this.matchData.team2.name;
 
-        return `${outsider} peut faire ${prayerCount} prière(s) à Nuffle.`;
+        // Cas où il y a un outsider mais pas assez d'écart
+        if (prayerCount === 0) {
+            return `${outsider} est l'outsider mais ne peut pas prier (écart de ${Utils.formatNumber(veaDifference)} PO, minimum 50 000 PO requis).`;
+        }
+
+        // Cas normal où l'outsider peut prier
+        return `${outsider} peut faire ${prayerCount} prière${prayerCount > 1 ? 's' : ''} à Nuffle.`;
     }
 
     // Gestion des dés
@@ -3312,6 +3355,12 @@ class BloodBowlApp {
 
         return total;
     }
+
+        calculateAdjustedVEA(team) {
+            const baseVEA = parseInt(this.matchData[`team${team}`].vea) || 0;
+            const inducementsCost = this.calculateInducementsCost(team);
+            return baseVEA + inducementsCost;
+        }
 
     getTeamBudget(team) {
         const petiteMonnaie = team === 1 ?
