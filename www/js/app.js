@@ -4066,16 +4066,16 @@ class BloodBowlApp {
 
         const kickoffEvents = {
             2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
-            3: "⏱️ Temps mort : si l'une des 2 équipes est au tour 4,5,6 le curseur est reculé d'une case. Sinon le curseur avance d'1 case.",
-            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être placés différemment.",
+            3: "⏱️ Temps mort : si le pion de l'équipe qui engage indique le tour 4,5 ou 6 (6,7 ou 8 au Blood Bowl à 11), les 2 coachs reculent leur pion de tour d'une case. Sinon, les 2 coachs avancent leur pion d'une case.",
+            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être retirés et replacés à dfes emplacements différents en suivant les règles de positionnement habituelles.",
             5: "⬆️ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle.",
-            6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders, le meilleur a droit à un jet sur le tableau des prières à Nuffle.",
-            7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants, le meilleur a droit à une relance pour la phase.",
-            8: "🌤️ Météo capricieuse : refaire le jet de météo ; si le résultat est condition idéale, le ballon ricoche.",
-            9: "⚡ Surprise : 1d3+1 joueurs de l'équipe en réception peuvent bouger d'une case.",
-            10: "💥 Blitz : 1d3+1 joueurs « démarqués » de l'équipe qui engage peuvent être activés pour une action de M.",
-            11: "🎭 Arbitre officieux : chaque coach jette 1d6+FP, le plus mauvais résultat désigne 1 joueur au hasard.",
-            12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP, le plus mauvais désigne 1d3 de ses joueurs au hasard."
+            6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders. Le coach avec le résultat le plus élevé gagne un jet sur le tableau de prières à Nuffle. En cas d'égalité, il n'y a pas de jet de prières.",
+            7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants. Le coach avec le résultat le plus élevé gagne une relance d'équipe supplémentaire pour la phase à venir. Si non utilisée, elle est perdue. En cas d'égalité, aucun coach ne gagne de relance.",
+            8: "🌤️ Météo capricieuse : effectuez un nouveau jet sur le tableau de météo. Si le résultat donne 'Conditions idéales', le ballon ricoche avant d'atterrir.",
+            9: "⚡ Surprise : 1d3+3 joueurs de l'équipe en réception peuvent bouger d'une case dans n'importe quelle direction.",
+            10: "💥 Blitz : 1d3+3 joueurs « démarqués » de l'équipe qui engage peuvent être activés pour faire une action de mouvement. 1 joueur peut faire un Blitz et 1 joueur peut lancer un coéquipier. Si un joueur chute ou est plaqué, aucun autre joueur ne peut être activé et le blitz prend fin.",
+            11: "🎭 Arbitre officieux : chaque coach jette 1d6+FP. Le coach qui obtient le plus bas résultat désigne au hasard un de ses joueurs parmi ceux qui sont sur le terrain. Jetez 1D6. Sur 2+, le joueur désigné est mis à terre et sonné. Sur 1, le joueur est expulsé. En cas d'égalité, les 2 coachs désignent un joueur.",
+            12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP. Le coach qui obtient le plus bas résultat désigne au hasard D3 joueurs de son équipe qui sont sur le terrain. Tous les joueurs désignés sont mis à terre et sonnés. En cas d'égalité, les 2 coachs désignent D3 joueurs."
         };
 
         if (roll >= 2 && roll <= 12) {
@@ -4407,16 +4407,16 @@ class BloodBowlApp {
 
         const kickoffEvents = {
             2: "🌪️ Appelez l'arbitre : chaque coach reçoit un pot de vin pour le match.",
-            3: "⏱️ Temps mort : si l'une des 2 équipes est au tour 4,5,6 le curseur est reculé d'une case. Sinon le curseur avance d'1 case.",
-            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être placés différemment.",
+            3: "⏱️ Temps mort : si le pion de l'équipe qui engage indique le tour 4,5 ou 6 (6,7 ou 8 au Blood Bowl à 11), les 2 coachs reculent leur pion de tour d'une case. Sinon, les 2 coachs avancent leur pion d'une case.",
+            4: "🛡️ Défense solide : 1d3+3 joueurs de l'équipe qui engage peuvent être retirés et replacés à dfes emplacements différents en suivant les règles de positionnement habituelles.",
             5: "⬆️ Coup de pied haut : 1 joueur « démarqué » peut se placer sur la case où va tomber la balle.",
-            6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders, le meilleur a droit à un jet sur le tableau des prières à Nuffle.",
-            7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants, le meilleur a droit à une relance pour la phase.",
-            8: "🌤️ Météo capricieuse : refaire le jet de météo ; si le résultat est condition idéale, le ballon ricoche.",
-            9: "⚡ Surprise : 1d3+1 joueurs de l'équipe en réception peuvent bouger d'une case.",
-            10: "💥 Blitz : 1d3+1 joueurs « démarqués » de l'équipe qui engage peuvent être activés pour une action de M.",
-            11: "🎭 Arbitre officieux : chaque coach jette 1d6+FP, le plus mauvais résultat désigne 1 joueur au hasard.",
-            12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP, le plus mauvais désigne 1d3 de ses joueurs au hasard."
+            6: "👥 Fan en folie : chaque coach jette 1d6+cheerleaders. Le coach avec le résultat le plus élevé gagne un jet sur le tableau de prières à Nuffle. En cas d'égalité, il n'y a pas de jet de prières.",
+            7: "🎯 Coaching brillant : chaque coach jette 1d6+assistants. Le coach avec le résultat le plus élevé gagne une relance d'équipe supplémentaire pour la phase à venir. Si non utilisée, elle est perdue. En cas d'égalité, aucun coach ne gagne de relance.",
+            8: "🌤️ Météo capricieuse : effectuez un nouveau jet sur le tableau de météo. Si le résultat donne 'Conditions idéales', le ballon ricoche avant d'atterrir.",
+            9: "⚡ Surprise : 1d3+3 joueurs de l'équipe en réception peuvent bouger d'une case dans n'importe quelle direction.",
+            10: "💥 Blitz : 1d3+3 joueurs « démarqués » de l'équipe qui engage peuvent être activés pour faire une action de mouvement. 1 joueur peut faire un Blitz et 1 joueur peut lancer un coéquipier. Si un joueur chute ou est plaqué, aucun autre joueur ne peut être activé et le blitz prend fin.",
+            11: "🎭 Arbitre officieux : chaque coach jette 1d6+FP. Le coach qui obtient le plus bas résultat désigne au hasard un de ses joueurs parmi ceux qui sont sur le terrain. Jetez 1D6. Sur 2+, le joueur désigné est mis à terre et sonné. Sur 1, le joueur est expulsé. En cas d'égalité, les 2 coachs désignent un joueur.",
+            12: "🔥 Invasion de terrain : chaque coach jette 1d6+FP. Le coach qui obtient le plus bas résultat désigne au hasard D3 joueurs de son équipe qui sont sur le terrain. Tous les joueurs désignés sont mis à terre et sonnés. En cas d'égalité, les 2 coachs désignent D3 joueurs."
         };
 
         if (roll >= 2 && roll <= 12) {
