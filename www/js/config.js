@@ -141,7 +141,7 @@ const AppConfig = {
             },
             souterraine: {
                 name: "Météo Souterraine",
-                icon: "🏈",
+                icon: "⛏️",
                 effects: {
                     2: "🏈 Infiltration du Dessous : -1 Mouvement",
                     3: "🏈 Ambiance Lugubre : -1 aux Passes Longues et Longues Bombes. -1 aux tests pour « Foncer » après la 1e case",
@@ -158,7 +158,7 @@ const AppConfig = {
             },
             foret_primordiale: {
                 name: "Météo Forêt Primordiale",
-                icon: "🏈",
+                icon: "🌳",
                 effects: {
                     2: "🏈 Loués Soient les Dieux du Soleil : +1 aux jets d’AR lors des chutes sur « Foncer » + les conditions de la ligne 3",
                     3: "🏈 Vague de Chaleur : -1 aux tests pour « Foncer » sur 1 case supp. -1 aux jets pour sortir du Box des KO",
@@ -175,7 +175,7 @@ const AppConfig = {
             },
             cimetiere: {
                 name: "Météo de Cimetière",
-                icon: "🏈",
+                icon: "💀",
                 effects: {
                     2: "🏈 Autochtones en Colère : Chaque coach jette 1D6. Celui ayant le plus petit résultat (les 2 si égalité) sélectionne au hasard 1 de ses joueurs sur le terrain qui rejoint la Réserves jusqu’à la fin du match ou si la Météo change. Effet cumulatif en cas de changement météo",
                     3: "🏈 Brouillard : -1 case pour « Foncer ». Seules les passes Rapides ou Courtes sont possibles. Pas d’Expulsion lors des Agressions",
@@ -187,12 +187,12 @@ const AppConfig = {
                     9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     11: "🏈 Pluie Battante : -1 pour Réceptionner, Interférer avec une passe et Ramasser",
-                    12: "🏈 Foudre : À la fin de chaque tour d’équipe, jetez 1D6. Sur 1, sélectionnez au hasard un joueur de l’équipe active, il est « Plaqué » et subit un jet d’AR avec modificateur de +1 au jet d’AR ou de Blessure (au choix après résultat du dé)"
+                    12: "⛈️ Foudre : À la fin de chaque tour d’équipe, jetez 1D6. Sur 1, sélectionnez au hasard un joueur de l’équipe active, il est « Plaqué » et subit un jet d’AR avec modificateur de +1 au jet d’AR ou de Blessure (au choix après résultat du dé)"
                 }
             },
             terres_gastes: {
                 name: "Météo de Terres Gastes",
-                icon: "🏈",
+                icon: "🏜️",
                 effects: {
                     2: "🏈 Secousses : À la fin de chaque tour d’équipe, jetez 1D6 pour chaque joueur Debout de l’équipe active. Sur 1, il est « Mis à Terre »",
                     3: "🏈 Pluie Battante : -1 pour Réceptionner, Interférer avec une passe et Ramasser",
@@ -203,15 +203,15 @@ const AppConfig = {
                     8: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-                    11: "🏈 Bombes de Lave : Tous les joueurs ont « Cerveau Lent »",
-                    12: "🏈 Vent fort : Direction du vent avec 1D8. 1-2 : vers En-but équipe qui engage ; 3-4 : vers En-but équipe en réception ; 5-6 : vers touche à gauche de l’équipe qui engage ; 7-8 vers touche à droite de l’équipe qui engage. Aux Coups d’Envoi, la balle dévie selon le Gabarit de Renvoi avec le 3-4 dans la direction du vent et sur 1D8 cases (au lieu d’1D6)"
+                    11: "🌋 Bombes de Lave : Tous les joueurs ont « Cerveau Lent »",
+                    12: "💨 Vent fort : Direction du vent avec 1D8. 1-2 : vers En-but équipe qui engage ; 3-4 : vers En-but équipe en réception ; 5-6 : vers touche à gauche de l’équipe qui engage ; 7-8 vers touche à droite de l’équipe qui engage. Aux Coups d’Envoi, la balle dévie selon le Gabarit de Renvoi avec le 3-4 dans la direction du vent et sur 1D8 cases (au lieu d’1D6)"
                 }
             },
             montagnarde: {
                 name: "Météo Montagnarde",
-                icon: "🏈",
+                icon: "⛰️",
                 effects: {
-                    2: "🏈 Vent Violent : Pas de Coup d’Envoi, la balle est donnée à 1 joueur de l’équipe à la Réception, au choix de son coach. Aucune action de Passe ou de Lancer de Coéquipier n’est possible",
+                    2: "💨 Vent Violent : Pas de Coup d’Envoi, la balle est donnée à 1 joueur de l’équipe à la Réception, au choix de son coach. Aucune action de Passe ou de Lancer de Coéquipier n’est possible",
                     3: "🏈 Très Ensoleillé : -1 aux tests de CP",
                     4: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     5: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
@@ -226,10 +226,10 @@ const AppConfig = {
             },
             cotiere: {
                 name: "Météo Côtière",
-                icon: "🏈",
+                icon: "🌊",
                 effects: {
-                    2: "🏈 Vent Violent : Pas de Coup d’Envoi, la balle est donnée à 1 joueur de l’équipe à la Réception, au choix de son coach. Aucune action de Passe ou de Lancer de Coéquipier n’est possible",
-                    3: "🏈 Vent fort : Direction du vent avec 1D8. 1-2 : vers En-but équipe qui engage ; 3-4 : vers En-but équipe en réception ; 5-6 : vers touche à gauche de l’équipe qui engage ; 7-8 vers touche à droite de l’équipe qui engage. Aux Coups d’Envoi, la balle dévie selon le Gabarit de Renvoi avec le 3-4 dans la direction du vent et sur 1D8 cases (au lieu d’1D6)",
+                    2: "💨 Vent Violent : Pas de Coup d’Envoi, la balle est donnée à 1 joueur de l’équipe à la Réception, au choix de son coach. Aucune action de Passe ou de Lancer de Coéquipier n’est possible",
+                    3: "💨 Vent fort : Direction du vent avec 1D8. 1-2 : vers En-but équipe qui engage ; 3-4 : vers En-but équipe en réception ; 5-6 : vers touche à gauche de l’équipe qui engage ; 7-8 vers touche à droite de l’équipe qui engage. Aux Coups d’Envoi, la balle dévie selon le Gabarit de Renvoi avec le 3-4 dans la direction du vent et sur 1D8 cases (au lieu d’1D6)",
                     4: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     5: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     6: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
@@ -243,7 +243,7 @@ const AppConfig = {
             },
             terrain_desertique: {
                 name: "Météo de Terrain Désertique",
-                icon: "🏈",
+                icon: "🌵",
                 effects: {
                     2: "🏈 Chaleur Accablante : 1D3 joueurs désigné au hasard dans chaque équipe et présents sur le terrain lors de la précédente phase restent en Réserves",
                     3: "🏈 Très Ensoleillé : -1 aux tests de CP",
@@ -254,7 +254,7 @@ const AppConfig = {
                     8: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     9: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
                     10: "⛅ Conditions idéales : temps idéal pour le Blood Bowl",
-                    11: "🏈 Vent fort : Direction du vent avec 1D8. 1-2 : vers En-but équipe qui engage ; 3-4 : vers En-but équipe en réception ; 5-6 : vers touche à gauche de l’équipe qui engage ; 7-8 vers touche à droite de l’équipe qui engage. Aux Coups d’Envoi, la balle dévie selon le Gabarit de Renvoi avec le 3-4 dans la direction du vent et sur 1D8 cases (au lieu d’1D6)",
+                    11: "💨 Vent fort : Direction du vent avec 1D8. 1-2 : vers En-but équipe qui engage ; 3-4 : vers En-but équipe en réception ; 5-6 : vers touche à gauche de l’équipe qui engage ; 7-8 vers touche à droite de l’équipe qui engage. Aux Coups d’Envoi, la balle dévie selon le Gabarit de Renvoi avec le 3-4 dans la direction du vent et sur 1D8 cases (au lieu d’1D6)",
                     12: "🏈 Tempête de Sable : Aucune action de Passe ou de Lancer de Coéquipier n’est possible. Pas de possibilité de « Foncer ». Pas d’Expulsion lors des Agressions"
                 }
             }
