@@ -2671,6 +2671,13 @@ class BloodBowlApp {
                 case 'treasury':
                     validatedValue = parseInt(value) || 0;
                     if (validatedValue < 0) validatedValue = 0;
+
+                    // Synchroniser avec les inducements
+                    if (!this.matchData.inducements[`team${teamNumber}Treasury`] ||
+                        this.matchData.inducements[`team${teamNumber}Treasury`] === 0) {
+                        this.matchData.inducements[`team${teamNumber}Treasury`] = validatedValue;
+                    }
+
                     break;
 
                 default:
@@ -2712,12 +2719,13 @@ class BloodBowlApp {
         }
     }
 
+    // NOUVELLE MÉTHODE : Synchroniser toutes les trésoreries
     syncAllTreasuries() {
-        // S'assurer que les trésoreries des inducements sont synchronisées avec la configuration
+        // S'assurer que les trésoreries des inducements sont synchronisées
         [1, 2].forEach(team => {
             const configTreasury = parseInt(this.matchData[`team${team}`].treasury) || 0;
 
-            // Si la trésorerie des inducements n'est pas définie ou est à 0, la synchroniser
+            // Si la trésorerie des inducements n'est pas définie, la synchroniser
             if (!this.matchData.inducements[`team${team}Treasury`]) {
                 this.matchData.inducements[`team${team}Treasury`] = configTreasury;
                 console.log(`🔄 Synchronisation trésorerie équipe ${team}: ${configTreasury} PO`);
