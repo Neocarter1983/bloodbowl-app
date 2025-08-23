@@ -1071,74 +1071,19 @@ input:focus, select:focus, textarea:focus {
     flex-wrap: wrap;
 }
 
-/* Kickoff history */
-.kickoff-history {
-    margin-top: 20px;
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
 
-.kickoff-history h5 {
-    color: var(--primary-color);
-    margin-bottom: 15px;
-    font-size: 1.1em;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #e9ecef;
-}
 
-.history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
 
-.history-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 3px solid var(--primary-color);
-    transition: all 0.2s ease;
-}
 
-.history-item:hover {
-    background: #e9ecef;
-    transform: translateX(2px);
-}
 
-.history-number {
-    background: var(--primary-color);
-    color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 12px;
-    flex-shrink: 0;
-}
 
-.history-text {
-    flex: 1;
-    color: #495057;
-    font-size: 14px;
-    line-height: 1.5;
-}
 
-/* Animation pour les nouveaux événements */
-.history-item:last-child {
-    animation: slideIn 0.3s ease;
-}
+
+
+
+
+
+
 
 @keyframes slideIn {
     from {
@@ -1149,47 +1094,6 @@ input:focus, select:focus, textarea:focus {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-/* Style alternatif pour mobile */
-@media (max-width: 768px) {
-    .kickoff-history {
-        padding: 12px;
-    }
-
-    .history-item {
-        padding: 10px;
-        gap: 10px;
-    }
-
-    .history-text {
-        font-size: 13px;
-    }
-}
-
-/* Limiter la hauteur si trop d'événements */
-.history-list {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-/* Scrollbar personnalisée */
-.history-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.history-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-}
-
-.history-list::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: 3px;
-}
-
-.history-list::-webkit-scrollbar-thumb:hover {
-    background: var(--secondary-color);
 }
 
 /* Players tabs system */
@@ -1491,51 +1395,6 @@ input:focus, select:focus, textarea:focus {
     .player-table td {
         padding: 4px;
     }
-}
-
-/* Bouton de suppression d'événement */
-.btn-remove-event {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    opacity: 0;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.history-item:hover .btn-remove-event {
-    opacity: 1;
-}
-
-.btn-remove-event:hover {
-    background: #f8d7da;
-    transform: scale(1.1);
-}
-
-/* Sur mobile, toujours afficher le bouton */
-@media (max-width: 768px) {
-    .btn-remove-event {
-        opacity: 0.7;
-    }
-
-    .history-item .btn-remove-event {
-        opacity: 0.7;
-    }
-}
-
-/* Ajuster l'alignement de history-item */
-.history-item {
-    display: flex;
-    align-items: center; /* Changé de flex-start à center */
-    gap: 12px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 3px solid var(--primary-color);
-    transition: all 0.2s ease;
 }
 
 /* Colonnes d'actions avec couleurs subtiles */
@@ -3563,96 +3422,6 @@ html {
     color: #2e7d32;
 }
 
-/* === STYLES À AJOUTER DANS www/css/styles.css === */
-
-/* Historique des événements de coup d'envoi */
-.kickoff-history {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-}
-
-.kickoff-history h5 {
-    color: var(--primary-color);
-    margin: 0 0 10px 0;
-    font-size: 1.1em;
-}
-
-.history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.history-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    background: white;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
-    transition: all 0.2s ease;
-}
-
-.history-item:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.history-number {
-    background: var(--primary-color);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-weight: bold;
-    font-size: 0.9em;
-    min-width: 30px;
-    text-align: center;
-}
-
-.history-text {
-    flex: 1;
-    font-size: 0.95em;
-    line-height: 1.4;
-}
-
-.history-actions {
-    display: flex;
-    gap: 4px;
-}
-
-.btn-edit-event,
-.btn-remove-event {
-    background: transparent;
-    border: 1px solid transparent;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.btn-edit-event {
-    color: #1976d2;
-}
-
-.btn-edit-event:hover {
-    background: #e3f2fd;
-    border-color: #1976d2;
-}
-
-.btn-remove-event {
-    color: #d32f2f;
-}
-
-.btn-remove-event:hover {
-    background: #ffebee;
-    border-color: #d32f2f;
-}
-
 /* Animation pour le jet de dé */
 @keyframes diceRoll {
     0% { transform: rotate(0deg) scale(1); }
@@ -3692,148 +3461,6 @@ html {
 
 #kickoff-description strong {
     color: #e65100;
-}
-
-/* Responsive pour mobile */
-@media (max-width: 768px) {
-    .history-item {
-        flex-wrap: wrap;
-        padding: 10px;
-    }
-
-    .history-text {
-        flex: 1 1 100%;
-        margin-top: 5px;
-        font-size: 0.9em;
-    }
-
-    .history-actions {
-        margin-left: auto;
-    }
-
-    .btn-edit-event,
-    .btn-remove-event {
-        padding: 6px 8px;
-        font-size: 16px;
-    }
-}
-
-/* === AJOUTS POUR www/css/styles.css === */
-
-/* Historique des événements de coup d'envoi */
-.kickoff-history {
-    margin-top: 20px;
-    padding: 15px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 12px;
-    border: 1px solid #dee2e6;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.kickoff-history h5 {
-    color: var(--primary-color, #2e7d32);
-    margin: 0 0 15px 0;
-    font-size: 1.1em;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.history-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    transition: all 0.3s ease;
-    animation: slideInFromLeft 0.3s ease;
-}
-
-.history-item:hover {
-    border-color: var(--primary-color, #2e7d32);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-    transform: translateX(2px);
-}
-
-.history-number {
-    background: linear-gradient(135deg, var(--primary-color, #2e7d32) 0%, #4caf50 100%);
-    color: white;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 0.9em;
-    min-width: 50px;
-    text-align: center;
-    white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.history-text {
-    flex: 1;
-    font-size: 0.95em;
-    line-height: 1.5;
-    color: #333;
-}
-
-.history-actions {
-    display: flex;
-    gap: 6px;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-}
-
-.history-item:hover .history-actions {
-    opacity: 1;
-}
-
-.btn-edit-event,
-.btn-remove-event {
-    background: transparent;
-    border: 1px solid transparent;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 6px 8px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    line-height: 1;
-}
-
-.btn-edit-event {
-    color: #1976d2;
-}
-
-.btn-edit-event:hover {
-    background: #e3f2fd;
-    border-color: #1976d2;
-    transform: scale(1.1);
-}
-
-.btn-remove-event {
-    color: #d32f2f;
-}
-
-.btn-remove-event:hover {
-    background: #ffebee;
-    border-color: #d32f2f;
-    transform: scale(1.1);
-}
-
-.history-summary {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e0e0e0;
-    text-align: center;
-    color: #666;
-    font-size: 0.9em;
 }
 
 /* Animation pour le jet de dé */
@@ -3978,15 +3605,301 @@ html {
 
 /* Responsive pour mobile */
 @media (max-width: 768px) {
+
+    .notification {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}
+
+/* Mode sombre (si votre app le supporte) */
+@media (prefers-color-scheme: dark) {
+
+    #kickoff-description.warning {
+        background: linear-gradient(135deg, #3e2723 0%, #4e342e 100%);
+        border-color: #ff6f00;
+    }
+
+    #kickoff-description p {
+        color: #e0e0e0;
+    }
+}
+
+/* GESTION DE L'HISTORIQUE DES EVENEMENTS DE DEBUT DE MATCH */
+
+/* Remplacer les anciens styles par ceux-ci qui respectent le thème existant */
+
+/* Historique des événements de coup d'envoi */
+.kickoff-history {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa; /* Même fond que les step-section */
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.kickoff-history h5 {
+    color: var(--primary-color); /* Utilise la couleur principale #1a5f3f */
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    animation: slideInFromLeft 0.3s ease;
+}
+
+.history-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Numéro d'ordre dans l'historique */
+.history-order {
+    background: var(--primary-color); /* Vert foncé #1a5f3f */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.85em;
+    min-width: 35px;
+    text-align: center;
+}
+
+/* Résultat du dé */
+.history-roll {
+    background: var(--secondary-color); /* Vert moyen #2d8f5f */
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.9em;
+    min-width: 45px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Si pas de résultat de dé (ancien format) */
+.history-roll:empty {
+    display: none;
+}
+
+.history-text {
+    flex: 1;
+    font-size: 0.95em;
+    line-height: 1.4;
+    color: #333;
+}
+
+.history-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.history-item:hover .history-actions {
+    opacity: 1;
+}
+
+.btn-edit-event,
+.btn-remove-event {
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.btn-edit-event {
+    color: var(--info-color); /* Utilise la couleur info existante #17a2b8 */
+}
+
+.btn-edit-event:hover {
+    background: #e3f2fd;
+    border-color: var(--info-color);
+    transform: scale(1.1);
+}
+
+.btn-remove-event {
+    color: var(--danger-color); /* Utilise la couleur danger existante #dc3545 */
+}
+
+.btn-remove-event:hover {
+    background: #ffebee;
+    border-color: var(--danger-color);
+    transform: scale(1.1);
+}
+
+.history-summary {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+    text-align: center;
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Animation pour le jet de dé */
+@keyframes diceRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(1.1); }
+    50% { transform: rotate(180deg) scale(1); }
+    75% { transform: rotate(270deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+.dice-rolling {
+    animation: diceRoll 0.5s ease-in-out;
+    background-color: #fffacd !important;
+}
+
+/* Style pour l'input quand il est modifié */
+#kickoff-result {
+    transition: all 0.3s ease;
+}
+
+#kickoff-result:focus {
+    box-shadow: 0 0 0 3px rgba(26, 95, 63, 0.2); /* Shadow avec la couleur principale */
+    border-color: var(--primary-color);
+}
+
+/* Le résultat d'événement reste comme il était (warning) */
+#kickoff-description {
+    margin-top: 15px;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Animations */
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Notifications (adaptées aux couleurs existantes) */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 300px;
+}
+
+.notification-success {
+    background: var(--success-color); /* #28a745 */
+    color: white;
+}
+
+.notification-error {
+    background: var(--danger-color); /* #dc3545 */
+    color: white;
+}
+
+.notification-info {
+    background: var(--info-color); /* #17a2b8 */
+    color: white;
+}
+
+/* Bouton pour effacer l'historique (optionnel) */
+.clear-history-btn {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+}
+
+.clear-history-btn:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+
+/* Responsive pour mobile */
+@media (max-width: 768px) {
     .history-item {
         flex-wrap: wrap;
-        padding: 12px;
+        padding: 10px;
         gap: 8px;
     }
 
-    .history-number {
+    .history-order {
+        font-size: 0.8em;
+        padding: 3px 6px;
+        min-width: 30px;
+    }
+
+    .history-roll {
         font-size: 0.85em;
-        padding: 5px 8px;
+        padding: 3px 8px;
+        min-width: 40px;
     }
 
     .history-text {
@@ -4017,7 +3930,7 @@ html {
 /* Mode sombre (si votre app le supporte) */
 @media (prefers-color-scheme: dark) {
     .kickoff-history {
-        background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+        background: #2c2c2c;
         border-color: #444;
     }
 
@@ -4028,7 +3941,7 @@ html {
     }
 
     .history-item:hover {
-        border-color: #4caf50;
+        border-color: var(--secondary-color);
     }
 
     .history-text {
@@ -4038,14 +3951,5 @@ html {
     .history-summary {
         color: #999;
         border-top-color: #555;
-    }
-
-    #kickoff-description.warning {
-        background: linear-gradient(135deg, #3e2723 0%, #4e342e 100%);
-        border-color: #ff6f00;
-    }
-
-    #kickoff-description p {
-        color: #e0e0e0;
     }
 }

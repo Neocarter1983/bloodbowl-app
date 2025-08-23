@@ -4148,9 +4148,8 @@ class BloodBowlApp {
 
                         return `
                             <div class="history-item" data-index="${index}">
-                                <span class="history-number">
-                                    ${roll ? `🎲 ${roll}` : `#${index + 1}`}
-                                </span>
+                                <span class="history-order">#${index + 1}</span>
+                                <span class="history-roll">${roll ? `🎲 ${roll}` : ''}</span>
                                 <span class="history-text">${text}</span>
                                 <div class="history-actions">
                                     <button class="btn-edit-event"
@@ -4183,7 +4182,7 @@ class BloodBowlApp {
             // Sauvegarder les changements
             this.saveState();
 
-            // Mettre à jour UNIQUEMENT l'historique
+            // Mettre à jour l'historique
             const historyContainer = document.querySelector('.kickoff-history');
             if (historyContainer) {
                 if (this.matchData.kickoffEvents.length === 0) {
@@ -4208,7 +4207,7 @@ class BloodBowlApp {
             const currentRoll = currentEvent.roll || '';
 
             // Demander le nouveau jet
-            const newRoll = prompt("Entrez le nouveau résultat du jet (2-12) :", currentRoll);
+            const newRoll = prompt(`Modifier l'événement #${index + 1}\nEntrez le nouveau résultat du jet (2-12) :`, currentRoll);
 
             if (newRoll !== null && newRoll !== '') {
                 const roll = parseInt(newRoll);
@@ -4255,30 +4254,34 @@ class BloodBowlApp {
     }
 
     clearKickoffHistory() {
-        if (confirm('Êtes-vous sûr de vouloir effacer tout l\'historique des événements ?')) {
-            this.matchData.kickoffEvents = [];
-            this.saveState();
+        if (this.matchData.kickoffEvents && this.matchData.kickoffEvents.length > 0) {
+            if (confirm(`Êtes-vous sûr de vouloir effacer tout l'historique ?\n${this.matchData.kickoffEvents.length} événement(s) seront supprimés.`)) {
+                this.matchData.kickoffEvents = [];
+                this.saveState();
 
-            // Retirer l'historique de l'affichage
-            const historyContainer = document.querySelector('.kickoff-history');
-            if (historyContainer) {
-                historyContainer.remove();
+                // Retirer l'historique de l'affichage
+                const historyContainer = document.querySelector('.kickoff-history');
+                if (historyContainer) {
+                    historyContainer.remove();
+                }
+
+                // Réinitialiser le champ de résultat
+                const resultInput = document.getElementById('kickoff-result');
+                if (resultInput) {
+                    resultInput.value = '';
+                }
+
+                // Cacher la description
+                const descDiv = document.getElementById('kickoff-description');
+                if (descDiv) {
+                    descDiv.style.display = 'none';
+                }
+
+                Utils.showNotification('Historique effacé', 'info');
+                Utils.vibrate(20);
             }
-
-            // Réinitialiser le champ de résultat
-            const resultInput = document.getElementById('kickoff-result');
-            if (resultInput) {
-                resultInput.value = '';
-            }
-
-            // Cacher la description
-            const descDiv = document.getElementById('kickoff-description');
-            if (descDiv) {
-                descDiv.style.display = 'none';
-            }
-
-            Utils.showNotification('Historique effacé', 'info');
-            Utils.vibrate(20);
+        } else {
+            Utils.showNotification('Aucun événement à effacer', 'info');
         }
     }
 
@@ -4481,26 +4484,41 @@ class BloodBowlApp {
         };
 
         if (roll >= 2 && roll <= 12) {
-            const event = kickoffEvents[roll] || "Événement inconnu.";
+            const eventText = kickoffEvents[roll] || "Événement inconnu.";
+
+            // Créer l'objet événement avec le jet et le texte
+            const eventObj = {
+                roll: roll,
+                text: eventText,
+                timestamp: Date.now()
+            };
 
             // Ajouter à l'historique
             if (!this.matchData.kickoffEvents) {
                 this.matchData.kickoffEvents = [];
             }
-            this.matchData.kickoffEvents.push(event);
+            this.matchData.kickoffEvents.push(eventObj);
 
             // Mettre à jour l'affichage de la description
             const descDiv = document.getElementById('kickoff-description');
             if (descDiv) {
                 descDiv.style.display = 'block';
                 descDiv.className = 'result-box warning';
-                descDiv.innerHTML = `<p>Événement du Coup d'Envoi (${roll}) : <strong>${event}</strong></p>`;
+                descDiv.innerHTML = `<p><strong>Résultat (${roll}):</strong> ${eventText}</p>`;
             }
 
-            // Mettre à jour UNIQUEMENT l'historique sans recharger tout l'onglet
+            // CORRECTION : Vérifier si l'historique existe déjà
             const historyContainer = document.querySelector('.kickoff-history');
             if (historyContainer) {
+                // Si l'historique existe, le mettre à jour
                 historyContainer.outerHTML = this.getKickoffHistory();
+            } else {
+                // Si l'historique n'existe pas, l'ajouter après la description
+                const kickoffSection = descDiv.closest('.step-section');
+                if (kickoffSection) {
+                    const historyHTML = this.getKickoffHistory();
+                    kickoffSection.insertAdjacentHTML('beforeend', historyHTML);
+                }
             }
 
             this.saveState();
