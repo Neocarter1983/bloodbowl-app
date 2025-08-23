@@ -239,6 +239,9 @@ class BloodBowlApp {
         // Initialiser les événements
         this.setupEventListeners();
 
+        // Initialiser la trésorerie
+        this.initializeTreasuries();
+
         // Charger le premier onglet
         this.loadTab('setup');
 
@@ -4947,58 +4950,25 @@ class BloodBowlApp {
     }
 
     getCostlyErrorsSection() {
+        // Calculer les trésoreries finales pour les deux équipes
+        const team1Treasury = this.calculateFinalTreasury(1);
+        const team2Treasury = this.calculateFinalTreasury(2);
+
         return `
             <div class="step-section">
                 <div class="step-header">
-                    <div class="step-number">13</div>
+                    <div class="step-number">6</div>
                     <div class="step-title">Erreurs Coûteuses</div>
                 </div>
                 <div class="explanation-box">
-                    <p><strong>Règle :</strong> Si une équipe a ≥100 000 PO en trésorerie, elle risque des scandales</p>
+                    <p><strong>Règle :</strong> Si une équipe a ≥100 000 PO en trésorerie finale, elle risque des scandales</p>
                     <p><strong>Incident mineur :</strong> -D3×10k PO | <strong>Incident majeur :</strong> Trésorerie ÷ 2</p>
                     <p><strong>Catastrophe :</strong> Ne garde que 2D6×10k PO</p>
                 </div>
 
                 <div class="costly-errors-grid">
-                    <div class="team-errors-section">
-                        <h5>${this.matchData.team1.name || 'Équipe 1'}</h5>
-                        <div class="treasury-input">
-                            <label>Trésorerie actuelle :</label>
-                            <input type="number" id="team1-current-treasury"
-                                placeholder="0" min="0" step="1000"
-                                value="${this.matchData.team1.treasury || 0}"
-                                onchange="app.updateTreasury(1, this.value)">
-                            <span>PO</span>
-                        </div>
-                        ${this.matchData.team1.treasury >= 100000 ? `
-                            <div class="dice-controls">
-                                <button class="dice-btn" onclick="app.rollCostlyErrors(1)">🎲 Test D6</button>
-                                <input type="number" class="dice-result" id="team1-errors-roll"
-                                    value="" min="1" max="6" onchange="app.updateCostlyErrors(1)">
-                            </div>
-                            <div id="team1-errors-result"></div>
-                        ` : '<p class="success-text">Trésorerie < 100k PO : Pas de test requis</p>'}
-                    </div>
-
-                    <div class="team-errors-section">
-                        <h5>${this.matchData.team2.name || 'Équipe 2'}</h5>
-                        <div class="treasury-input">
-                            <label>Trésorerie actuelle :</label>
-                            <input type="number" id="team2-current-treasury"
-                                placeholder="0" min="0" step="1000"
-                                value="${this.matchData.team2.treasury || 0}"
-                                onchange="app.updateTreasury(2, this.value)">
-                            <span>PO</span>
-                        </div>
-                        ${this.matchData.team2.treasury >= 100000 ? `
-                            <div class="dice-controls">
-                                <button class="dice-btn" onclick="app.rollCostlyErrors(2)">🎲 Test D6</button>
-                                <input type="number" class="dice-result" id="team2-errors-roll"
-                                    value="" min="1" max="6" onchange="app.updateCostlyErrors(2)">
-                            </div>
-                            <div id="team2-errors-result"></div>
-                        ` : '<p class="success-text">Trésorerie < 100k PO : Pas de test requis</p>'}
-                    </div>
+                    ${this.getTeamCostlyErrorSection(1, team1Treasury)}
+                    ${this.getTeamCostlyErrorSection(2, team2Treasury)}
                 </div>
             </div>
         `;
@@ -5210,22 +5180,33 @@ class BloodBowlApp {
         if (treasury < 100000) return { type: 'none' };
 
         const table = {
-            100000: { 1: 'minor', 2: 'none', 3: 'none', 4: 'none', 5: 'none', 6: 'none' },
-            200000: { 1: 'minor', 2: 'minor', 3: 'none', 4: 'none', 5: 'none', 6: 'none' },
-            300000: { 1: 'major', 2: 'minor', 3: 'minor', 4: 'none', 5: 'none', 6: 'none' },
-            400000: { 1: 'major', 2: 'major', 3: 'minor', 4: 'minor', 5: 'none', 6: 'none' },
-            500000: { 1: 'catastrophe', 2: 'major', 3: 'major', 4: 'minor', 5: 'minor', 6: 'none' },
-            600000: { 1: 'catastrophe', 2: 'catastrophe', 3: 'major', 4: 'major', 5: 'minor', 6: 'minor' }
+            100000: [1, 2, 2, 2, 2, 2],  // 1: incident mineur, reste: crise évitée
+            200000: [1, 1, 2, 2, 2, 2],  // 1-2: incident mineur, reste: crise évitée
+            300000: [3, 1, 1, 2, 2, 2],  // 1: incident majeur, 2-3: incident mineur, reste: crise évitée
+            400000: [3, 3, 1, 1, 2, 2],  // 1-2: incident majeur, 3-4: incident mineur, reste: crise évitée
+            500000: [4, 3, 3, 1, 1, 2],  // 1: catastrophe, 2-3: incident majeur, 4-5: incident mineur, 6: crise évitée
+            600000: [4, 4, 3, 3, 1, 1]   // 1-2: catastrophe, 3-4: incident majeur, 5-6: incident mineur
         };
 
-        let bracket = 100000;
+        // Déterminer la tranche de trésorerie
+        let bracket;
         if (treasury >= 600000) bracket = 600000;
         else if (treasury >= 500000) bracket = 500000;
         else if (treasury >= 400000) bracket = 400000;
         else if (treasury >= 300000) bracket = 300000;
         else if (treasury >= 200000) bracket = 200000;
+        else bracket = 100000;
 
-        return { type: table[bracket][roll] || 'none' };
+        const result = table[bracket][roll - 1];
+
+        const types = {
+            1: 'minor',
+            2: 'none',
+            3: 'major',
+            4: 'catastrophe'
+        };
+
+        return { type: types[result] || 'none' };
     }
 
     initializePostmatchTab() {
@@ -5895,6 +5876,202 @@ class BloodBowlApp {
                 </div>
             </div>
         `;
+    }
+
+    calculateFinalTreasury(team) {
+        // Trésorerie de base (avant match)
+        const baseTreasury = parseInt(this.matchData[`team${team}`].initialTreasury) || 0;
+
+        // Gains du match (POP + TD) × 10000
+        const gains = this.calculateGains(team);
+
+        // Ventes de joueurs
+        const playerSales = this.getPlayerSalesTotal(team);
+
+        // Dépenses en coups de pouce payées en trésorerie
+        const inducementsSpending = this.calculateInducementSpending(team);
+        const treasurySpentOnInducements = inducementsSpending.spentFromTreasury || 0;
+
+        // Achats de nouveaux joueurs (pour l'instant à 0, pas encore implémenté)
+        const newPlayerPurchases = 0; // TODO: implémenter plus tard
+
+        // Calcul final
+        const finalTreasury = baseTreasury + gains + playerSales - treasurySpentOnInducements - newPlayerPurchases;
+
+        // Debug
+        console.log(`💰 Équipe ${team} - Calcul trésorerie finale:`);
+        console.log(`   Trésorerie initiale: ${Utils.formatNumber(baseTreasury)} PO`);
+        console.log(`   + Gains du match: ${Utils.formatNumber(gains)} PO`);
+        console.log(`   + Ventes de joueurs: ${Utils.formatNumber(playerSales)} PO`);
+        console.log(`   - Coups de pouce (trésorerie): ${Utils.formatNumber(treasurySpentOnInducements)} PO`);
+        console.log(`   - Achats de joueurs: ${Utils.formatNumber(newPlayerPurchases)} PO`);
+        console.log(`   = TOTAL FINAL: ${Utils.formatNumber(finalTreasury)} PO`);
+
+        return {
+            baseTreasury,
+            gains,
+            playerSales,
+            treasurySpentOnInducements,
+            newPlayerPurchases,
+            finalTreasury
+        };
+    }
+
+    getPlayerSalesTotal(team) {
+        const soldPlayers = this.matchData[`team${team}`].soldPlayers || [];
+        let total = 0;
+
+        soldPlayers.forEach(sale => {
+            total += parseInt(sale.value) || 0;
+        });
+
+        return total;
+    }
+
+    getTeamCostlyErrorSection(team, treasuryCalc) {
+        const teamName = this.matchData[`team${team}`].name || `Équipe ${team}`;
+        const finalTreasury = treasuryCalc.finalTreasury;
+
+        // Sauvegarder la trésorerie calculée
+        this.matchData[`team${team}`].calculatedFinalTreasury = finalTreasury;
+
+        return `
+            <div class="team-errors-section">
+                <h5>${teamName}</h5>
+
+                <!-- Détail du calcul de la trésorerie -->
+                <div class="treasury-calculation">
+                    <div class="calc-line">
+                        <span class="calc-label">Trésorerie avant match :</span>
+                        <span class="calc-value">${Utils.formatNumber(treasuryCalc.baseTreasury)} PO</span>
+                    </div>
+                    <div class="calc-line positive">
+                        <span class="calc-label">+ Gains du match :</span>
+                        <span class="calc-value">+${Utils.formatNumber(treasuryCalc.gains)} PO</span>
+                    </div>
+                    ${treasuryCalc.playerSales > 0 ? `
+                    <div class="calc-line positive">
+                        <span class="calc-label">+ Ventes de joueurs :</span>
+                        <span class="calc-value">+${Utils.formatNumber(treasuryCalc.playerSales)} PO</span>
+                    </div>
+                    ` : ''}
+                    ${treasuryCalc.treasurySpentOnInducements > 0 ? `
+                    <div class="calc-line negative">
+                        <span class="calc-label">- Coups de pouce (trésorerie) :</span>
+                        <span class="calc-value">-${Utils.formatNumber(treasuryCalc.treasurySpentOnInducements)} PO</span>
+                    </div>
+                    ` : ''}
+                    ${treasuryCalc.newPlayerPurchases > 0 ? `
+                    <div class="calc-line negative">
+                        <span class="calc-label">- Achats de joueurs :</span>
+                        <span class="calc-value">-${Utils.formatNumber(treasuryCalc.newPlayerPurchases)} PO</span>
+                    </div>
+                    ` : ''}
+                    <div class="calc-line total">
+                        <span class="calc-label"><strong>= Trésorerie finale :</strong></span>
+                        <span class="calc-value"><strong>${Utils.formatNumber(finalTreasury)} PO</strong></span>
+                    </div>
+                </div>
+
+                <!-- Test d'erreurs coûteuses si nécessaire -->
+                ${finalTreasury >= 100000 ? `
+                    <div class="error-test-zone">
+                        <div class="alert alert-warning">
+                            ⚠️ Trésorerie ≥ 100k PO : Test requis !
+                        </div>
+                        <div class="dice-controls">
+                            <button class="dice-btn" onclick="app.rollCostlyErrorsWithFinalTreasury(${team})">
+                                🎲 Test D6
+                            </button>
+                            <input type="number" class="dice-result" id="team${team}-errors-roll"
+                                value="" min="1" max="6"
+                                onchange="app.updateCostlyErrorsWithFinalTreasury(${team})">
+                        </div>
+                        <div id="team${team}-errors-result"></div>
+                    </div>
+                ` : `
+                    <div class="no-test-required">
+                        <p class="success-text">✅ Trésorerie < 100k PO : Pas de test requis</p>
+                    </div>
+                `}
+            </div>
+        `;
+    }
+
+    rollCostlyErrorsWithFinalTreasury(team) {
+        const roll = Utils.getRandomInt(1, 6);
+        document.getElementById(`team${team}-errors-roll`).value = roll;
+        this.updateCostlyErrorsWithFinalTreasury(team);
+        this.saveState();
+    }
+
+    updateCostlyErrorsWithFinalTreasury(team) {
+        const roll = parseInt(document.getElementById(`team${team}-errors-roll`).value) || 0;
+        const treasury = this.matchData[`team${team}`].calculatedFinalTreasury || 0;
+        const resultDiv = document.getElementById(`team${team}-errors-result`);
+
+        if (!roll || roll < 1 || roll > 6) {
+            resultDiv.innerHTML = '';
+            return;
+        }
+
+        const errorTable = this.getCostlyErrorResult(treasury, roll);
+
+        if (errorTable.type === 'none') {
+            resultDiv.innerHTML = '<p class="success-text">✅ Crise évitée ! Aucune perte.</p>';
+            this.matchData[`team${team}`].costlyErrorLoss = 0;
+        } else if (errorTable.type === 'minor') {
+            const d3Roll = Utils.getRandomInt(1, 3);
+            const loss = d3Roll * 10000;
+            resultDiv.innerHTML = `
+                <p class="warning-text">
+                    ⚠️ Incident mineur !<br>
+                    Jet D3 = ${d3Roll}<br>
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(Math.max(0, treasury - loss))} PO
+                </p>
+            `;
+            this.matchData[`team${team}`].costlyErrorLoss = loss;
+        } else if (errorTable.type === 'major') {
+            const newTreasury = Math.floor(treasury / 2);
+            const loss = treasury - newTreasury;
+            resultDiv.innerHTML = `
+                <p class="danger-text">
+                    🔥 Incident majeur !<br>
+                    Trésorerie divisée par 2<br>
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(newTreasury)} PO
+                </p>
+            `;
+            this.matchData[`team${team}`].costlyErrorLoss = loss;
+        } else if (errorTable.type === 'catastrophe') {
+            const d6Roll1 = Utils.getRandomInt(1, 6);
+            const d6Roll2 = Utils.getRandomInt(1, 6);
+            const kept = (d6Roll1 + d6Roll2) * 10000;
+            const loss = Math.max(0, treasury - kept);
+            resultDiv.innerHTML = `
+                <p class="danger-text">
+                    💥 CATASTROPHE !<br>
+                    Jets 2D6 = ${d6Roll1} + ${d6Roll2} = ${d6Roll1 + d6Roll2}<br>
+                    Montant conservé : ${Utils.formatNumber(kept)} PO<br>
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(Math.min(treasury, kept))} PO
+                </p>
+            `;
+            this.matchData[`team${team}`].costlyErrorLoss = loss;
+        }
+
+        this.saveState();
+    }
+
+    initializeTreasuries() {
+        // Appelé au début du match ou lors du chargement
+        if (!this.matchData.team1.initialTreasury) {
+            this.matchData.team1.initialTreasury = this.matchData.team1.treasury || 0;
+        }
+        if (!this.matchData.team2.initialTreasury) {
+            this.matchData.team2.initialTreasury = this.matchData.team2.treasury || 0;
+        }
     }
 
 }

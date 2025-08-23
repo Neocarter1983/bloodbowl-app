@@ -3953,3 +3953,212 @@ html {
         border-top-color: #555;
     }
 }
+
+/* === STYLES POUR LE CALCUL DE LA TRÉSORERIE FINALE === */
+/* À ajouter dans www/css/styles.css */
+
+/* Calcul de la trésorerie */
+.treasury-calculation {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 15px 0;
+    font-size: 14px;
+}
+
+.calc-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    margin: 2px 0;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.calc-line:hover {
+    background: #f8f9fa;
+}
+
+.calc-label {
+    color: #495057;
+    flex: 1;
+}
+
+.calc-value {
+    font-weight: 600;
+    color: #212529;
+    text-align: right;
+    min-width: 100px;
+}
+
+/* Lignes positives (gains) */
+.calc-line.positive {
+    background: rgba(40, 167, 69, 0.05);
+    border-left: 3px solid var(--success-color);
+}
+
+.calc-line.positive .calc-value {
+    color: var(--success-color);
+}
+
+/* Lignes négatives (dépenses) */
+.calc-line.negative {
+    background: rgba(220, 53, 69, 0.05);
+    border-left: 3px solid var(--danger-color);
+}
+
+.calc-line.negative .calc-value {
+    color: var(--danger-color);
+}
+
+/* Ligne de total */
+.calc-line.total {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 2px solid var(--primary-color);
+    background: linear-gradient(90deg, rgba(26, 95, 63, 0.05) 0%, rgba(45, 143, 95, 0.05) 100%);
+}
+
+.calc-line.total .calc-label {
+    color: var(--primary-color);
+    font-size: 15px;
+}
+
+.calc-line.total .calc-value {
+    color: var(--primary-color);
+    font-size: 16px;
+}
+
+/* Zone de test des erreurs */
+.error-test-zone {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+}
+
+.alert {
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* Zone sans test requis */
+.no-test-required {
+    margin-top: 15px;
+    padding: 12px;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+}
+
+/* Résultats des erreurs coûteuses */
+#team1-errors-result,
+#team2-errors-result {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 6px;
+    animation: slideIn 0.3s ease;
+}
+
+#team1-errors-result p,
+#team2-errors-result p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+#team1-errors-result .success-text,
+#team2-errors-result .success-text {
+    background: rgba(40, 167, 69, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 4px solid var(--success-color);
+}
+
+#team1-errors-result .warning-text,
+#team2-errors-result .warning-text {
+    background: rgba(255, 193, 7, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 4px solid var(--warning-color);
+}
+
+#team1-errors-result .danger-text,
+#team2-errors-result .danger-text {
+    background: rgba(220, 53, 69, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 4px solid var(--danger-color);
+}
+
+/* Animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .treasury-calculation {
+        font-size: 13px;
+        padding: 10px;
+    }
+
+    .calc-line {
+        padding: 4px 6px;
+    }
+
+    .calc-value {
+        min-width: 80px;
+        font-size: 13px;
+    }
+
+    .calc-line.total .calc-value {
+        font-size: 14px;
+    }
+}
+
+/* Style amélioré pour la grille des erreurs coûteuses */
+.costly-errors-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 15px 0;
+}
+
+@media (max-width: 768px) {
+    .costly-errors-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.team-errors-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.team-errors-section h5 {
+    color: var(--primary-color);
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary-color);
+    font-size: 1.2em;
+}
