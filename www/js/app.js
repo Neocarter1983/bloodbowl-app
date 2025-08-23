@@ -634,6 +634,7 @@ class BloodBowlApp {
                 ${this.getExperienceSection()}
                 ${this.getMVPSection()}
                 ${this.getPlayerSalesSection()}
+                ${this.getPlayerPurchasesSection()}
                 ${this.getCostlyErrorsSection()}
 
                 <div class="form-actions">
@@ -4929,7 +4930,6 @@ class BloodBowlApp {
         return html;
     }
 
-
     getPlayerSalesSection() {
         return `
             <div class="step-section">
@@ -4970,6 +4970,125 @@ class BloodBowlApp {
                 </div>
             </div>
         `;
+    }
+
+    getPlayerPurchasesSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">13</div>
+                    <div class="step-title">Achat de Joueurs</div>
+                </div>
+                <div class="explanation-box">
+                    <p><strong>Règle :</strong> Les coachs peuvent dépenser leur trésorerie pour acheter de nouveaux joueurs</p>
+                    <p><strong>Important :</strong> Le coût sera déduit de la trésorerie finale</p>
+                    <p>Notez le nom, le poste et le coût de chaque nouveau joueur acheté</p>
+                </div>
+
+                <div class="player-purchases-grid">
+                    <div class="team-purchases-section">
+                        <h5>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h5>
+                        <div id="team1-purchases-list" class="purchases-list">
+                            ${this.getTeamPurchasesList(1)}
+                        </div>
+                        <button class="btn btn-secondary" onclick="app.addPurchasedPlayer(1)">
+                            ➕ Ajouter un joueur acheté
+                        </button>
+                    </div>
+
+                    <div class="team-purchases-section">
+                        <h5>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h5>
+                        <div id="team2-purchases-list" class="purchases-list">
+                            ${this.getTeamPurchasesList(2)}
+                        </div>
+                        <button class="btn btn-secondary" onclick="app.addPurchasedPlayer(2)">
+                            ➕ Ajouter un joueur acheté
+                        </button>
+                    </div>
+                </div>
+
+                <div class="help-text">
+                    💡 Les achats de joueurs seront automatiquement déduits de votre trésorerie dans la section Erreurs Coûteuses
+                </div>
+            </div>
+        `;
+    }
+
+    getTeamPurchasesList(team) {
+        if (!this.matchData[`team${team}`].purchasedPlayers) {
+            this.matchData[`team${team}`].purchasedPlayers = [];
+        }
+
+        const purchasedPlayers = this.matchData[`team${team}`].purchasedPlayers;
+
+        if (purchasedPlayers.length === 0) {
+            return '<p class="help-text">Aucun joueur acheté</p>';
+        }
+
+        return purchasedPlayers.map((player, index) => `
+            <div class="purchased-player-item">
+                <input type="text" class="purchased-player-input purchased-player-name"
+                    value="${player.name}"
+                    placeholder="Nom du joueur"
+                    onchange="app.updatePurchasedPlayer(${team}, ${index}, 'name', this.value)">
+                <input type="text" class="purchased-player-input purchased-player-position"
+                    value="${player.position}"
+                    placeholder="Poste"
+                    onchange="app.updatePurchasedPlayer(${team}, ${index}, 'position', this.value)">
+                <input type="number" class="purchased-player-value"
+                    value="${player.cost || 0}"
+                    placeholder="Coût"
+                    min="0" step="10000"
+                    onchange="app.updatePurchasedPlayer(${team}, ${index}, 'cost', this.value)">
+                <span>PO</span>
+                <button class="btn-remove-player" onclick="app.removePurchasedPlayer(${team}, ${index})">❌</button>
+            </div>
+        `).join('');
+    }
+
+    addPurchasedPlayer(team) {
+        if (!this.matchData[`team${team}`].purchasedPlayers) {
+            this.matchData[`team${team}`].purchasedPlayers = [];
+        }
+
+        this.matchData[`team${team}`].purchasedPlayers.push({
+            name: '',
+            position: '',
+            cost: 0
+        });
+
+        this.loadTab('postmatch');
+        this.saveState();
+    }
+
+    updatePurchasedPlayer(team, index, field, value) {
+        if (field === 'cost') {
+            this.matchData[`team${team}`].purchasedPlayers[index][field] = parseInt(value) || 0;
+        } else {
+            this.matchData[`team${team}`].purchasedPlayers[index][field] = value;
+        }
+
+        // Recharger la section des erreurs coûteuses pour mettre à jour les calculs
+        this.loadTab('postmatch');
+        this.saveState();
+    }
+
+    removePurchasedPlayer(team, index) {
+        this.matchData[`team${team}`].purchasedPlayers.splice(index, 1);
+        this.loadTab('postmatch');
+        this.saveState();
+    }
+
+    // MÉTHODE POUR CALCULER LE TOTAL DES ACHATS
+    getPlayerPurchasesTotal(team) {
+        const purchasedPlayers = this.matchData[`team${team}`].purchasedPlayers || [];
+        let total = 0;
+
+        purchasedPlayers.forEach(purchase => {
+            total += parseInt(purchase.cost) || 0;
+        });
+
+        return total;
     }
 
     getCostlyErrorsSection() {
@@ -5902,27 +6021,15 @@ class BloodBowlApp {
     }
 
     calculateFinalTreasury(team) {
-        // Trésorerie de base (avant match)
-        const baseTreasury = parseInt(this.matchData[`team${team}`].treasury) || 0;
-
-        // Gains du match (POP + TD) × 10000
+        const baseTreasury = this.matchData[`team${team}`].treasury || 0;
         const gains = this.calculateGains(team);
-
-        // Ventes de joueurs
         const playerSales = this.getPlayerSalesTotal(team);
+        const treasurySpentOnInducements = this.matchData[`team${team}`].treasurySpentOnInducements || 0;
+        const newPlayerPurchases = this.getPlayerPurchasesTotal(team); // Utilise maintenant la vraie méthode
 
-        // Dépenses en coups de pouce payées en trésorerie
-        const inducementsSpending = this.calculateInducementSpending(team);
-        const treasurySpentOnInducements = inducementsSpending.spentFromTreasury || 0;
-
-        // Achats de nouveaux joueurs (pour l'instant à 0, pas encore implémenté)
-        const newPlayerPurchases = 0; // TODO: implémenter plus tard
-
-        // Calcul final
         const finalTreasury = baseTreasury + gains + playerSales - treasurySpentOnInducements - newPlayerPurchases;
 
-        // Debug
-        console.log(`💰 Équipe ${team} - Calcul trésorerie finale:`);
+        console.log(`Calcul trésorerie ${this.matchData[`team${team}`].name}:`);
         console.log(`   Trésorerie initiale: ${Utils.formatNumber(baseTreasury)} PO`);
         console.log(`   + Gains du match: ${Utils.formatNumber(gains)} PO`);
         console.log(`   + Ventes de joueurs: ${Utils.formatNumber(playerSales)} PO`);
@@ -5991,8 +6098,8 @@ class BloodBowlApp {
                     </div>
                     ` : ''}
                     <div class="calc-line total">
-                        <span class="calc-label"><strong>= Trésorerie finale :</strong></span>
-                        <span class="calc-value"><strong>${Utils.formatNumber(finalTreasury)} PO</strong></span>
+                        <span class="calc-label">= Trésorerie finale :</span>
+                        <span class="calc-value ${finalTreasury < 0 ? 'negative' : ''}">${Utils.formatNumber(finalTreasury)} PO</span>
                     </div>
                 </div>
 
