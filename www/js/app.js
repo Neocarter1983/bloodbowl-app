@@ -236,6 +236,8 @@ class BloodBowlApp {
         // Charger les données sauvegardées
         this.loadState();
 
+        this.syncAllTreasuries();
+
         // Initialiser les événements
         this.setupEventListeners();
 
@@ -2708,6 +2710,19 @@ class BloodBowlApp {
             console.error('Erreur updateTeamData:', error);
             return false;
         }
+    }
+
+    syncAllTreasuries() {
+        // S'assurer que les trésoreries des inducements sont synchronisées avec la configuration
+        [1, 2].forEach(team => {
+            const configTreasury = parseInt(this.matchData[`team${team}`].treasury) || 0;
+
+            // Si la trésorerie des inducements n'est pas définie ou est à 0, la synchroniser
+            if (!this.matchData.inducements[`team${team}Treasury`]) {
+                this.matchData.inducements[`team${team}Treasury`] = configTreasury;
+                console.log(`🔄 Synchronisation trésorerie équipe ${team}: ${configTreasury} PO`);
+            }
+        });
     }
 
     // Nouvelle méthode pour mettre à jour l'état de navigation
@@ -5880,7 +5895,7 @@ class BloodBowlApp {
 
     calculateFinalTreasury(team) {
         // Trésorerie de base (avant match)
-        const baseTreasury = parseInt(this.matchData[`team${team}`].initialTreasury) || 0;
+        const baseTreasury = parseInt(this.matchData[`team${team}`].treasury) || 0;
 
         // Gains du match (POP + TD) × 10000
         const gains = this.calculateGains(team);
@@ -5942,7 +5957,7 @@ class BloodBowlApp {
                 <!-- Détail du calcul de la trésorerie -->
                 <div class="treasury-calculation">
                     <div class="calc-line">
-                        <span class="calc-label">Trésorerie avant match :</span>
+                        <span class="calc-label">Trésorerie (onglet Configuration) :</span>
                         <span class="calc-value">${Utils.formatNumber(treasuryCalc.baseTreasury)} PO</span>
                     </div>
                     <div class="calc-line positive">
