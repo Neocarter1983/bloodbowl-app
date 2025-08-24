@@ -383,66 +383,56 @@ class BloodBowlApp {
     }
 
     getScoreDisplay() {
+        // Calculer automatiquement les scores basés sur les TD dans le tableau
+        this.updateTeamScore(1);
+        this.updateTeamScore(2);
+
         return `
             <div class="step-section">
                 <div class="step-header">
                     <div class="step-number">6</div>
                     <div class="step-title">Score du Match</div>
                 </div>
-                <div class="score-display">
-                    <div class="team-score">
-                        <h3>${this.matchData.team1.name || 'Équipe 1'}</h3>
-                        <div class="score-controls">
-                            <button class="btn-score-minus" onclick="app.updateScore(1, -1)" title="Retirer un TD">
-                                −
-                            </button>
-                            <div class="score-numbers" id="score1">${this.matchData.team1.score || 0}</div>
-                            <button class="btn-score-plus" onclick="app.updateScore(1, 1)" title="Ajouter un TD">
-                                +
-                            </button>
-                        </div>
-                    </div>
-                    <div class="vs-separator">VS</div>
-                    <div class="team-score">
-                        <h3>${this.matchData.team2.name || 'Équipe 2'}</h3>
-                        <div class="score-controls">
-                            <button class="btn-score-minus" onclick="app.updateScore(2, -1)" title="Retirer un TD">
-                                −
-                            </button>
-                            <div class="score-numbers" id="score2">${this.matchData.team2.score || 0}</div>
-                            <button class="btn-score-plus" onclick="app.updateScore(2, 1)" title="Ajouter un TD">
-                                +
-                            </button>
-                        </div>
-                    </div>
+                <div class="explanation-box">
+                    <p>💡 <strong>Le score se met à jour automatiquement</strong> quand vous cochez "TD" dans le tableau des joueurs</p>
                 </div>
-                <div style="text-align: center; margin-top: 15px;">
-                    <button class="btn btn-secondary" onclick="app.resetScore()">
-                        🔄 Réinitialiser le score
-                    </button>
+                <div class="score-display">
+                    <div class="team-score-card">
+                        <div class="team-icon">🏠</div>
+                        <h3>${this.matchData.team1.name || 'Équipe 1'}</h3>
+                        <div class="score-value" id="score1">${this.matchData.team1.score || 0}</div>
+                        <div class="score-label">TD</div>
+                    </div>
+
+                    <div class="vs-separator">
+                        <span class="vs-text">VS</span>
+                        <div class="match-status">
+                            ${this.getMatchStatusText()}
+                        </div>
+                    </div>
+
+                    <div class="team-score-card">
+                        <div class="team-icon">🚌</div>
+                        <h3>${this.matchData.team2.name || 'Équipe 2'}</h3>
+                        <div class="score-value" id="score2">${this.matchData.team2.score || 0}</div>
+                        <div class="score-label">TD</div>
+                    </div>
                 </div>
             </div>
         `;
     }
 
-    // Nouvelle méthode pour gérer les scores avec +1/-1
-    updateScore(team, delta) {
-        const currentScore = this.matchData[`team${team}`].score || 0;
-        const newScore = Math.max(0, currentScore + delta); // Empêcher les scores négatifs
+    getMatchStatusText() {
+        const score1 = this.matchData.team1.score || 0;
+        const score2 = this.matchData.team2.score || 0;
 
-        this.matchData[`team${team}`].score = newScore;
-        document.getElementById(`score${team}`).textContent = newScore;
-        this.saveState();
-
-        // Vibration pour feedback
-        Utils.vibrate(30);
-
-        // Animation visuelle du changement
-        const scoreElement = document.getElementById(`score${team}`);
-        scoreElement.classList.add('score-updated');
-        setTimeout(() => {
-            scoreElement.classList.remove('score-updated');
-        }, 300);
+        if (score1 > score2) {
+            return `<span style="color: #28a745;">🏆 ${this.matchData.team1.name} mène</span>`;
+        } else if (score2 > score1) {
+            return `<span style="color: #28a745;">🏆 ${this.matchData.team2.name} mène</span>`;
+        } else {
+            return `<span style="color: #6c757d;">🤝 Égalité</span>`;
+        }
     }
 
     ensureCurrentTabSelected() {
@@ -4535,43 +4525,6 @@ class BloodBowlApp {
         `;
     }
 
-    // Gestion du score
-    addTouchdown(team) {
-        // Afficher une modal ou une liste pour sélectionner le joueur qui a marqué
-        const players = this.matchData[`team${team}`].players || [];
-
-        if (players.length === 0) {
-            alert("Ajoutez d'abord des joueurs à l'équipe !");
-            return;
-        }
-
-        // Créer une liste de sélection simple
-        let playerOptions = players.map(p =>
-            `<option value="${p.id}">${p.name || 'Joueur sans nom'}</option>`
-        ).join('');
-
-        const modalHTML = `
-            <div class="modal-overlay" id="td-modal">
-                <div class="modal-content" style="max-width: 400px;">
-                    <h3>Qui a marqué le touchdown ?</h3>
-                    <select id="td-player-select" style="width: 100%; padding: 8px; margin: 10px 0;">
-                        <option value="">-- Sélectionner un joueur --</option>
-                        ${playerOptions}
-                    </select>
-                    <div style="margin-top: 15px; text-align: center;">
-                        <button class="btn btn-primary" onclick="app.confirmTouchdown(${team})">Confirmer</button>
-                        <button class="btn btn-secondary" onclick="app.closeTDModal()">Annuler</button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Ajouter la modal au DOM
-        const modalContainer = document.createElement('div');
-        modalContainer.innerHTML = modalHTML;
-        document.body.appendChild(modalContainer);
-    }
-
     updateKickoffEvent() {
         const roll = parseInt(document.getElementById('kickoff-result').value) || 0;
 
@@ -4759,35 +4712,6 @@ class BloodBowlApp {
             scoreElement.textContent = totalTDs;
         }
     }
-
-    confirmTouchdown(team) {
-        const select = document.getElementById('td-player-select');
-        const playerId = select.value;
-
-        if (!playerId) {
-            alert("Veuillez sélectionner un joueur !");
-            return;
-        }
-
-        // Ajouter le TD au joueur
-        this.changePlayerAction(team, playerId, 'td', 1);
-
-        // Fermer la modal
-        this.closeTDModal();
-
-        // Animation de célébration
-        Utils.vibrate(100);
-    }
-
-    closeTDModal() {
-        const modal = document.getElementById('td-modal');
-        if (modal && modal.parentElement) {
-            modal.parentElement.remove();
-        }
-    }
-
-
-
 
     calculatePlayerXP(team, playerId) {
         const player = this.matchData[`team${team}`].players.find(p => p.id === playerId);

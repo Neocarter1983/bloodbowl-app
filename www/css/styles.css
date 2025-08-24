@@ -2803,38 +2803,6 @@ select.form-control {
 
 /* ===== STYLES POUR LES BOUTONS DE SCORE +/- ===== */
 
-.score-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-}
-
-.btn-score-plus, .btn-score-minus {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid var(--primary-color);
-    background: white;
-    color: var(--primary-color);
-    font-size: 24px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    line-height: 1;
-}
-
-.btn-score-plus:hover, .btn-score-minus:hover {
-    background: var(--primary-color);
-    color: white;
-    transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(26, 95, 63, 0.3);
-}
-
 .btn-score-plus:active, .btn-score-minus:active {
     transform: scale(0.95);
 }
@@ -3307,41 +3275,6 @@ html {
 .td-counter .counter-btn.plus:hover {
     background: #e65100;
     color: white;
-}
-
-/* Modal pour sélection de TD */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
-.modal-content {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    max-width: 90%;
-}
-
-.modal-content h3 {
-    margin-top: 0;
-    color: var(--primary-color);
-}
-
-.modal-content select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
 }
 
 /* Ajustements pour mobile */
@@ -4487,4 +4420,113 @@ html {
     border-color: #dc3545;
     color: #dc3545;
     font-weight: bold;
+}
+
+/* ===== NOUVELLE SECTION SCORE ÉPURÉE ===== */
+
+.team-score-card {
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    min-width: 150px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.team-score-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.team-score-card .team-icon {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.team-score-card h3 {
+    color: #212529;
+    font-size: 1.1em;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+.score-value {
+    font-size: 3.5em;
+    font-weight: bold;
+    color: var(--primary-color);
+    line-height: 1;
+    margin: 10px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.score-label {
+    color: #6c757d;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.vs-separator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.vs-text {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #495057;
+}
+
+.match-status {
+    font-size: 0.9em;
+    padding: 5px 10px;
+    background: #f8f9fa;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.score-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(26, 95, 63, 0.02), rgba(26, 95, 63, 0.05));
+    border-radius: 15px;
+    margin-top: 15px;
+}
+
+/* Animation mise à jour du score */
+@keyframes scoreUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); color: #ffc107; }
+    100% { transform: scale(1); }
+}
+
+.score-value.updated {
+    animation: scoreUpdate 0.5s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .score-display {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .team-score-card {
+        width: 100%;
+        max-width: 250px;
+    }
+
+    .vs-separator {
+        transform: rotate(90deg);
+        margin: 10px 0;
+    }
 }
