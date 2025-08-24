@@ -3872,6 +3872,18 @@ class BloodBowlApp {
     }
 
     validateInducements() {
+        // NOUVEAU : Calculer et sauvegarder la trésorerie dépensée pour chaque équipe
+        const team1Spending = this.calculateInducementSpending(1);
+        const team2Spending = this.calculateInducementSpending(2);
+
+        // Sauvegarder la trésorerie dépensée
+        this.matchData.team1.treasurySpentOnInducements = team1Spending.spentFromTreasury;
+        this.matchData.team2.treasurySpentOnInducements = team2Spending.spentFromTreasury;
+
+        console.log('💰 Trésorerie dépensée sauvegardée:');
+        console.log(`   Équipe 1: ${team1Spending.spentFromTreasury} PO`);
+        console.log(`   Équipe 2: ${team2Spending.spentFromTreasury} PO`);
+
         // Sauvegarder les données
         this.saveState();
 
@@ -3881,8 +3893,8 @@ class BloodBowlApp {
         // Rafraîchir l'affichage de l'onglet
         this.loadTab(this.currentTab);
 
-        // Message de confirmation (optionnel)
-        console.log('Coups de pouce validés !');
+        // Message de confirmation
+        console.log('✅ Coups de pouce validés et trésorerie dépensée enregistrée !');
     }
 
     getSelectedInducementsDisplay() {
@@ -4807,6 +4819,12 @@ class BloodBowlApp {
         const team1Gains = this.calculateGains(1);
         const team2Gains = this.calculateGains(2);
 
+        // Récupérer le facteur de popularité calculé en avant-match
+        const team1Popularity = this.matchData.team1.popularity || 0;
+        const team2Popularity = this.matchData.team2.popularity || 0;
+        const team1Touchdowns = this.matchData.team1.score || 0;
+        const team2Touchdowns = this.matchData.team2.score || 0;
+
         return `
             <div class="step-section">
                 <div class="step-header">
@@ -4815,19 +4833,37 @@ class BloodBowlApp {
                 </div>
                 <div class="explanation-box">
                     <p><strong>Formule :</strong> 10 000 PO × (Facteur de Popularité + Touchdowns marqués)</p>
+                    <p>Le Facteur de Popularité a été calculé en avant-match (D3 + fans dévoués)</p>
                     <p>Une équipe qui concède ne compte pas son facteur de popularité</p>
                 </div>
                 <div class="summary-grid">
                     <div class="summary-item">
                         <div class="label">${this.matchData.team1.name || 'Équipe 1'}</div>
                         <div class="value">${Utils.formatNumber(team1Gains)} PO</div>
-                        <small>Calcul : (${this.matchData.team1.popularity} + ${this.matchData.team1.score}) × 10k</small>
+                        <div class="gains-calculation">
+                            <small>
+                                Facteur de Popularité : ${team1Popularity}<br>
+                                + Touchdowns marqués : ${team1Touchdowns}<br>
+                                = Total : ${team1Popularity + team1Touchdowns}<br>
+                                × 10 000 PO = <strong>${Utils.formatNumber(team1Gains)} PO</strong>
+                            </small>
+                        </div>
                     </div>
                     <div class="summary-item">
                         <div class="label">${this.matchData.team2.name || 'Équipe 2'}</div>
                         <div class="value">${Utils.formatNumber(team2Gains)} PO</div>
-                        <small>Calcul : (${this.matchData.team2.popularity} + ${this.matchData.team2.score}) × 10k</small>
+                        <div class="gains-calculation">
+                            <small>
+                                Facteur de Popularité : ${team2Popularity}<br>
+                                + Touchdowns marqués : ${team2Touchdowns}<br>
+                                = Total : ${team2Popularity + team2Touchdowns}<br>
+                                × 10 000 PO = <strong>${Utils.formatNumber(team2Gains)} PO</strong>
+                            </small>
+                        </div>
                     </div>
+                </div>
+                <div class="help-text">
+                    📝 Rappel : Le Facteur de Popularité (${team1Popularity} et ${team2Popularity}) a été déterminé en avant-match par D3 + fans dévoués
                 </div>
             </div>
         `;
@@ -5018,6 +5054,24 @@ class BloodBowlApp {
     }
 
     getPlayerPurchasesSection() {
+        // Calculer le budget disponible pour chaque équipe
+        const team1Budget = this.calculateAvailableBudget(1);
+        const team2Budget = this.calculateAvailableBudget(2);
+
+        // Récupérer les montants de trésorerie dépensée
+        let team1TreasurySpent = this.matchData.team1.treasurySpentOnInducements || 0;
+        let team2TreasurySpent = this.matchData.team2.treasurySpentOnInducements || 0;
+
+        // Si pas encore définis, calculer
+        if (team1TreasurySpent === 0 && this.hasInducements(1)) {
+            const spending = this.calculateInducementSpending(1);
+            team1TreasurySpent = spending.spentFromTreasury;
+        }
+        if (team2TreasurySpent === 0 && this.hasInducements(2)) {
+            const spending = this.calculateInducementSpending(2);
+            team2TreasurySpent = spending.spentFromTreasury;
+        }
+
         return `
             <div class="step-section">
                 <div class="step-header">
@@ -5033,6 +5087,21 @@ class BloodBowlApp {
                 <div class="player-purchases-grid">
                     <div class="team-purchases-section">
                         <h5>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h5>
+
+                        <!-- Affichage du budget disponible -->
+                        <div class="budget-display">
+                            <div class="budget-available">
+                                <span class="budget-label">💰 Budget disponible :</span>
+                                <span class="budget-amount ${team1Budget < 0 ? 'negative' : ''}">${Utils.formatNumber(team1Budget)} PO</span>
+                            </div>
+                            <div class="budget-breakdown">
+                                <small>Trésorerie initiale (${Utils.formatNumber(this.matchData.team1.treasury || 0)})
+                                + Gains (${Utils.formatNumber(this.calculateGains(1))})
+                                + Ventes (${Utils.formatNumber(this.getPlayerSalesTotal(1))})
+                                ${team1TreasurySpent > 0 ? `- Coups de pouce (${Utils.formatNumber(team1TreasurySpent)})` : ''}</small>
+                            </div>
+                        </div>
+
                         <div id="team1-purchases-list" class="purchases-list">
                             ${this.getTeamPurchasesList(1)}
                         </div>
@@ -5043,6 +5112,21 @@ class BloodBowlApp {
 
                     <div class="team-purchases-section">
                         <h5>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h5>
+
+                        <!-- Affichage du budget disponible -->
+                        <div class="budget-display">
+                            <div class="budget-available">
+                                <span class="budget-label">💰 Budget disponible :</span>
+                                <span class="budget-amount ${team2Budget < 0 ? 'negative' : ''}">${Utils.formatNumber(team2Budget)} PO</span>
+                            </div>
+                            <div class="budget-breakdown">
+                                <small>Trésorerie initiale (${Utils.formatNumber(this.matchData.team2.treasury || 0)})
+                                + Gains (${Utils.formatNumber(this.calculateGains(2))})
+                                + Ventes (${Utils.formatNumber(this.getPlayerSalesTotal(2))})
+                                ${team2TreasurySpent > 0 ? `- Coups de pouce (${Utils.formatNumber(team2TreasurySpent)})` : ''}</small>
+                            </div>
+                        </div>
+
                         <div id="team2-purchases-list" class="purchases-list">
                             ${this.getTeamPurchasesList(2)}
                         </div>
@@ -5057,6 +5141,38 @@ class BloodBowlApp {
                 </div>
             </div>
         `;
+    }
+
+    calculateAvailableBudget(team) {
+        const baseTreasury = this.matchData[`team${team}`].treasury || 0;
+        const gains = this.calculateGains(team);
+        const playerSales = this.getPlayerSalesTotal(team);
+
+        // Récupérer la trésorerie dépensée pour les coups de pouce
+        let treasurySpentOnInducements = this.matchData[`team${team}`].treasurySpentOnInducements || 0;
+
+        // Si pas encore définie mais qu'il y a des coups de pouce, calculer
+        if (treasurySpentOnInducements === 0 && this.hasInducements(team)) {
+            const spending = this.calculateInducementSpending(team);
+            treasurySpentOnInducements = spending.spentFromTreasury;
+            // Optionnel : sauvegarder pour éviter de recalculer
+            this.matchData[`team${team}`].treasurySpentOnInducements = treasurySpentOnInducements;
+        }
+
+        // Budget disponible = trésorerie + gains + ventes - coups de pouce
+        const availableBudget = baseTreasury + gains + playerSales - treasurySpentOnInducements;
+
+        return availableBudget;
+    }
+
+    hasInducements(team) {
+        const items = this.matchData.inducements[`team${team}Items`];
+        if (!items) return false;
+
+        for (let key in items) {
+            if (items[key] > 0) return true;
+        }
+        return false;
     }
 
     getTeamPurchasesList(team) {
@@ -5108,12 +5224,29 @@ class BloodBowlApp {
 
     updatePurchasedPlayer(team, index, field, value) {
         if (field === 'cost') {
-            this.matchData[`team${team}`].purchasedPlayers[index][field] = parseInt(value) || 0;
+            const newCost = parseInt(value) || 0;
+            const availableBudget = this.calculateAvailableBudget(team);
+            const totalPurchases = this.getPlayerPurchasesTotal(team);
+            const previousCost = this.matchData[`team${team}`].purchasedPlayers[index].cost || 0;
+            const newTotalPurchases = totalPurchases - previousCost + newCost;
+
+            // Vérifier si le nouveau total dépasse le budget
+            if (newTotalPurchases > availableBudget) {
+                // Afficher un avertissement
+                const remainingBudget = availableBudget - (totalPurchases - previousCost);
+                alert(`⚠️ Budget insuffisant !\n\nBudget restant : ${Utils.formatNumber(remainingBudget)} PO\nCoût saisi : ${Utils.formatNumber(newCost)} PO\n\nVeuillez saisir un montant inférieur ou vendre des joueurs pour augmenter votre budget.`);
+
+                // Optionnel : remettre l'ancienne valeur
+                document.querySelector(`#team${team}-purchases-list input[type="number"]`).value = previousCost;
+                return;
+            }
+
+            this.matchData[`team${team}`].purchasedPlayers[index][field] = newCost;
         } else {
             this.matchData[`team${team}`].purchasedPlayers[index][field] = value;
         }
 
-        // Recharger la section des erreurs coûteuses pour mettre à jour les calculs
+        // Recharger la section pour mettre à jour le budget restant
         this.loadTab('postmatch');
         this.saveState();
     }
@@ -6069,8 +6202,18 @@ class BloodBowlApp {
         const baseTreasury = this.matchData[`team${team}`].treasury || 0;
         const gains = this.calculateGains(team);
         const playerSales = this.getPlayerSalesTotal(team);
-        const treasurySpentOnInducements = this.matchData[`team${team}`].treasurySpentOnInducements || 0;
-        const newPlayerPurchases = this.getPlayerPurchasesTotal(team); // Utilise maintenant la vraie méthode
+        const newPlayerPurchases = this.getPlayerPurchasesTotal(team);
+
+        // Récupérer la trésorerie dépensée pour les coups de pouce
+        let treasurySpentOnInducements = this.matchData[`team${team}`].treasurySpentOnInducements || 0;
+
+        // Si pas encore définie mais qu'il y a des coups de pouce, calculer
+        if (treasurySpentOnInducements === 0 && this.hasInducements(team)) {
+            const spending = this.calculateInducementSpending(team);
+            treasurySpentOnInducements = spending.spentFromTreasury;
+            // Sauvegarder pour éviter de recalculer
+            this.matchData[`team${team}`].treasurySpentOnInducements = treasurySpentOnInducements;
+        }
 
         const finalTreasury = baseTreasury + gains + playerSales - treasurySpentOnInducements - newPlayerPurchases;
 

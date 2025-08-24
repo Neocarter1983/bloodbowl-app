@@ -4352,3 +4352,139 @@ html {
         margin-top: 8px;
     }
 }
+
+/* Budget display dans la section achat de joueurs */
+.budget-display {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 2px solid #4caf50;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.budget-available {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.budget-label {
+    font-weight: 600;
+    color: #2e7d32;
+    font-size: 1.1em;
+}
+
+.budget-amount {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #1b5e20;
+    padding: 4px 12px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.budget-amount.negative {
+    color: #dc3545;
+    background: #ffe5e5;
+    border: 1px solid #ff9999;
+}
+
+.budget-breakdown {
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    font-size: 0.85em;
+    color: #555;
+    line-height: 1.4;
+}
+
+.budget-breakdown small {
+    display: block;
+    opacity: 0.9;
+}
+
+/* Amélioration de l'affichage des gains */
+.gains-calculation {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 6px;
+    text-align: left;
+}
+
+.gains-calculation small {
+    line-height: 1.8;
+    color: #333;
+}
+
+.gains-calculation strong {
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+/* Alert de budget insuffisant */
+.budget-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.budget-warning::before {
+    content: '⚠️';
+    font-size: 1.2em;
+}
+
+/* Animation pour le budget qui change */
+@keyframes budgetPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.budget-amount.updating {
+    animation: budgetPulse 0.3s ease;
+}
+
+/* Responsive pour mobile */
+@media (max-width: 768px) {
+    .budget-display {
+        padding: 10px;
+    }
+
+    .budget-available {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .budget-amount {
+        font-size: 1.2em;
+        width: 100%;
+        text-align: center;
+    }
+
+    .budget-breakdown {
+        font-size: 0.8em;
+        text-align: center;
+    }
+}
+
+/* Highlight pour les achats qui dépassent le budget */
+.purchased-player-item.over-budget {
+    background: #ffe5e5;
+    border-color: #ff9999;
+}
+
+.purchased-player-item.over-budget .purchased-player-value {
+    border-color: #dc3545;
+    color: #dc3545;
+    font-weight: bold;
+}
