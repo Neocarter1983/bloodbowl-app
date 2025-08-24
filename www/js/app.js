@@ -638,73 +638,830 @@ class BloodBowlApp {
     getSummaryTabHTML() {
         return `
             <div class="tab-content active" id="summary">
-                <h2 class="section-title">📋 Résumé du Match</h2>
+                <h2 class="section-title">📋 Résumé Complet du Match</h2>
 
-                ${this.getMatchSummaryHeader()}
-                ${this.getMatchResultSection()}
-                ${this.getMatchStatsSection()}
-                ${this.getTeamsSummarySection()}
-                ${this.getFinancialSummarySection()}
-                ${this.getExportSection()}
+                ${this.getGeneralInfoSection()}
+                ${this.getInitialSetupSection()}
+                ${this.getPrematchSummarySection()}
+                ${this.getMatchFlowSection()}
+                ${this.getPlayerPerformanceSection()}
+                ${this.getPostmatchEventsSection()}
+                ${this.getComprehensiveFinancialSection()}
+                ${this.getExportOptionsSection()}
 
                 <div class="form-actions">
                     <button class="btn btn-primary" onclick="app.switchTab('postmatch')">⬅️ Retour Après-Match</button>
+                    <button class="btn btn-success" onclick="app.printSummary()">🖨️ Imprimer</button>
                     <button class="btn btn-primary" onclick="app.resetMatch()">🔄 Nouveau Match</button>
                 </div>
             </div>
         `;
     }
 
-    getMatchSummaryHeader() {
+    // 1. Section Informations Générales
+    getGeneralInfoSection() {
         const matchDate = this.matchData.matchDate || new Date().toLocaleDateString('fr-FR');
         const duration = this.getMatchDuration();
 
         return `
-            <div class="summary-header">
-                <div class="summary-header-item">
-                    <span class="label">Date du match</span>
-                    <span class="value">${matchDate}</span>
-                </div>
-                <div class="summary-header-item">
-                    <span class="label">Durée</span>
-                    <span class="value">${duration}</span>
-                </div>
-                <div class="summary-header-item">
-                    <span class="label">Météo</span>
-                    <span class="value">${this.matchData.weather.effect ?
-                        this.matchData.weather.effect.split(':')[0] : 'Non définie'}</span>
+            <div class="summary-section">
+                <h3>📅 Informations Générales</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Date du match</span>
+                        <span class="info-value">${matchDate}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Durée</span>
+                        <span class="info-value">${duration}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Météo</span>
+                        <span class="info-value">${this.getWeatherSummary()}</span>
+                    </div>
                 </div>
             </div>
         `;
     }
 
-    getMatchResultSection() {
+    // 2. Section Configuration Initiale
+    getInitialSetupSection() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+
+        return `
+            <div class="summary-section">
+                <h3>⚙️ Configuration Initiale</h3>
+                <div class="teams-comparison-grid">
+                    <div class="team-setup-card">
+                        <div class="team-header home">
+                            <span class="team-icon">🏠</span>
+                            <h4>${team1.name || 'Équipe 1'}</h4>
+                        </div>
+                        <div class="team-info">
+                            <div class="info-row">
+                                <span>Coach</span>
+                                <span>${team1.coach || 'Non défini'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span>Roster</span>
+                                <span>${team1.roster || 'Non défini'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span>VEA</span>
+                                <span>${Utils.formatNumber(team1.vea || 0)} PO</span>
+                            </div>
+                            <div class="info-row">
+                                <span>Trésorerie initiale</span>
+                                <span>${Utils.formatNumber(team1.treasury || 0)} PO</span>
+                            </div>
+                            <div class="info-row">
+                                <span>Fans dévoués (début)</span>
+                                <span>${team1.dedicatedFans || 1}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="team-setup-card">
+                        <div class="team-header visitor">
+                            <span class="team-icon">🚌</span>
+                            <h4>${team2.name || 'Équipe 2'}</h4>
+                        </div>
+                        <div class="team-info">
+                            <div class="info-row">
+                                <span>Coach</span>
+                                <span>${team2.coach || 'Non défini'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span>Roster</span>
+                                <span>${team2.roster || 'Non défini'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span>VEA</span>
+                                <span>${Utils.formatNumber(team2.vea || 0)} PO</span>
+                            </div>
+                            <div class="info-row">
+                                <span>Trésorerie initiale</span>
+                                <span>${Utils.formatNumber(team2.treasury || 0)} PO</span>
+                            </div>
+                            <div class="info-row">
+                                <span>Fans dévoués (début)</span>
+                                <span>${team2.dedicatedFans || 1}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 3. Section Avant-Match
+    getPrematchSummarySection() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+
+        return `
+            <div class="summary-section">
+                <h3>⚡ Séquence d'Avant-Match</h3>
+
+                <div class="prematch-grid">
+                    <!-- Popularité -->
+                    <div class="prematch-item">
+                        <h5>👥 Facteur de Popularité</h5>
+                        <div class="prematch-result">
+                            <div class="team-pop">
+                                <span>${team1.name}</span>
+                                <span class="pop-value">${team1.popularity || 0}</span>
+                            </div>
+                            <div class="team-pop">
+                                <span>${team2.name}</span>
+                                <span class="pop-value">${team2.popularity || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coups de pouce -->
+                    ${this.getInducementsSummary()}
+
+                    <!-- Prières -->
+                    ${this.getPrayersSummary()}
+
+                    <!-- Pile ou Face -->
+                    <div class="prematch-item">
+                        <h5>🪙 Pile ou Face</h5>
+                        <div class="prematch-result">
+                            ${this.getCoinFlipSummary()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 4. Section Déroulement du Match
+    getMatchFlowSection() {
         const team1 = this.matchData.team1;
         const team2 = this.matchData.team2;
         const winner = team1.score > team2.score ? team1.name :
                        team2.score > team1.score ? team2.name : null;
 
         return `
-            <div class="match-result-section">
-                <h3>🏆 Résultat Final</h3>
-                <div class="final-score-display">
+            <div class="summary-section">
+                <h3>🏈 Déroulement du Match</h3>
+
+                <!-- Score Final -->
+                <div class="final-score-box">
                     <div class="team-final-score ${team1.score > team2.score ? 'winner' : ''}">
-                        <div class="team-icon">🏠</div>
-                        <div class="team-name">${team1.name}</div>
-                        <div class="team-score">${team1.score}</div>
+                        <span class="team-name">${team1.name}</span>
+                        <span class="score-big">${team1.score || 0}</span>
                     </div>
-                    <div class="vs-separator">VS</div>
+                    <div class="vs-divider">-</div>
                     <div class="team-final-score ${team2.score > team1.score ? 'winner' : ''}">
-                        <div class="team-score">${team2.score}</div>
-                        <div class="team-name">${team2.name}</div>
-                        <div class="team-icon">🚌</div>
+                        <span class="score-big">${team2.score || 0}</span>
+                        <span class="team-name">${team2.name}</span>
                     </div>
                 </div>
                 ${winner ?
-                    `<p class="winner-announcement">🎉 Victoire de ${winner} !</p>` :
-                    `<p class="winner-announcement">🤝 Match nul !</p>`}
+                    `<p class="winner-text">🏆 Victoire de <strong>${winner}</strong> !</p>` :
+                    `<p class="winner-text">🤝 Match nul !</p>`
+                }
+
+                <!-- Événements de coup d'envoi -->
+                ${this.getKickoffEventsSummary()}
+
+                <!-- Statistiques du match -->
+                ${this.getMatchStatsSummary()}
             </div>
         `;
+    }
+
+    // 5. Section Performance des Joueurs
+    getPlayerPerformanceSection() {
+        const team1Players = this.getPlayersWithActions(1);
+        const team2Players = this.getPlayersWithActions(2);
+
+        return `
+            <div class="summary-section">
+                <h3>⭐ Performance des Joueurs</h3>
+
+                <div class="players-performance-grid">
+                    ${this.getTeamPlayersSummary(1, team1Players)}
+                    ${this.getTeamPlayersSummary(2, team2Players)}
+                </div>
+
+                ${this.getMVPsSummary()}
+            </div>
+        `;
+    }
+
+    // 6. Section Événements d'Après-Match
+    getPostmatchEventsSection() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+
+        return `
+            <div class="summary-section">
+                <h3>📊 Événements d'Après-Match</h3>
+
+                <div class="postmatch-grid">
+                    <!-- Évolution des fans -->
+                    <div class="postmatch-item">
+                        <h5>👥 Évolution des Fans Dévoués</h5>
+                        <div class="fans-evolution">
+                            <div class="team-fans">
+                                <span>${team1.name}</span>
+                                <span>${team1.dedicatedFans || 1} → ${team1.newDedicatedFans || team1.dedicatedFans || 1}</span>
+                                ${this.getFansChangeIndicator(1)}
+                            </div>
+                            <div class="team-fans">
+                                <span>${team2.name}</span>
+                                <span>${team2.dedicatedFans || 1} → ${team2.newDedicatedFans || team2.dedicatedFans || 1}</span>
+                                ${this.getFansChangeIndicator(2)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transferts de joueurs -->
+                    ${this.getTransfersSummary()}
+
+                    <!-- Erreurs coûteuses -->
+                    ${this.getCostlyErrorsSummary()}
+                </div>
+            </div>
+        `;
+    }
+
+    // 7. Section Bilan Financier Complet
+    getComprehensiveFinancialSection() {
+        const team1Treasury = this.calculateFinalTreasury(1);
+        const team2Treasury = this.calculateFinalTreasury(2);
+
+        return `
+            <div class="summary-section financial-section">
+                <h3>💰 Bilan Financier Détaillé</h3>
+
+                <div class="financial-comparison">
+                    ${this.getTeamFinancialBreakdown(1, team1Treasury)}
+                    ${this.getTeamFinancialBreakdown(2, team2Treasury)}
+                </div>
+
+                <div class="financial-summary-bar">
+                    <div class="summary-item">
+                        <span>Total des gains</span>
+                        <span class="positive">+${Utils.formatNumber(team1Treasury.gains + team2Treasury.gains)} PO</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Total des transactions</span>
+                        <span>${Utils.formatNumber(
+                            team1Treasury.playerSales + team2Treasury.playerSales +
+                            team1Treasury.newPlayerPurchases + team2Treasury.newPlayerPurchases
+                        )} PO</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 8. Section Options d'Export
+    getExportOptionsSection() {
+        return `
+            <div class="summary-section export-section">
+                <h3>📤 Options d'Export et Sauvegarde</h3>
+
+                <div class="export-grid">
+                    <button class="export-btn" onclick="app.printSummary()">
+                        <span class="export-icon">🖨️</span>
+                        <span>Version Imprimable</span>
+                        <small>Format optimisé pour l'impression</small>
+                    </button>
+
+                    <button class="export-btn" onclick="app.exportAsJSON()">
+                        <span class="export-icon">💾</span>
+                        <span>Exporter JSON</span>
+                        <small>Données complètes du match</small>
+                    </button>
+
+                    <button class="export-btn" onclick="app.exportAsPDF()">
+                        <span class="export-icon">📄</span>
+                        <span>Générer PDF</span>
+                        <small>Document officiel du match</small>
+                    </button>
+
+                    <button class="export-btn" onclick="app.shareMatch()">
+                        <span class="export-icon">📱</span>
+                        <span>Partager</span>
+                        <small>Envoyer le résumé</small>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ===== MÉTHODES AUXILIAIRES =====
+
+    getWeatherSummary() {
+        if (this.matchData.weather && this.matchData.weather.effect) {
+            const weather = this.matchData.weather;
+            const weatherTable = AppConfig.gameData.weatherTables[weather.type];
+            return `${weatherTable.icon} ${weather.effect.split(':')[0]}`;
+        }
+        return 'Non définie';
+    }
+
+    getInducementsSummary() {
+        const inducements = this.matchData.inducements || {};
+        const hasInducements = inducements.team1Items?.length > 0 || inducements.team2Items?.length > 0;
+
+        if (!hasInducements) {
+            return `
+                <div class="prematch-item">
+                    <h5>💰 Coups de Pouce</h5>
+                    <div class="prematch-result">
+                        <p class="no-data">Aucun coup de pouce utilisé</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="prematch-item">
+                <h5>💰 Coups de Pouce</h5>
+                <div class="inducements-summary">
+                    ${inducements.team1Items?.length > 0 ? `
+                        <div class="team-inducements">
+                            <strong>${this.matchData.team1.name}</strong>
+                            <ul>
+                                ${inducements.team1Items.map(item =>
+                                    `<li>${item.name} (${Utils.formatNumber(item.cost)} PO)</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    ${inducements.team2Items?.length > 0 ? `
+                        <div class="team-inducements">
+                            <strong>${this.matchData.team2.name}</strong>
+                            <ul>
+                                ${inducements.team2Items.map(item =>
+                                    `<li>${item.name} (${Utils.formatNumber(item.cost)} PO)</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getPrayersSummary() {
+        const prayers = this.matchData.prayers || {};
+
+        if (!prayers.team1Result && !prayers.team2Result) {
+            return `
+                <div class="prematch-item">
+                    <h5>🙏 Prières à Nuffle</h5>
+                    <div class="prematch-result">
+                        <p class="no-data">Aucune prière effectuée</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="prematch-item">
+                <h5>🙏 Prières à Nuffle</h5>
+                <div class="prayers-summary">
+                    ${prayers.team1Result ? `
+                        <div class="prayer-result">
+                            <strong>${this.matchData.team1.name}</strong>
+                            <span>${prayers.team1Result}</span>
+                        </div>
+                    ` : ''}
+                    ${prayers.team2Result ? `
+                        <div class="prayer-result">
+                            <strong>${this.matchData.team2.name}</strong>
+                            <span>${prayers.team2Result}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getCoinFlipSummary() {
+        const coinFlip = this.matchData.coinFlip || {};
+
+        if (!coinFlip.winner) {
+            return '<p class="no-data">Pile ou face non effectué</p>';
+        }
+
+        return `
+            <div class="coin-flip-result">
+                <p><strong>Gagnant :</strong> ${coinFlip.winner}</p>
+                <p><strong>Choix :</strong> ${coinFlip.choice || 'Non défini'}</p>
+            </div>
+        `;
+    }
+
+    getKickoffEventsSummary() {
+        const events = this.matchData.kickoffHistory || [];
+
+        if (events.length === 0) {
+            return `
+                <div class="kickoff-events">
+                    <h5>🎲 Événements de Coup d'Envoi</h5>
+                    <p class="no-data">Aucun événement enregistré</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="kickoff-events">
+                <h5>🎲 Événements de Coup d'Envoi (${events.length})</h5>
+                <ul class="events-list">
+                    ${events.map(event =>
+                        `<li><strong>[${event.roll}]</strong> ${event.description}</li>`
+                    ).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    getMatchStatsSummary() {
+        const stats = this.calculateMatchStats();
+
+        return `
+            <div class="match-stats-grid">
+                <div class="stat-card">
+                    <span class="stat-icon">🏈</span>
+                    <span class="stat-value">${stats.totalTouchdowns}</span>
+                    <span class="stat-label">Touchdowns</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">💀</span>
+                    <span class="stat-value">${stats.totalEliminations}</span>
+                    <span class="stat-label">Éliminations</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🎯</span>
+                    <span class="stat-value">${stats.totalPasses}</span>
+                    <span class="stat-label">Passes/Lancers</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🛡️</span>
+                    <span class="stat-value">${stats.totalInterceptions}</span>
+                    <span class="stat-label">Interceptions</span>
+                </div>
+            </div>
+        `;
+    }
+
+    getPlayersWithActions(team) {
+        const players = this.matchData[`team${team}`].players || [];
+        return players.filter(p => {
+            return p.name && p.actions && (
+                p.actions.reu > 0 || p.actions.det > 0 ||
+                p.actions.int > 0 || p.actions.elim > 0 ||
+                p.actions.td > 0 || p.actions.jdm
+            );
+        });
+    }
+
+    getTeamPlayersSummary(team, players) {
+        const teamName = this.matchData[`team${team}`].name || `Équipe ${team}`;
+
+        if (players.length === 0) {
+            return `
+                <div class="team-players-summary">
+                    <h5>${teamName}</h5>
+                    <p class="no-data">Aucune action enregistrée</p>
+                </div>
+            `;
+        }
+
+        // Trier par XP décroissant
+        players.sort((a, b) => (b.xp || 0) - (a.xp || 0));
+
+        return `
+            <div class="team-players-summary">
+                <h5>${teamName}</h5>
+                <table class="players-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Joueur</th>
+                            <th>Actions</th>
+                            <th>XP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${players.map(player => `
+                            <tr ${player.actions.jdm ? 'class="is-mvp"' : ''}>
+                                <td>
+                                    ${player.name}
+                                    ${player.actions.jdm ? '<span class="mvp-badge">JDM</span>' : ''}
+                                </td>
+                                <td class="actions-cell">
+                                    ${this.getPlayerActionsSummary(player.actions)}
+                                </td>
+                                <td class="xp-cell">${player.xp || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    getPlayerActionsSummary(actions) {
+        const summary = [];
+        if (actions.td > 0) summary.push(`${actions.td} TD`);
+        if (actions.elim > 0) summary.push(`${actions.elim} ELIM`);
+        if (actions.int > 0) summary.push(`${actions.int} INT`);
+        if (actions.reu > 0) summary.push(`${actions.reu} REU`);
+        if (actions.det > 0) summary.push(`${actions.det} DET`);
+        return summary.join(', ') || '-';
+    }
+
+    getMVPsSummary() {
+        const mvps = [];
+
+        [1, 2].forEach(team => {
+            const players = this.matchData[`team${team}`].players || [];
+            const mvp = players.find(p => p.actions && p.actions.jdm);
+            if (mvp) {
+                mvps.push({
+                    name: mvp.name,
+                    team: this.matchData[`team${team}`].name,
+                    xp: mvp.xp || 0
+                });
+            }
+        });
+
+        if (mvps.length === 0) {
+            return '';
+        }
+
+        return `
+            <div class="mvps-summary">
+                <h5>🌟 Joueurs du Match</h5>
+                <div class="mvps-grid">
+                    ${mvps.map(mvp => `
+                        <div class="mvp-card">
+                            <div class="mvp-icon">🏆</div>
+                            <div class="mvp-info">
+                                <strong>${mvp.name}</strong>
+                                <span>${mvp.team}</span>
+                                <span class="mvp-xp">${mvp.xp} XP au total</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    getFansChangeIndicator(team) {
+        const initial = this.matchData[`team${team}`].dedicatedFans || 1;
+        const final = this.matchData[`team${team}`].newDedicatedFans || initial;
+        const change = final - initial;
+
+        if (change > 0) {
+            return `<span class="change positive">+${change}</span>`;
+        } else if (change < 0) {
+            return `<span class="change negative">${change}</span>`;
+        }
+        return `<span class="change neutral">=</span>`;
+    }
+
+    getTransfersSummary() {
+        const team1Sold = this.matchData.team1.soldPlayers || [];
+        const team2Sold = this.matchData.team2.soldPlayers || [];
+        const hasTransfers = team1Sold.length > 0 || team2Sold.length > 0;
+
+        if (!hasTransfers) {
+            return `
+                <div class="postmatch-item">
+                    <h5>💼 Transferts de Joueurs</h5>
+                    <div class="transfers-summary">
+                        <p class="no-data">Aucun transfert effectué</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="postmatch-item">
+                <h5>💼 Transferts de Joueurs</h5>
+                <div class="transfers-summary">
+                    ${team1Sold.length > 0 ? `
+                        <div class="team-transfers">
+                            <strong>${this.matchData.team1.name}</strong>
+                            <ul>
+                                ${team1Sold.map(sale =>
+                                    `<li>${sale.name} vendu pour ${Utils.formatNumber(sale.value)} PO</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    ${team2Sold.length > 0 ? `
+                        <div class="team-transfers">
+                            <strong>${this.matchData.team2.name}</strong>
+                            <ul>
+                                ${team2Sold.map(sale =>
+                                    `<li>${sale.name} vendu pour ${Utils.formatNumber(sale.value)} PO</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getCostlyErrorsSummary() {
+        const team1Error = this.matchData.team1.costlyError || {};
+        const team2Error = this.matchData.team2.costlyError || {};
+        const hasErrors = team1Error.type || team2Error.type;
+
+        if (!hasErrors) {
+            return `
+                <div class="postmatch-item">
+                    <h5>⚠️ Erreurs Coûteuses</h5>
+                    <div class="errors-summary">
+                        <p class="no-data">Aucune erreur coûteuse</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="postmatch-item">
+                <h5>⚠️ Erreurs Coûteuses</h5>
+                <div class="errors-summary">
+                    ${team1Error.type ? `
+                        <div class="team-error ${team1Error.type}">
+                            <strong>${this.matchData.team1.name}</strong>
+                            <span>${this.getErrorDescription(team1Error)}</span>
+                        </div>
+                    ` : ''}
+                    ${team2Error.type ? `
+                        <div class="team-error ${team2Error.type}">
+                            <strong>${this.matchData.team2.name}</strong>
+                            <span>${this.getErrorDescription(team2Error)}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getErrorDescription(error) {
+        switch(error.type) {
+            case 'minor':
+                return `Incident mineur (-${error.amount || 0} PO)`;
+            case 'major':
+                return 'Incident majeur (trésorerie divisée par 2)';
+            case 'catastrophe':
+                return 'Catastrophe (conservation de 2D6 kPO seulement)';
+            default:
+                return 'Aucune erreur';
+        }
+    }
+
+    getTeamFinancialBreakdown(team, treasury) {
+        const teamName = this.matchData[`team${team}`].name || `Équipe ${team}`;
+
+        return `
+            <div class="financial-breakdown">
+                <h5>${teamName}</h5>
+
+                <div class="financial-lines">
+                    <div class="financial-line">
+                        <span>Trésorerie initiale</span>
+                        <span class="amount">${Utils.formatNumber(treasury.baseTreasury)} PO</span>
+                    </div>
+
+                    <div class="financial-line positive">
+                        <span>+ Gains du match</span>
+                        <span class="amount">+${Utils.formatNumber(treasury.gains)} PO</span>
+                    </div>
+
+                    ${treasury.playerSales > 0 ? `
+                        <div class="financial-line positive">
+                            <span>+ Ventes de joueurs</span>
+                            <span class="amount">+${Utils.formatNumber(treasury.playerSales)} PO</span>
+                        </div>
+                    ` : ''}
+
+                    ${treasury.treasurySpentOnInducements > 0 ? `
+                        <div class="financial-line negative">
+                            <span>- Coups de pouce</span>
+                            <span class="amount">-${Utils.formatNumber(treasury.treasurySpentOnInducements)} PO</span>
+                        </div>
+                    ` : ''}
+
+                    ${treasury.newPlayerPurchases > 0 ? `
+                        <div class="financial-line negative">
+                            <span>- Achats de joueurs</span>
+                            <span class="amount">-${Utils.formatNumber(treasury.newPlayerPurchases)} PO</span>
+                        </div>
+                    ` : ''}
+
+                    ${this.getCostlyErrorImpact(team)}
+
+                    <div class="financial-line total">
+                        <span>Trésorerie finale</span>
+                        <span class="amount ${treasury.finalTreasury < 0 ? 'negative' : ''}">
+                            ${Utils.formatNumber(treasury.finalTreasury)} PO
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getCostlyErrorImpact(team) {
+        const error = this.matchData[`team${team}`].costlyError || {};
+
+        if (!error.type || error.type === 'none') {
+            return '';
+        }
+
+        return `
+            <div class="financial-line negative error">
+                <span>- Erreur coûteuse</span>
+                <span class="amount">${this.getErrorDescription(error)}</span>
+            </div>
+        `;
+    }
+
+    calculateMatchStats() {
+        let stats = {
+            totalTouchdowns: 0,
+            totalEliminations: 0,
+            totalPasses: 0,
+            totalInterceptions: 0
+        };
+
+        [1, 2].forEach(team => {
+            const players = this.matchData[`team${team}`].players || [];
+            players.forEach(player => {
+                if (player.actions) {
+                    stats.totalTouchdowns += player.actions.td || 0;
+                    stats.totalEliminations += player.actions.elim || 0;
+                    stats.totalPasses += player.actions.reu || 0;
+                    stats.totalInterceptions += player.actions.int || 0;
+                }
+            });
+        });
+
+        return stats;
+    }
+
+    getMatchDuration() {
+        if (this.matchData.matchStart && this.matchData.matchEnd) {
+            const start = new Date(this.matchData.matchStart);
+            const end = new Date(this.matchData.matchEnd);
+            const diff = end - start;
+
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+
+            if (hours > 0) {
+                return `${hours}h ${minutes}min`;
+            }
+            return `${minutes} minutes`;
+        }
+        return 'Non enregistrée';
+    }
+
+    // Méthode pour exporter en JSON
+    exportAsJSON() {
+        const dataStr = JSON.stringify(this.matchData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `match_${Date.now()}.json`;
+        link.click();
+    }
+
+    // Méthode pour exporter en PDF (basique)
+    exportAsPDF() {
+        alert('Utilisez Ctrl+P (ou Cmd+P sur Mac) et sélectionnez "Enregistrer en PDF"');
+    }
+
+    // Méthode pour partager
+    shareMatch() {
+        if (navigator.share) {
+            const summary = `Match: ${this.matchData.team1.name} vs ${this.matchData.team2.name}\n` +
+                           `Score: ${this.matchData.team1.score} - ${this.matchData.team2.score}`;
+            navigator.share({
+                title: 'Résumé du match',
+                text: summary
+            });
+        } else {
+            alert('Le partage n\'est pas disponible sur ce navigateur');
+        }
     }
 
     getMatchStatsSection() {
@@ -792,8 +1549,6 @@ class BloodBowlApp {
     }
 
 // === AMÉLIORATION DE L'AFFICHAGE DANS L'ONGLET APRÈS-MATCH ===
-
-// REMPLACER la méthode getExperienceSection par cette version améliorée :
 
     getExperienceSection() {
         const team1Players = this.matchData.team1.players || [];
@@ -904,90 +1659,6 @@ class BloodBowlApp {
 
 // === AMÉLIORATION DU RÉSUMÉ DES STATISTIQUES ===
 
-    getMatchStatsSection() {
-        const team1Players = this.matchData.team1.players || [];
-        const team2Players = this.matchData.team2.players || [];
-
-        // Calculer les statistiques totales
-        let stats = {
-            team1: { td: 0, elim: 0, int: 0, reu: 0, det: 0 },
-            team2: { td: 0, elim: 0, int: 0, reu: 0, det: 0 }
-        };
-
-        team1Players.forEach(p => {
-            if (p.actions) {
-                stats.team1.td += p.actions.td || 0;
-                stats.team1.elim += p.actions.elim || 0;
-                stats.team1.int += p.actions.int || 0;
-                stats.team1.reu += p.actions.reu || 0;
-                stats.team1.det += p.actions.det || 0;
-            }
-        });
-
-        team2Players.forEach(p => {
-            if (p.actions) {
-                stats.team2.td += p.actions.td || 0;
-                stats.team2.elim += p.actions.elim || 0;
-                stats.team2.int += p.actions.int || 0;
-                stats.team2.reu += p.actions.reu || 0;
-                stats.team2.det += p.actions.det || 0;
-            }
-        });
-
-        // Trouver les meilleurs joueurs
-        const topScorers = this.getTopScorers();
-        const topEliminator = this.getTopEliminator();
-
-        return `
-            <div class="match-stats-section">
-                <h3>📊 Statistiques du Match</h3>
-
-                <div class="stats-comparison">
-                    <div class="stat-row">
-                        <span class="stat-label">${this.matchData.team1.name || 'Équipe 1'}</span>
-                        <span class="stat-name">Touchdowns</span>
-                        <span class="stat-value">${stats.team1.td} - ${stats.team2.td}</span>
-                        <span class="stat-label">${this.matchData.team2.name || 'Équipe 2'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">${stats.team1.elim}</span>
-                        <span class="stat-name">Éliminations</span>
-                        <span class="stat-value">vs</span>
-                        <span class="stat-label">${stats.team2.elim}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">${stats.team1.int}</span>
-                        <span class="stat-name">Interceptions</span>
-                        <span class="stat-value">vs</span>
-                        <span class="stat-label">${stats.team2.int}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">${stats.team1.reu}</span>
-                        <span class="stat-name">Passes réussies</span>
-                        <span class="stat-value">vs</span>
-                        <span class="stat-label">${stats.team2.reu}</span>
-                    </div>
-                </div>
-
-                <div class="top-performers">
-                    <h4>🏆 Meilleurs Joueurs</h4>
-                    ${topScorers.length > 0 ? `
-                        <div class="performer-item">
-                            <strong>Meilleur(s) marqueur(s) :</strong>
-                            ${topScorers.map(p => `${p.name} (${p.td} TD)`).join(', ')}
-                        </div>
-                    ` : ''}
-                    ${topEliminator ? `
-                        <div class="performer-item">
-                            <strong>Plus violent :</strong>
-                            ${topEliminator.name} (${topEliminator.elim} éliminations)
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-    }
-
     getTopScorers() {
         const allPlayers = [
             ...this.matchData.team1.players.map(p => ({...p, team: 1})),
@@ -1032,18 +1703,6 @@ class BloodBowlApp {
         });
 
         return topPlayer;
-    }
-
-    getTeamsSummarySection() {
-        return `
-            <div class="teams-summary-section">
-                <h3>👥 Résumé des Équipes</h3>
-                <div class="teams-comparison">
-                    ${this.getTeamSummaryCard(1)}
-                    ${this.getTeamSummaryCard(2)}
-                </div>
-            </div>
-        `;
     }
 
     getTeamSummaryCard(team) {
@@ -1120,120 +1779,6 @@ class BloodBowlApp {
                             </div>
                         </div>
                     ` : ''}
-                </div>
-            </div>
-        `;
-    }
-
-    getFinancialSummarySection() {
-        // Utiliser la nouvelle méthode calculateFinalTreasury pour obtenir tous les détails
-        const team1Treasury = this.calculateFinalTreasury(1);
-        const team2Treasury = this.calculateFinalTreasury(2);
-
-        return `
-            <div class="financial-summary-section">
-                <h3>💰 Résumé Financier</h3>
-                <div class="financial-grid">
-                    <!-- Équipe 1 -->
-                    <div class="financial-item">
-                        <h5>${this.matchData.team1.name}</h5>
-                        <div class="financial-row">
-                            <span>Trésorerie initiale</span>
-                            <span>${Utils.formatNumber(team1Treasury.baseTreasury)} PO</span>
-                        </div>
-                        <div class="financial-row positive">
-                            <span>Gains du match</span>
-                            <span>+${Utils.formatNumber(team1Treasury.gains)} PO</span>
-                        </div>
-                        ${team1Treasury.playerSales > 0 ? `
-                            <div class="financial-row positive">
-                                <span>Ventes de joueurs</span>
-                                <span>+${Utils.formatNumber(team1Treasury.playerSales)} PO</span>
-                            </div>
-                        ` : ''}
-                        ${team1Treasury.treasurySpentOnInducements > 0 ? `
-                            <div class="financial-row negative">
-                                <span>Coups de pouce</span>
-                                <span>-${Utils.formatNumber(team1Treasury.treasurySpentOnInducements)} PO</span>
-                            </div>
-                        ` : ''}
-                        ${team1Treasury.newPlayerPurchases > 0 ? `
-                            <div class="financial-row negative">
-                                <span>Achats de joueurs</span>
-                                <span>-${Utils.formatNumber(team1Treasury.newPlayerPurchases)} PO</span>
-                            </div>
-                        ` : ''}
-                        <div class="financial-row total">
-                            <span>Trésorerie finale</span>
-                            <span class="${team1Treasury.finalTreasury < 0 ? 'negative' : ''}">${Utils.formatNumber(team1Treasury.finalTreasury)} PO</span>
-                        </div>
-                    </div>
-
-                    <!-- Équipe 2 -->
-                    <div class="financial-item">
-                        <h5>${this.matchData.team2.name}</h5>
-                        <div class="financial-row">
-                            <span>Trésorerie initiale</span>
-                            <span>${Utils.formatNumber(team2Treasury.baseTreasury)} PO</span>
-                        </div>
-                        <div class="financial-row positive">
-                            <span>Gains du match</span>
-                            <span>+${Utils.formatNumber(team2Treasury.gains)} PO</span>
-                        </div>
-                        ${team2Treasury.playerSales > 0 ? `
-                            <div class="financial-row positive">
-                                <span>Ventes de joueurs</span>
-                                <span>+${Utils.formatNumber(team2Treasury.playerSales)} PO</span>
-                            </div>
-                        ` : ''}
-                        ${team2Treasury.treasurySpentOnInducements > 0 ? `
-                            <div class="financial-row negative">
-                                <span>Coups de pouce</span>
-                                <span>-${Utils.formatNumber(team2Treasury.treasurySpentOnInducements)} PO</span>
-                            </div>
-                        ` : ''}
-                        ${team2Treasury.newPlayerPurchases > 0 ? `
-                            <div class="financial-row negative">
-                                <span>Achats de joueurs</span>
-                                <span>-${Utils.formatNumber(team2Treasury.newPlayerPurchases)} PO</span>
-                            </div>
-                        ` : ''}
-                        <div class="financial-row total">
-                            <span>Trésorerie finale</span>
-                            <span class="${team2Treasury.finalTreasury < 0 ? 'negative' : ''}">${Utils.formatNumber(team2Treasury.finalTreasury)} PO</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    getExportSection() {
-        return `
-            <div class="export-section">
-                <h3>📤 Export & Sauvegarde</h3>
-                <div class="export-options">
-                    <button class="btn btn-secondary" onclick="app.printSummary()">
-                        🖨️ Version imprimable
-                    </button>
-                    <button class="btn btn-secondary" onclick="app.exportMatchData()">
-                        💾 Exporter les données (JSON)
-                    </button>
-                    <button class="btn btn-secondary" onclick="app.saveMatchState()">
-                        ☁️ Sauvegarder localement
-                    </button>
-                </div>
-
-                <div class="import-section" style="margin-top: 20px;">
-                    <h4 style="color: #666; margin-bottom: 10px;">📥 Importer un match</h4>
-                    <input type="file"
-                           id="import-file-input"
-                           accept=".json"
-                           style="display: none;"
-                           onchange="app.importMatchData(event)">
-                    <button class="btn btn-secondary" onclick="document.getElementById('import-file-input').click()">
-                        📂 Charger un fichier JSON
-                    </button>
                 </div>
             </div>
         `;
