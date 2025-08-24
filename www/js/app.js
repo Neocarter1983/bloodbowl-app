@@ -605,6 +605,7 @@ class BloodBowlApp {
                 ${this.getScoreDisplay()}
                 ${this.getKickoffSection()}
                 ${this.getPlayersActionsSection()}
+                ${this.getMVPReminderSection()}
 
                 <div class="form-actions">
                     <button class="btn btn-primary" onclick="app.switchTab('prematch')">⬅️ Retour Avant-Match</button>
@@ -632,7 +633,6 @@ class BloodBowlApp {
                 ${this.getMatchGainsSection()}
                 ${this.getFansUpdateSection()}
                 ${this.getExperienceSection()}
-                ${this.getMVPSection()}
                 ${this.getPlayerSalesSection()}
                 ${this.getPlayerPurchasesSection()}
                 ${this.getCostlyErrorsSection()}
@@ -4406,6 +4406,28 @@ class BloodBowlApp {
         `;
     }
 
+    getMVPReminderSection() {
+        return `
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-number">8</div>
+                    <div class="step-title">Joueur du Match (JDM)</div>
+                </div>
+                <div class="explanation-box">
+                    <h4>🌟 Rappel Important</h4>
+                    <p><strong>À la fin du match :</strong> Tirez au hasard un JDM pour chaque équipe</p>
+                    <p><strong>Comment faire :</strong></p>
+                    <ol style="margin: 10px 0; padding-left: 20px;">
+                        <li>Si le joueur n'est pas déjà dans le tableau, ajoutez-le avec le bouton "➕ Ajouter"</li>
+                        <li>Cochez la case JDM pour le joueur tiré (4 XP bonus)</li>
+                        <li>Un seul JDM par équipe (cocher une case décoche automatiquement l'autre)</li>
+                    </ol>
+                    <p style="margin-top: 10px;"><em>💡 Note : Les morts, mercenaires et champions ne peuvent pas être JDM</em></p>
+                </div>
+            </div>
+        `;
+    }
+
     getTeamPlayersTable(team) {
         const teamData = this.matchData[`team${team}`];
         const players = teamData.players || [];
@@ -5539,204 +5561,6 @@ class BloodBowlApp {
         });
 
         console.log('Post-match tab initialized');
-    }
-
-    getMVPSection() {
-        return `
-            <div class="step-section">
-                <div class="step-header">
-                    <div class="step-number">11</div>
-                    <div class="step-title">Joueur du Match (JDM)</div>
-                </div>
-                <div class="explanation-box">
-                    <p><strong>Règle :</strong> Un JDM est désigné pour chaque équipe</p>
-                    <p>Le joueur sélectionné gagne automatiquement 4 XP bonus</p>
-                    <p>Le JDM peut être n'importe quel joueur, même s'il n'est pas dans le tableau des actions</p>
-                </div>
-
-                <div class="mvp-selection-grid">
-                    <div class="mvp-team-section">
-                        <h5>🏠 ${this.matchData.team1.name || 'Équipe 1'}</h5>
-                        <div class="mvp-input-group">
-                            <label>Nom du JDM :</label>
-                            <input type="text"
-                                id="team1-mvp-name"
-                                class="mvp-name-input"
-                                placeholder="Entrez le nom du joueur"
-                                value="${this.matchData.team1.mvpName || ''}"
-                                onchange="app.updateMVP(1, this.value)">
-                        </div>
-                        ${this.matchData.team1.mvpName ? `
-                            <div class="mvp-display-small">
-                                <span class="mvp-icon">🌟</span>
-                                <span class="mvp-text">${this.matchData.team1.mvpName} (+4 XP)</span>
-                            </div>
-                        ` : ''}
-                    </div>
-
-                    <div class="mvp-team-section">
-                        <h5>🚌 ${this.matchData.team2.name || 'Équipe 2'}</h5>
-                        <div class="mvp-input-group">
-                            <label>Nom du JDM :</label>
-                            <input type="text"
-                                id="team2-mvp-name"
-                                class="mvp-name-input"
-                                placeholder="Entrez le nom du joueur"
-                                value="${this.matchData.team2.mvpName || ''}"
-                                onchange="app.updateMVP(2, this.value)">
-                        </div>
-                        ${this.matchData.team2.mvpName ? `
-                            <div class="mvp-display-small">
-                                <span class="mvp-icon">🌟</span>
-                                <span class="mvp-text">${this.matchData.team2.mvpName} (+4 XP)</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    updateMVP(team, name) {
-        this.matchData[`team${team}`].mvpName = name.trim();
-
-        // Si le joueur existe dans le tableau, lui attribuer le JDM
-        const player = this.matchData[`team${team}`].players.find(p =>
-            p.name && p.name.toLowerCase() === name.toLowerCase()
-        );
-
-        if (player) {
-            // Retirer JDM de tous les autres joueurs de l'équipe
-            this.matchData[`team${team}`].players.forEach(p => {
-                if (p.actions) p.actions.jdm = false;
-            });
-
-            // Attribuer JDM à ce joueur
-            if (!player.actions) player.actions = {};
-            player.actions.jdm = true;
-            this.calculatePlayerXP(team, player.id);
-        }
-
-        this.saveState();
-    }
-
-    getTeamPlayersOptions(team) {
-        const players = this.matchData[`team${team}`].players || [];
-        return players
-            .filter(p => p.name && p.name.trim() !== '')
-            .map(p => `<option value="${p.id}">${p.name}</option>`)
-            .join('');
-    }
-
-    getMVPDisplay() {
-        if (!this.matchData.mvp || !this.matchData.mvp.playerId) {
-            return '<p class="help-text">Aucun JDM sélectionné</p>';
-        }
-
-        const mvp = this.matchData.mvp;
-        const team = mvp.team;
-        const player = this.matchData[`team${team}`].players.find(p => p.id === mvp.playerId);
-
-        if (!player) {
-            return '<p class="help-text">Aucun JDM sélectionné</p>';
-        }
-
-        return `
-            <div class="mvp-display">
-                <div class="mvp-icon">🌟</div>
-                <div class="mvp-info">
-                    <h4>Joueur du Match</h4>
-                    <p class="mvp-name">${player.name}</p>
-                    <p class="mvp-team">${this.matchData[`team${team}`].name}</p>
-                    <p class="mvp-bonus">+4 XP bonus accordés</p>
-                </div>
-            </div>
-        `;
-    }
-
-    selectRandomMVP() {
-        const allPlayers = [];
-
-        // Collecter tous les joueurs éligibles
-        [1, 2].forEach(team => {
-            const players = this.matchData[`team${team}`].players || [];
-            players.forEach(player => {
-                if (player.name && player.name.trim() !== '') {
-                    allPlayers.push({
-                        ...player,
-                        team: team
-                    });
-                }
-            });
-        });
-
-        if (allPlayers.length === 0) {
-            alert('Aucun joueur éligible pour être JDM');
-            return;
-        }
-
-        // Sélection aléatoire
-        const randomIndex = Math.floor(Math.random() * allPlayers.length);
-        const mvpPlayer = allPlayers[randomIndex];
-
-        // Enregistrer le MVP
-        this.setMVP(mvpPlayer.team, mvpPlayer.id);
-    }
-
-    selectManualMVP(team) {
-        const select = document.getElementById(`team${team}-mvp-select`);
-        const playerId = select.value;
-
-        if (!playerId) return;
-
-        // Réinitialiser l'autre select
-        const otherTeam = team === 1 ? 2 : 1;
-        document.getElementById(`team${otherTeam}-mvp-select`).value = '';
-
-        this.setMVP(team, playerId);
-    }
-
-    setMVP(team, playerId) {
-        // Retirer l'ancien JDM s'il existe
-        if (this.matchData.mvp && this.matchData.mvp.playerId) {
-            const oldTeam = this.matchData.mvp.team;
-            const oldPlayer = this.matchData[`team${oldTeam}`].players.find(p => p.id === this.matchData.mvp.playerId);
-            if (oldPlayer && oldPlayer.actions) {
-                oldPlayer.actions.jdm = false;
-                // Recalculer l'XP
-                this.calculatePlayerXP(oldTeam, oldPlayer.id);
-            }
-        }
-
-        // Définir le nouveau JDM
-        this.matchData.mvp = {
-            team: team,
-            playerId: playerId
-        };
-
-        // Marquer le joueur comme JDM
-        const player = this.matchData[`team${team}`].players.find(p => p.id === playerId);
-        if (player) {
-            if (!player.actions) player.actions = {};
-            player.actions.jdm = true;
-
-            // Recalculer l'XP
-            this.calculatePlayerXP(team, playerId);
-        }
-
-        // Rafraîchir l'affichage
-        document.getElementById('mvp-result').innerHTML = this.getMVPDisplay();
-
-        // Mettre à jour aussi dans l'onglet Match si nécessaire
-        const checkbox = document.querySelector(`input[data-player="${playerId}"][data-action="jdm"]`);
-        if (checkbox) {
-            checkbox.checked = true;
-        }
-
-        this.saveState();
-
-        // Animation de célébration
-        Utils.vibrate(100);
     }
 
     initializeSummaryTab() {
