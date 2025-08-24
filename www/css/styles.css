@@ -4282,6 +4282,55 @@ html {
     text-align: right;
 }
 
+/* Liste des joueurs achetés dans le résumé */
+.purchased-players-list {
+    padding-left: 20px;
+}
+
+.purchased-player-summary {
+    padding: 4px 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Couleurs pour les lignes financières */
+.financial-row.positive {
+    color: #28a745; /* Vert pour les gains */
+}
+
+.financial-row.positive span:last-child {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.financial-row.negative {
+    color: #dc3545; /* Rouge pour les dépenses */
+}
+
+.financial-row.negative span:last-child {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+/* Trésorerie finale négative */
+.financial-row.total .negative {
+    color: #dc3545 !important;
+    font-weight: bold;
+}
+
+/* Style pour les lignes expandées dans le résumé */
+.summary-row-expanded {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.summary-row-expanded > span:first-child {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+}
+
 /* Amélioration de l'affichage responsive sur mobile */
 @media (max-width: 480px) {
     .purchased-player-item {

@@ -1118,54 +1118,99 @@ class BloodBowlApp {
                             </div>
                         </div>
                     ` : ''}
+                    ${teamData.purchasedPlayers && teamData.purchasedPlayers.length > 0 ? `
+                        <div class="summary-row-expanded">
+                            <span>Joueurs achetés (${teamData.purchasedPlayers.length})</span>
+                            <div class="purchased-players-list">
+                                ${teamData.purchasedPlayers.map(p => `
+                                    <div class="purchased-player-summary">
+                                        ${p.name || 'Sans nom'} (${p.position || 'Sans poste'}) - ${Utils.formatNumber(p.cost)} PO
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
     }
 
     getFinancialSummarySection() {
-        const team1Gains = this.calculateGains(1);
-        const team2Gains = this.calculateGains(2);
-        const team1Sales = this.calculateSalesTotal(1);
-        const team2Sales = this.calculateSalesTotal(2);
+        // Utiliser la nouvelle méthode calculateFinalTreasury pour obtenir tous les détails
+        const team1Treasury = this.calculateFinalTreasury(1);
+        const team2Treasury = this.calculateFinalTreasury(2);
 
         return `
             <div class="financial-summary-section">
                 <h3>💰 Résumé Financier</h3>
                 <div class="financial-grid">
+                    <!-- Équipe 1 -->
                     <div class="financial-item">
                         <h5>${this.matchData.team1.name}</h5>
                         <div class="financial-row">
-                            <span>Gains du match</span>
-                            <span>+${Utils.formatNumber(team1Gains)} PO</span>
+                            <span>Trésorerie initiale</span>
+                            <span>${Utils.formatNumber(team1Treasury.baseTreasury)} PO</span>
                         </div>
-                        ${team1Sales > 0 ? `
-                            <div class="financial-row">
+                        <div class="financial-row positive">
+                            <span>Gains du match</span>
+                            <span>+${Utils.formatNumber(team1Treasury.gains)} PO</span>
+                        </div>
+                        ${team1Treasury.playerSales > 0 ? `
+                            <div class="financial-row positive">
                                 <span>Ventes de joueurs</span>
-                                <span>+${Utils.formatNumber(team1Sales)} PO</span>
+                                <span>+${Utils.formatNumber(team1Treasury.playerSales)} PO</span>
+                            </div>
+                        ` : ''}
+                        ${team1Treasury.treasurySpentOnInducements > 0 ? `
+                            <div class="financial-row negative">
+                                <span>Coups de pouce</span>
+                                <span>-${Utils.formatNumber(team1Treasury.treasurySpentOnInducements)} PO</span>
+                            </div>
+                        ` : ''}
+                        ${team1Treasury.newPlayerPurchases > 0 ? `
+                            <div class="financial-row negative">
+                                <span>Achats de joueurs</span>
+                                <span>-${Utils.formatNumber(team1Treasury.newPlayerPurchases)} PO</span>
                             </div>
                         ` : ''}
                         <div class="financial-row total">
-                            <span>Total</span>
-                            <span>+${Utils.formatNumber(team1Gains + team1Sales)} PO</span>
+                            <span>Trésorerie finale</span>
+                            <span class="${team1Treasury.finalTreasury < 0 ? 'negative' : ''}">${Utils.formatNumber(team1Treasury.finalTreasury)} PO</span>
                         </div>
                     </div>
 
+                    <!-- Équipe 2 -->
                     <div class="financial-item">
                         <h5>${this.matchData.team2.name}</h5>
                         <div class="financial-row">
-                            <span>Gains du match</span>
-                            <span>+${Utils.formatNumber(team2Gains)} PO</span>
+                            <span>Trésorerie initiale</span>
+                            <span>${Utils.formatNumber(team2Treasury.baseTreasury)} PO</span>
                         </div>
-                        ${team2Sales > 0 ? `
-                            <div class="financial-row">
+                        <div class="financial-row positive">
+                            <span>Gains du match</span>
+                            <span>+${Utils.formatNumber(team2Treasury.gains)} PO</span>
+                        </div>
+                        ${team2Treasury.playerSales > 0 ? `
+                            <div class="financial-row positive">
                                 <span>Ventes de joueurs</span>
-                                <span>+${Utils.formatNumber(team2Sales)} PO</span>
+                                <span>+${Utils.formatNumber(team2Treasury.playerSales)} PO</span>
+                            </div>
+                        ` : ''}
+                        ${team2Treasury.treasurySpentOnInducements > 0 ? `
+                            <div class="financial-row negative">
+                                <span>Coups de pouce</span>
+                                <span>-${Utils.formatNumber(team2Treasury.treasurySpentOnInducements)} PO</span>
+                            </div>
+                        ` : ''}
+                        ${team2Treasury.newPlayerPurchases > 0 ? `
+                            <div class="financial-row negative">
+                                <span>Achats de joueurs</span>
+                                <span>-${Utils.formatNumber(team2Treasury.newPlayerPurchases)} PO</span>
                             </div>
                         ` : ''}
                         <div class="financial-row total">
-                            <span>Total</span>
-                            <span>+${Utils.formatNumber(team2Gains + team2Sales)} PO</span>
+                            <span>Trésorerie finale</span>
+                            <span class="${team2Treasury.finalTreasury < 0 ? 'negative' : ''}">${Utils.formatNumber(team2Treasury.finalTreasury)} PO</span>
                         </div>
                     </div>
                 </div>
