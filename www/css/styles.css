@@ -5009,8 +5009,35 @@ html {
     justify-content: space-around;
     padding: 15px;
     background: var(--primary-color);
-    color: white;
     border-radius: 8px;
+    margin-top: 20px;
+}
+
+.financial-summary-bar .summary-item {
+    text-align: center;
+    color: white; /* Assurer que le texte est blanc */
+}
+
+.financial-summary-bar .summary-item span {
+    color: white !important; /* Forcer la couleur blanche */
+}
+
+.financial-summary-bar .summary-item span:first-child {
+    display: block;
+    font-size: 0.9em;
+    opacity: 0.9;
+    margin-bottom: 5px;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.financial-summary-bar .summary-item span:last-child {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: white !important; /* CORRECTION du problème blanc sur blanc */
+}
+
+.financial-summary-bar .summary-item span.positive {
+    color: #90EE90 !important; /* Vert clair pour les gains */
 }
 
 .summary-item {
@@ -5104,4 +5131,181 @@ html {
         flex-direction: column;
         gap: 15px;
     }
+}
+
+/* Styles pour les coups de pouce dans le résumé */
+.inducements-summary {
+    display: grid;
+    gap: 15px;
+}
+
+.team-inducements {
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.team-inducements strong {
+    display: block;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.team-inducements ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #495057;
+}
+
+.team-inducements li {
+    padding: 2px 0;
+}
+
+.inducements-total {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #dee2e6;
+    font-weight: 600;
+    color: #212529;
+}
+
+/* Styles pour les prières */
+.prayers-summary {
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.prayer-result {
+    padding: 10px;
+}
+
+.prayer-result strong {
+    display: block;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.prayer-result span {
+    display: block;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.prayer-effect {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+    color: #212529;
+    font-style: italic;
+}
+
+/* Styles pour le pile ou face */
+.coin-flip-result {
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.coin-flip-result p {
+    margin: 5px 0;
+}
+
+.coin-flip-note {
+    color: #6c757d;
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+/* Détails des joueurs achetés dans le bilan financier */
+.purchased-players-detail {
+    margin-left: 20px;
+    margin-top: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.purchased-player-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    color: #6c757d;
+}
+
+.purchased-player-line span:first-child {
+    flex: 1;
+}
+
+.purchased-player-line span:last-child {
+    font-weight: 600;
+    color: #dc3545;
+}
+
+/* Amélioration de la lisibilité du bilan financier */
+.financial-breakdown {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.financial-breakdown h5 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 1.1em;
+}
+
+.financial-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dotted #dee2e6;
+    align-items: center;
+}
+
+.financial-line span:first-child {
+    color: #495057;
+}
+
+.financial-line .amount {
+    font-weight: 600;
+    color: #212529;
+}
+
+.financial-line.positive .amount {
+    color: #28a745;
+}
+
+.financial-line.negative .amount {
+    color: #dc3545;
+}
+
+.financial-line.total {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid var(--primary-color);
+    border-bottom: none;
+    font-size: 1.1em;
+}
+
+.financial-line.total span:first-child {
+    font-weight: 600;
+    color: #212529;
+}
+
+.financial-line.total .amount {
+    font-size: 1.2em;
+}
+
+.financial-line.total .amount.negative {
+    background: #dc3545;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
 }

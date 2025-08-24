@@ -970,7 +970,47 @@ class BloodBowlApp {
 
     getInducementsSummary() {
         const inducements = this.matchData.inducements || {};
-        const hasInducements = inducements.team1Items?.length > 0 || inducements.team2Items?.length > 0;
+
+        // Collecter les coups de pouce achetés pour chaque équipe
+        const team1Inducements = [];
+        const team2Inducements = [];
+
+        // Parcourir les items de l'équipe 1
+        if (inducements.team1Items) {
+            Object.keys(inducements.team1Items).forEach(itemName => {
+                const quantity = inducements.team1Items[itemName];
+                if (quantity > 0) {
+                    // Trouver le coût de cet item dans la config
+                    const itemConfig = AppConfig.gameData.inducements.find(i => i.name === itemName);
+                    if (itemConfig) {
+                        team1Inducements.push({
+                            name: itemName,
+                            quantity: quantity,
+                            cost: itemConfig.cost * quantity
+                        });
+                    }
+                }
+            });
+        }
+
+        // Parcourir les items de l'équipe 2
+        if (inducements.team2Items) {
+            Object.keys(inducements.team2Items).forEach(itemName => {
+                const quantity = inducements.team2Items[itemName];
+                if (quantity > 0) {
+                    const itemConfig = AppConfig.gameData.inducements.find(i => i.name === itemName);
+                    if (itemConfig) {
+                        team2Inducements.push({
+                            name: itemName,
+                            quantity: quantity,
+                            cost: itemConfig.cost * quantity
+                        });
+                    }
+                }
+            });
+        }
+
+        const hasInducements = team1Inducements.length > 0 || team2Inducements.length > 0;
 
         if (!hasInducements) {
             return `
@@ -987,24 +1027,30 @@ class BloodBowlApp {
             <div class="prematch-item">
                 <h5>💰 Coups de Pouce</h5>
                 <div class="inducements-summary">
-                    ${inducements.team1Items?.length > 0 ? `
+                    ${team1Inducements.length > 0 ? `
                         <div class="team-inducements">
                             <strong>${this.matchData.team1.name}</strong>
                             <ul>
-                                ${inducements.team1Items.map(item =>
-                                    `<li>${item.name} (${Utils.formatNumber(item.cost)} PO)</li>`
+                                ${team1Inducements.map(item =>
+                                    `<li>${item.quantity}x ${item.name} (${Utils.formatNumber(item.cost)} PO)</li>`
                                 ).join('')}
                             </ul>
+                            <div class="inducements-total">
+                                Total: ${Utils.formatNumber(team1Inducements.reduce((sum, i) => sum + i.cost, 0))} PO
+                            </div>
                         </div>
                     ` : ''}
-                    ${inducements.team2Items?.length > 0 ? `
+                    ${team2Inducements.length > 0 ? `
                         <div class="team-inducements">
                             <strong>${this.matchData.team2.name}</strong>
                             <ul>
-                                ${inducements.team2Items.map(item =>
-                                    `<li>${item.name} (${Utils.formatNumber(item.cost)} PO)</li>`
+                                ${team2Inducements.map(item =>
+                                    `<li>${item.quantity}x ${item.name} (${Utils.formatNumber(item.cost)} PO)</li>`
                                 ).join('')}
                             </ul>
+                            <div class="inducements-total">
+                                Total: ${Utils.formatNumber(team2Inducements.reduce((sum, i) => sum + i.cost, 0))} PO
+                            </div>
                         </div>
                     ` : ''}
                 </div>
@@ -1013,9 +1059,10 @@ class BloodBowlApp {
     }
 
     getPrayersSummary() {
-        const prayers = this.matchData.prayers || {};
+        const prayer = this.matchData.prayer || {};
 
-        if (!prayers.team1Result && !prayers.team2Result) {
+        // Vérifier si une prière a été effectuée
+        if (!prayer.dice || !prayer.effect) {
             return `
                 <div class="prematch-item">
                     <h5>🙏 Prières à Nuffle</h5>
@@ -1026,38 +1073,40 @@ class BloodBowlApp {
             `;
         }
 
+        // Déterminer qui a prié (l'équipe avec la VEA la plus faible après coups de pouce)
+        const team1AdjustedVEA = this.calculateAdjustedVEA(1);
+        const team2AdjustedVEA = this.calculateAdjustedVEA(2);
+        const prayingTeam = team1AdjustedVEA < team2AdjustedVEA ?
+            this.matchData.team1.name :
+            this.matchData.team2.name;
+
         return `
             <div class="prematch-item">
                 <h5>🙏 Prières à Nuffle</h5>
                 <div class="prayers-summary">
-                    ${prayers.team1Result ? `
-                        <div class="prayer-result">
-                            <strong>${this.matchData.team1.name}</strong>
-                            <span>${prayers.team1Result}</span>
-                        </div>
-                    ` : ''}
-                    ${prayers.team2Result ? `
-                        <div class="prayer-result">
-                            <strong>${this.matchData.team2.name}</strong>
-                            <span>${prayers.team2Result}</span>
-                        </div>
-                    ` : ''}
+                    <div class="prayer-result">
+                        <strong>${prayingTeam}</strong>
+                        <span>Résultat du D8 : ${prayer.dice}</span>
+                        <p class="prayer-effect">${prayer.effect}</p>
+                    </div>
                 </div>
             </div>
         `;
     }
 
     getCoinFlipSummary() {
-        const coinFlip = this.matchData.coinFlip || {};
+        const coinFlip = this.matchData.coinFlip;
 
-        if (!coinFlip.winner) {
+        if (!coinFlip || coinFlip === '') {
             return '<p class="no-data">Pile ou face non effectué</p>';
         }
 
+        // Essayer de récupérer qui a gagné et son choix si ces infos sont stockées
+        // Sinon juste afficher le résultat
         return `
             <div class="coin-flip-result">
-                <p><strong>Gagnant :</strong> ${coinFlip.winner}</p>
-                <p><strong>Choix :</strong> ${coinFlip.choice || 'Non défini'}</p>
+                <p><strong>Résultat :</strong> ${coinFlip}</p>
+                <p class="coin-flip-note">Le gagnant choisit d'engager ou de recevoir</p>
             </div>
         `;
     }
@@ -1329,6 +1378,7 @@ class BloodBowlApp {
 
     getTeamFinancialBreakdown(team, treasury) {
         const teamName = this.matchData[`team${team}`].name || `Équipe ${team}`;
+        const purchasedPlayers = this.matchData[`team${team}`].purchasedPlayers || [];
 
         return `
             <div class="financial-breakdown">
@@ -1361,9 +1411,19 @@ class BloodBowlApp {
 
                     ${treasury.newPlayerPurchases > 0 ? `
                         <div class="financial-line negative">
-                            <span>- Achats de joueurs</span>
+                            <span>- Achats de joueurs (${purchasedPlayers.length})</span>
                             <span class="amount">-${Utils.formatNumber(treasury.newPlayerPurchases)} PO</span>
                         </div>
+                        ${purchasedPlayers.length > 0 ? `
+                            <div class="purchased-players-detail">
+                                ${purchasedPlayers.map(p => `
+                                    <div class="purchased-player-line">
+                                        <span>• ${p.name || 'Sans nom'} (${p.position || 'Sans poste'})</span>
+                                        <span>${Utils.formatNumber(p.cost)} PO</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
                     ` : ''}
 
                     ${this.getCostlyErrorImpact(team)}
@@ -4258,11 +4318,24 @@ class BloodBowlApp {
         return total;
     }
 
-        calculateAdjustedVEA(team) {
-            const baseVEA = parseInt(this.matchData[`team${team}`].vea) || 0;
-            const inducementsCost = this.calculateInducementsCost(team);
-            return baseVEA + inducementsCost;
-        }
+    calculateAdjustedVEA(team) {
+        const baseVEA = this.matchData[`team${team}`].vea || 0;
+        const inducements = this.matchData.inducements || {};
+        const teamItems = inducements[`team${team}Items`] || {};
+
+        let inducementsCost = 0;
+        Object.keys(teamItems).forEach(itemName => {
+            const quantity = teamItems[itemName] || 0;
+            if (quantity > 0) {
+                const itemConfig = AppConfig.gameData.inducements.find(i => i.name === itemName);
+                if (itemConfig) {
+                    inducementsCost += itemConfig.cost * quantity;
+                }
+            }
+        });
+
+        return baseVEA + inducementsCost;
+    }
 
     getTeamBudget(team) {
         const petiteMonnaie = team === 1 ?
