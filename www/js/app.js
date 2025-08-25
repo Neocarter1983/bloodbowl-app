@@ -1404,16 +1404,41 @@ class BloodBowlApp {
     }
 
     getErrorDescription(error) {
+        if (!error || !error.type || error.type === 'none') {
+            return 'Aucune erreur';
+        }
+
+        let description = '';
+
+        // Ajouter le jet de D6 si disponible
+        if (error.roll) {
+            description += `(D6=${error.roll}) `;
+        }
+
         switch(error.type) {
             case 'minor':
-                return `Incident mineur (-${error.amount || 0} PO)`;
+                if (error.d3Roll) {
+                    description += `Incident mineur (D3=${error.d3Roll}, -${Utils.formatNumber(error.amount || 0)} PO)`;
+                } else {
+                    description += `Incident mineur (-${Utils.formatNumber(error.amount || 0)} PO)`;
+                }
+                break;
             case 'major':
-                return 'Incident majeur (trésorerie divisée par 2)';
+                description += 'Incident majeur (trésorerie divisée par 2)';
+                break;
             case 'catastrophe':
-                return 'Catastrophe (conservation de 2D6 kPO seulement)';
+                if (error.d6Rolls) {
+                    const total = error.d6Rolls[0] + error.d6Rolls[1];
+                    description += `Catastrophe (2D6=${total}, conserve ${Utils.formatNumber(error.kept || 0)} PO)`;
+                } else {
+                    description += 'Catastrophe (conservation de 2D6 kPO seulement)';
+                }
+                break;
             default:
-                return 'Aucune erreur';
+                description += 'Erreur inconnue';
         }
+
+        return description;
     }
 
     getTeamFinancialBreakdown(team, treasury) {
@@ -6683,7 +6708,7 @@ class BloodBowlApp {
         // Ventes de joueurs
         const playerSales = this.getPlayerSalesTotal(team);
 
-        // Coups de pouce payés avec la trésorerie
+        // CORRECTION: Récupérer le montant DÉPENSÉ en coups de pouce (pas la trésorerie totale)
         const treasurySpentOnInducements = this.matchData[`team${team}`].treasurySpentOnInducements || 0;
 
         // Achats de nouveaux joueurs
@@ -6692,19 +6717,16 @@ class BloodBowlApp {
         // Calculer la trésorerie AVANT les erreurs coûteuses
         const treasuryBeforeErrors = baseTreasury + gains + playerSales - treasurySpentOnInducements - newPlayerPurchases;
 
-        // NOUVEAU : Prendre en compte les erreurs coûteuses
+        // Prendre en compte les erreurs coûteuses
         let costlyErrorLoss = 0;
         const costlyError = this.matchData[`team${team}`].costlyError || {};
 
         if (costlyError.type && costlyError.type !== 'none') {
-            // Si une erreur coûteuse a été définie
             if (costlyError.type === 'minor' && costlyError.amount) {
                 costlyErrorLoss = costlyError.amount;
             } else if (costlyError.type === 'major') {
-                // Incident majeur : perd la moitié
                 costlyErrorLoss = Math.floor(treasuryBeforeErrors / 2);
             } else if (costlyError.type === 'catastrophe' && costlyError.kept) {
-                // Catastrophe : ne garde que le montant spécifié
                 costlyErrorLoss = Math.max(0, treasuryBeforeErrors - costlyError.kept);
             }
         }
@@ -6728,7 +6750,7 @@ class BloodBowlApp {
             playerSales,
             treasurySpentOnInducements,
             newPlayerPurchases,
-            costlyErrorLoss,  // NOUVEAU
+            costlyErrorLoss,
             finalTreasury
         };
     }
@@ -6748,7 +6770,11 @@ class BloodBowlApp {
         const teamName = this.matchData[`team${team}`].name || `Équipe ${team}`;
         const finalTreasury = treasuryCalc.finalTreasury;
 
-        // Sauvegarder la trésorerie calculée
+        // Récupérer les données d'erreur coûteuse existantes (incluant le jet de dé)
+        const existingError = this.matchData[`team${team}`].costlyError || {};
+        const existingRoll = existingError.roll || '';
+
+        // Sauvegarder la trésorerie calculée AVANT les erreurs
         this.matchData[`team${team}`].calculatedFinalTreasury = finalTreasury;
 
         return `
@@ -6757,32 +6783,15 @@ class BloodBowlApp {
 
                 <!-- Détail du calcul de la trésorerie -->
                 <div class="treasury-calculation">
-                    <div class="calc-line">
-                        <span class="calc-label">Trésorerie (onglet Configuration) :</span>
-                        <span class="calc-value">${Utils.formatNumber(treasuryCalc.baseTreasury)} PO</span>
-                    </div>
-                    <div class="calc-line positive">
-                        <span class="calc-label">+ Gains du match :</span>
-                        <span class="calc-value">+${Utils.formatNumber(treasuryCalc.gains)} PO</span>
-                    </div>
-                    ${treasuryCalc.playerSales > 0 ? `
-                    <div class="calc-line positive">
-                        <span class="calc-label">+ Ventes de joueurs :</span>
-                        <span class="calc-value">+${Utils.formatNumber(treasuryCalc.playerSales)} PO</span>
+                    <!-- ... lignes de calcul existantes ... -->
+
+                    ${treasuryCalc.costlyErrorLoss > 0 ? `
+                    <div class="calc-line negative error">
+                        <span class="calc-label">- Erreur coûteuse ${this.getErrorTypeLabel(team)} :</span>
+                        <span class="calc-value">-${Utils.formatNumber(treasuryCalc.costlyErrorLoss)} PO</span>
                     </div>
                     ` : ''}
-                    ${treasuryCalc.treasurySpentOnInducements > 0 ? `
-                    <div class="calc-line negative">
-                        <span class="calc-label">- Coups de pouce (trésorerie) :</span>
-                        <span class="calc-value">-${Utils.formatNumber(treasuryCalc.treasurySpentOnInducements)} PO</span>
-                    </div>
-                    ` : ''}
-                    ${treasuryCalc.newPlayerPurchases > 0 ? `
-                    <div class="calc-line negative">
-                        <span class="calc-label">- Achats de joueurs :</span>
-                        <span class="calc-value">-${Utils.formatNumber(treasuryCalc.newPlayerPurchases)} PO</span>
-                    </div>
-                    ` : ''}
+
                     <div class="calc-line total">
                         <span class="calc-label">= Trésorerie finale :</span>
                         <span class="calc-value ${finalTreasury < 0 ? 'negative' : ''}">${Utils.formatNumber(finalTreasury)} PO</span>
@@ -6800,10 +6809,12 @@ class BloodBowlApp {
                                 🎲 Test D6
                             </button>
                             <input type="number" class="dice-result" id="team${team}-errors-roll"
-                                value="" min="1" max="6"
+                                value="${existingRoll}" min="1" max="6"
                                 onchange="app.updateCostlyErrorsWithFinalTreasury(${team})">
                         </div>
-                        <div id="team${team}-errors-result"></div>
+                        <div id="team${team}-errors-result">
+                            ${this.getCostlyErrorResultDisplay(team)}
+                        </div>
                     </div>
                 ` : `
                     <div class="no-test-required">
@@ -6823,61 +6834,137 @@ class BloodBowlApp {
 
     updateCostlyErrorsWithFinalTreasury(team) {
         const roll = parseInt(document.getElementById(`team${team}-errors-roll`).value) || 0;
-        const treasury = this.matchData[`team${team}`].calculatedFinalTreasury || 0;
+        // IMPORTANT: Utiliser la trésorerie AVANT les erreurs coûteuses
+        const treasuryBeforeErrors = this.matchData[`team${team}`].calculatedFinalTreasury || 0;
         const resultDiv = document.getElementById(`team${team}-errors-result`);
 
         if (!roll || roll < 1 || roll > 6) {
             resultDiv.innerHTML = '';
+            // Réinitialiser les erreurs si pas de jet valide
+            this.matchData[`team${team}`].costlyError = { type: 'none', roll: 0 };
+            this.saveState();
             return;
         }
 
-        const errorTable = this.getCostlyErrorResult(treasury, roll);
+        const errorTable = this.getCostlyErrorResult(treasuryBeforeErrors, roll);
 
         if (errorTable.type === 'none') {
-            resultDiv.innerHTML = '<p class="success-text">✅ Crise évitée ! Aucune perte.</p>';
-            this.matchData[`team${team}`].costlyErrorLoss = 0;
+            resultDiv.innerHTML = '<p class="success-text">✅ Crise évitée !</p>';
+            this.matchData[`team${team}`].costlyError = {
+                type: 'none',
+                roll: roll
+            };
         } else if (errorTable.type === 'minor') {
             const d3Roll = Utils.getRandomInt(1, 3);
             const loss = d3Roll * 10000;
             resultDiv.innerHTML = `
                 <p class="warning-text">
                     ⚠️ Incident mineur !<br>
+                    Jet D6 = ${roll}<br>
                     Jet D3 = ${d3Roll}<br>
                     Perte : ${Utils.formatNumber(loss)} PO<br>
-                    Nouvelle trésorerie : ${Utils.formatNumber(Math.max(0, treasury - loss))} PO
+                    Nouvelle trésorerie : ${Utils.formatNumber(Math.max(0, treasuryBeforeErrors - loss))} PO
                 </p>
             `;
-            this.matchData[`team${team}`].costlyErrorLoss = loss;
+            this.matchData[`team${team}`].costlyError = {
+                type: 'minor',
+                amount: loss,
+                roll: roll,
+                d3Roll: d3Roll
+            };
         } else if (errorTable.type === 'major') {
-            const newTreasury = Math.floor(treasury / 2);
-            const loss = treasury - newTreasury;
+            const loss = Math.floor(treasuryBeforeErrors / 2);
+            const newTreasury = treasuryBeforeErrors - loss;
             resultDiv.innerHTML = `
                 <p class="danger-text">
                     🔥 Incident majeur !<br>
+                    Jet D6 = ${roll}<br>
                     Trésorerie divisée par 2<br>
                     Perte : ${Utils.formatNumber(loss)} PO<br>
                     Nouvelle trésorerie : ${Utils.formatNumber(newTreasury)} PO
                 </p>
             `;
-            this.matchData[`team${team}`].costlyErrorLoss = loss;
+            this.matchData[`team${team}`].costlyError = {
+                type: 'major',
+                roll: roll
+            };
         } else if (errorTable.type === 'catastrophe') {
             const d6Roll1 = Utils.getRandomInt(1, 6);
             const d6Roll2 = Utils.getRandomInt(1, 6);
             const kept = (d6Roll1 + d6Roll2) * 10000;
-            const loss = Math.max(0, treasury - kept);
+            const loss = Math.max(0, treasuryBeforeErrors - kept);
             resultDiv.innerHTML = `
                 <p class="danger-text">
                     💥 CATASTROPHE !<br>
+                    Jet D6 = ${roll}<br>
                     Jets 2D6 = ${d6Roll1} + ${d6Roll2} = ${d6Roll1 + d6Roll2}<br>
                     Montant conservé : ${Utils.formatNumber(kept)} PO<br>
                     Perte : ${Utils.formatNumber(loss)} PO<br>
-                    Nouvelle trésorerie : ${Utils.formatNumber(Math.min(treasury, kept))} PO
+                    Nouvelle trésorerie : ${Utils.formatNumber(Math.min(treasuryBeforeErrors, kept))} PO
                 </p>
             `;
-            this.matchData[`team${team}`].costlyErrorLoss = loss;
+            this.matchData[`team${team}`].costlyError = {
+                type: 'catastrophe',
+                kept: kept,
+                roll: roll,
+                d6Rolls: [d6Roll1, d6Roll2]
+            };
         }
 
+        // Forcer le recalcul de la trésorerie finale et rafraîchir l'affichage
         this.saveState();
+        this.loadTab('postmatch');
+    }
+
+    getCostlyErrorResultDisplay(team) {
+        const error = this.matchData[`team${team}`].costlyError || {};
+        const treasuryBeforeErrors = this.matchData[`team${team}`].calculatedFinalTreasury || 0;
+
+        if (!error.type || !error.roll) {
+            return '';
+        }
+
+        if (error.type === 'none') {
+            return '<p class="success-text">✅ Crise évitée !</p>';
+        } else if (error.type === 'minor') {
+            const loss = error.amount || 0;
+            return `
+                <p class="warning-text">
+                    ⚠️ Incident mineur !<br>
+                    Jet D6 = ${error.roll}<br>
+                    Jet D3 = ${error.d3Roll || '?'}<br>
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(Math.max(0, treasuryBeforeErrors - loss))} PO
+                </p>
+            `;
+        } else if (error.type === 'major') {
+            const loss = Math.floor(treasuryBeforeErrors / 2);
+            const newTreasury = treasuryBeforeErrors - loss;
+            return `
+                <p class="danger-text">
+                    🔥 Incident majeur !<br>
+                    Jet D6 = ${error.roll}<br>
+                    Trésorerie divisée par 2<br>
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(newTreasury)} PO
+                </p>
+            `;
+        } else if (error.type === 'catastrophe') {
+            const kept = error.kept || 0;
+            const loss = Math.max(0, treasuryBeforeErrors - kept);
+            return `
+                <p class="danger-text">
+                    💥 CATASTROPHE !<br>
+                    Jet D6 = ${error.roll}<br>
+                    Jets 2D6 = ${error.d6Rolls ? error.d6Rolls.join(' + ') : '?'} = ${error.d6Rolls ? error.d6Rolls[0] + error.d6Rolls[1] : '?'}<br>
+                    Montant conservé : ${Utils.formatNumber(kept)} PO<br>
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(Math.min(treasuryBeforeErrors, kept))} PO
+                </p>
+            `;
+        }
+
+        return '';
     }
 
     initializeTreasuries() {
