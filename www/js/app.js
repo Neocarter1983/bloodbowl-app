@@ -689,10 +689,6 @@ class BloodBowlApp {
         const team1 = this.matchData.team1;
         const team2 = this.matchData.team2;
 
-        // DEBUG : Afficher les valeurs dans la console
-        console.log('Fans équipe 1:', team1.fans);
-        console.log('Fans équipe 2:', team2.fans);
-
         return `
             <div class="summary-section">
                 <h3>⚙️ Configuration Initiale</h3>
@@ -721,7 +717,7 @@ class BloodBowlApp {
                             </div>
                             <div class="info-row">
                                 <span>Fans dévoués (début)</span>
-                                <span>${team1.fans || 1}</span>
+                                <span>${team1.fans || 1}</span>  <!-- ✅ FANS INITIAUX -->
                             </div>
                         </div>
                     </div>
@@ -750,7 +746,7 @@ class BloodBowlApp {
                             </div>
                             <div class="info-row">
                                 <span>Fans dévoués (début)</span>
-                                <span>${team2.fans || 1}</span>
+                                <span>${team2.fans || 1}</span>  <!-- ✅ FANS INITIAUX -->
                             </div>
                         </div>
                     </div>
@@ -863,11 +859,11 @@ class BloodBowlApp {
         const team1 = this.matchData.team1;
         const team2 = this.matchData.team2;
 
-        // Calculer les fans initiaux et finaux
-        const team1InitialFans = team1.initialFans || team1.fans || 1;
-        const team2InitialFans = team2.initialFans || team2.fans || 1;
-        const team1FinalFans = team1.fans || 1;
-        const team2FinalFans = team2.fans || 1;
+        // CORRECTION : Utiliser les bonnes propriétés
+        const team1InitialFans = team1.fans || 1;  // Fans initiaux (configuration)
+        const team2InitialFans = team2.fans || 1;  // Fans initiaux (configuration)
+        const team1FinalFans = team1.finalFans !== undefined ? team1.finalFans : team1InitialFans;
+        const team2FinalFans = team2.finalFans !== undefined ? team2.finalFans : team2InitialFans;
 
         return `
             <div class="summary-section">
@@ -5531,14 +5527,16 @@ class BloodBowlApp {
                 </div>
                 <div class="fans-update-controls">
                     <div class="dice-controls">
-                        <span><strong>${this.matchData.team1.name || 'Équipe 1'}</strong> (${this.getMatchResult(1)}) :</span>
+                        <span><strong>${this.matchData.team1.name || 'Équipe 1'}</strong>
+                        (${this.getMatchResult(1)}) - Fans actuels: ${this.matchData.team1.fans} :</span>
                         <button class="dice-btn" onclick="app.rollFansUpdate(1)">🎲 Test Fans</button>
                         <input type="number" class="dice-result" id="fans1-roll"
                             value="${this.matchData.team1.fansUpdateRoll || ''}" min="1" max="6" onchange="app.updateFans(1)">
                         <span id="fans1-result">${this.matchData.team1.fansUpdateResult || ''}</span>
                     </div>
                     <div class="dice-controls">
-                        <span><strong>${this.matchData.team2.name || 'Équipe 2'}</strong> (${this.getMatchResult(2)}) :</span>
+                        <span><strong>${this.matchData.team2.name || 'Équipe 2'}</strong>
+                        (${this.getMatchResult(2)}) - Fans actuels: ${this.matchData.team2.fans} :</span>
                         <button class="dice-btn" onclick="app.rollFansUpdate(2)">🎲 Test Fans</button>
                         <input type="number" class="dice-result" id="fans2-roll"
                             value="${this.matchData.team2.fansUpdateRoll || ''}" min="1" max="6" onchange="app.updateFans(2)">
@@ -6057,7 +6055,7 @@ class BloodBowlApp {
     rollFansUpdate(team) {
         const roll = Utils.getRandomInt(1, 6);
         document.getElementById(`fans${team}-roll`).value = roll;
-        // AJOUT : Sauvegarder le résultat du dé
+        // Sauvegarder le résultat du dé
         this.matchData[`team${team}`].fansUpdateRoll = roll;
         this.updateFans(team);
         this.saveState();
@@ -6065,10 +6063,13 @@ class BloodBowlApp {
 
     updateFans(team) {
         const roll = parseInt(document.getElementById(`fans${team}-roll`).value) || 0;
-        const currentFans = this.matchData[`team${team}`].fans;
         const result = this.getMatchResult(team);
 
-        // Sauvegarder les fans initiaux la première fois
+        // IMPORTANT : Utiliser les fans INITIAUX (depuis configuration)
+        // Ne PAS modifier this.matchData[`team${team}`].fans !
+        const currentFans = this.matchData[`team${team}`].fans || 1;
+
+        // Sauvegarder les fans initiaux la première fois (pour référence)
         if (this.matchData[`team${team}`].initialFans === undefined) {
             this.matchData[`team${team}`].initialFans = currentFans;
         }
@@ -6077,7 +6078,7 @@ class BloodBowlApp {
         this.matchData[`team${team}`].fansUpdateRoll = roll;
 
         let message = '';
-        let newFans = currentFans;
+        let newFans = currentFans; // Commencer avec les fans initiaux
 
         if (result === 'Match nul') {
             message = 'Match nul : pas de changement';
@@ -6099,7 +6100,9 @@ class BloodBowlApp {
             }
         }
 
-        this.matchData[`team${team}`].fans = newFans;
+        // IMPORTANT : Sauvegarder dans une propriété SÉPARÉE
+        // Ne PAS écraser this.matchData[`team${team}`].fans !
+        this.matchData[`team${team}`].finalFans = newFans;
         this.matchData[`team${team}`].fansUpdateResult = message;
 
         document.getElementById(`fans${team}-result`).textContent = message;
