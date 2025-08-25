@@ -6768,38 +6768,61 @@ class BloodBowlApp {
 
     getTeamCostlyErrorSection(team, treasuryCalc) {
         const teamName = this.matchData[`team${team}`].name || `Équipe ${team}`;
-        const finalTreasury = treasuryCalc.finalTreasury;
 
-        // Récupérer les données d'erreur coûteuse existantes (incluant le jet de dé)
+        // IMPORTANT : Calculer la trésorerie SANS les erreurs coûteuses
+        const treasuryBeforeErrors = treasuryCalc.baseTreasury +
+                                      treasuryCalc.gains +
+                                      treasuryCalc.playerSales -
+                                      treasuryCalc.treasurySpentOnInducements -
+                                      treasuryCalc.newPlayerPurchases;
+
+        // Récupérer les données d'erreur existantes
         const existingError = this.matchData[`team${team}`].costlyError || {};
         const existingRoll = existingError.roll || '';
 
-        // Sauvegarder la trésorerie calculée AVANT les erreurs
-        this.matchData[`team${team}`].calculatedFinalTreasury = finalTreasury;
+        // Sauvegarder la trésorerie AVANT erreurs pour les calculs futurs
+        this.matchData[`team${team}`].calculatedFinalTreasury = treasuryBeforeErrors;
 
         return `
             <div class="team-errors-section">
                 <h5>${teamName}</h5>
 
-                <!-- Détail du calcul de la trésorerie -->
+                <!-- Détail du calcul de la trésorerie AVANT erreurs coûteuses -->
                 <div class="treasury-calculation">
-                    <!-- ... lignes de calcul existantes ... -->
-
-                    ${treasuryCalc.costlyErrorLoss > 0 ? `
-                    <div class="calc-line negative error">
-                        <span class="calc-label">- Erreur coûteuse ${this.getErrorTypeLabel(team)} :</span>
-                        <span class="calc-value">-${Utils.formatNumber(treasuryCalc.costlyErrorLoss)} PO</span>
+                    <div class="calc-line">
+                        <span class="calc-label">Trésorerie (onglet Configuration) :</span>
+                        <span class="calc-value">${Utils.formatNumber(treasuryCalc.baseTreasury)} PO</span>
+                    </div>
+                    <div class="calc-line positive">
+                        <span class="calc-label">+ Gains du match :</span>
+                        <span class="calc-value">+${Utils.formatNumber(treasuryCalc.gains)} PO</span>
+                    </div>
+                    ${treasuryCalc.playerSales > 0 ? `
+                    <div class="calc-line positive">
+                        <span class="calc-label">+ Ventes de joueurs :</span>
+                        <span class="calc-value">+${Utils.formatNumber(treasuryCalc.playerSales)} PO</span>
                     </div>
                     ` : ''}
-
+                    ${treasuryCalc.treasurySpentOnInducements > 0 ? `
+                    <div class="calc-line negative">
+                        <span class="calc-label">- Coups de pouce (trésorerie) :</span>
+                        <span class="calc-value">-${Utils.formatNumber(treasuryCalc.treasurySpentOnInducements)} PO</span>
+                    </div>
+                    ` : ''}
+                    ${treasuryCalc.newPlayerPurchases > 0 ? `
+                    <div class="calc-line negative">
+                        <span class="calc-label">- Achats de joueurs :</span>
+                        <span class="calc-value">-${Utils.formatNumber(treasuryCalc.newPlayerPurchases)} PO</span>
+                    </div>
+                    ` : ''}
                     <div class="calc-line total">
-                        <span class="calc-label">= Trésorerie finale :</span>
-                        <span class="calc-value ${finalTreasury < 0 ? 'negative' : ''}">${Utils.formatNumber(finalTreasury)} PO</span>
+                        <span class="calc-label">= Trésorerie (avant erreurs) :</span>
+                        <span class="calc-value ${treasuryBeforeErrors < 0 ? 'negative' : ''}">${Utils.formatNumber(treasuryBeforeErrors)} PO</span>
                     </div>
                 </div>
 
                 <!-- Test d'erreurs coûteuses si nécessaire -->
-                ${finalTreasury >= 100000 ? `
+                ${treasuryBeforeErrors >= 100000 ? `
                     <div class="error-test-zone">
                         <div class="alert alert-warning">
                             ⚠️ Trésorerie ≥ 100k PO : Test requis !
