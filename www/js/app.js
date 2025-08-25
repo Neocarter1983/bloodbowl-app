@@ -6684,7 +6684,7 @@ class BloodBowlApp {
         const playerSales = this.getPlayerSalesTotal(team);
 
         // Coups de pouce payés avec la trésorerie
-        const treasurySpentOnInducements = this.matchData.inducements[`team${team}Treasury`] || 0;
+        const treasurySpentOnInducements = this.matchData[`team${team}`].treasurySpentOnInducements || 0;
 
         // Achats de nouveaux joueurs
         const newPlayerPurchases = this.getPlayerPurchasesTotal(team);
