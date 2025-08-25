@@ -689,6 +689,10 @@ class BloodBowlApp {
         const team1 = this.matchData.team1;
         const team2 = this.matchData.team2;
 
+        // DEBUG : Afficher les valeurs dans la console
+        console.log('Fans équipe 1:', team1.fans);
+        console.log('Fans équipe 2:', team2.fans);
+
         return `
             <div class="summary-section">
                 <h3>⚙️ Configuration Initiale</h3>
@@ -717,7 +721,7 @@ class BloodBowlApp {
                             </div>
                             <div class="info-row">
                                 <span>Fans dévoués (début)</span>
-                                <span>${team1.dedicatedFans || 1}</span>
+                                <span>${team1.fans || 1}</span>
                             </div>
                         </div>
                     </div>
@@ -746,7 +750,7 @@ class BloodBowlApp {
                             </div>
                             <div class="info-row">
                                 <span>Fans dévoués (début)</span>
-                                <span>${team2.dedicatedFans || 1}</span>
+                                <span>${team2.fans || 1}</span>
                             </div>
                         </div>
                     </div>
@@ -859,6 +863,12 @@ class BloodBowlApp {
         const team1 = this.matchData.team1;
         const team2 = this.matchData.team2;
 
+        // Calculer les fans initiaux et finaux
+        const team1InitialFans = team1.initialFans || team1.fans || 1;
+        const team2InitialFans = team2.initialFans || team2.fans || 1;
+        const team1FinalFans = team1.fans || 1;
+        const team2FinalFans = team2.fans || 1;
+
         return `
             <div class="summary-section">
                 <h3>📊 Événements d'Après-Match</h3>
@@ -870,15 +880,16 @@ class BloodBowlApp {
                         <div class="fans-evolution">
                             <div class="team-fans">
                                 <span>${team1.name}</span>
-                                <span>${team1.dedicatedFans || 1} → ${team1.newDedicatedFans || team1.dedicatedFans || 1}</span>
-                                ${this.getFansChangeIndicator(1)}
+                                <span>${team1InitialFans} → ${team1FinalFans}</span>
+                                ${this.getFansChangeIndicator(team1InitialFans, team1FinalFans)}
                             </div>
                             <div class="team-fans">
                                 <span>${team2.name}</span>
-                                <span>${team2.dedicatedFans || 1} → ${team2.newDedicatedFans || team2.dedicatedFans || 1}</span>
-                                ${this.getFansChangeIndicator(2)}
+                                <span>${team2InitialFans} → ${team2FinalFans}</span>
+                                ${this.getFansChangeIndicator(team2InitialFans, team2FinalFans)}
                             </div>
                         </div>
+                        ${this.getFansUpdateDetails()}
                     </div>
 
                     <!-- Transferts de joueurs -->
@@ -896,6 +907,12 @@ class BloodBowlApp {
         const team1Treasury = this.calculateFinalTreasury(1);
         const team2Treasury = this.calculateFinalTreasury(2);
 
+        // Calculer les totaux
+        const totalGains = team1Treasury.gains + team2Treasury.gains;
+        const totalSales = team1Treasury.playerSales + team2Treasury.playerSales;
+        const totalPurchases = team1Treasury.newPlayerPurchases + team2Treasury.newPlayerPurchases;
+        const totalTransactions = totalSales + totalPurchases;
+
         return `
             <div class="summary-section financial-section">
                 <h3>💰 Bilan Financier Détaillé</h3>
@@ -907,15 +924,12 @@ class BloodBowlApp {
 
                 <div class="financial-summary-bar">
                     <div class="summary-item">
-                        <span>Total des gains</span>
-                        <span class="positive">+${Utils.formatNumber(team1Treasury.gains + team2Treasury.gains)} PO</span>
+                        <span class="summary-label">Total des gains</span>
+                        <span class="summary-value positive">+${Utils.formatNumber(totalGains)} PO</span>
                     </div>
                     <div class="summary-item">
-                        <span>Total des transactions</span>
-                        <span>${Utils.formatNumber(
-                            team1Treasury.playerSales + team2Treasury.playerSales +
-                            team1Treasury.newPlayerPurchases + team2Treasury.newPlayerPurchases
-                        )} PO</span>
+                        <span class="summary-label">Total des transactions</span>
+                        <span class="summary-value">${Utils.formatNumber(totalTransactions)} PO</span>
                     </div>
                 </div>
             </div>
@@ -1112,7 +1126,7 @@ class BloodBowlApp {
     }
 
     getKickoffEventsSummary() {
-        const events = this.matchData.kickoffHistory || [];
+        const events = this.matchData.kickoffEvents || [];
 
         if (events.length === 0) {
             return `
@@ -1127,9 +1141,13 @@ class BloodBowlApp {
             <div class="kickoff-events">
                 <h5>🎲 Événements de Coup d'Envoi (${events.length})</h5>
                 <ul class="events-list">
-                    ${events.map(event =>
-                        `<li><strong>[${event.roll}]</strong> ${event.description}</li>`
-                    ).join('')}
+                    ${events.map((event, index) => {
+                        // Support pour l'ancien format (string) et le nouveau format (objet)
+                        const roll = event.roll || '';
+                        const text = event.text || event;
+
+                        return `<li><strong>${roll ? `[${roll}]` : `#${index + 1}`}</strong> ${text}</li>`;
+                    }).join('')}
                 </ul>
             </div>
         `;
@@ -1268,10 +1286,8 @@ class BloodBowlApp {
         `;
     }
 
-    getFansChangeIndicator(team) {
-        const initial = this.matchData[`team${team}`].dedicatedFans || 1;
-        const final = this.matchData[`team${team}`].newDedicatedFans || initial;
-        const change = final - initial;
+    getFansChangeIndicator(initialFans, finalFans) {
+        const change = finalFans - initialFans;
 
         if (change > 0) {
             return `<span class="change positive">+${change}</span>`;
@@ -1279,6 +1295,30 @@ class BloodBowlApp {
             return `<span class="change negative">${change}</span>`;
         }
         return `<span class="change neutral">=</span>`;
+    }
+
+    getFansUpdateDetails() {
+        const team1Result = this.matchData.team1.fansUpdateResult;
+        const team2Result = this.matchData.team2.fansUpdateResult;
+
+        if (!team1Result && !team2Result) {
+            return '';
+        }
+
+        return `
+            <div class="fans-update-details">
+                ${team1Result ? `
+                    <div class="fans-detail">
+                        <small>${this.matchData.team1.name}: ${team1Result}</small>
+                    </div>
+                ` : ''}
+                ${team2Result ? `
+                    <div class="fans-detail">
+                        <small>${this.matchData.team2.name}: ${team2Result}</small>
+                    </div>
+                ` : ''}
+            </div>
+        `;
     }
 
     getTransfersSummary() {
@@ -1426,7 +1466,12 @@ class BloodBowlApp {
                         ` : ''}
                     ` : ''}
 
-                    ${this.getCostlyErrorImpact(team)}
+                    ${treasury.costlyErrorLoss > 0 ? `
+                        <div class="financial-line negative error">
+                            <span>- Erreur coûteuse ${this.getErrorTypeLabel(team)}</span>
+                            <span class="amount">-${Utils.formatNumber(treasury.costlyErrorLoss)} PO</span>
+                        </div>
+                    ` : ''}
 
                     <div class="financial-line total">
                         <span>Trésorerie finale</span>
@@ -1437,6 +1482,20 @@ class BloodBowlApp {
                 </div>
             </div>
         `;
+    }
+
+    getErrorTypeLabel(team) {
+        const error = this.matchData[`team${team}`].costlyError || {};
+        switch(error.type) {
+            case 'minor':
+                return '(Incident mineur)';
+            case 'major':
+                return '(Incident majeur)';
+            case 'catastrophe':
+                return '(Catastrophe)';
+            default:
+                return '';
+        }
     }
 
     getCostlyErrorImpact(team) {
@@ -5984,7 +6043,12 @@ class BloodBowlApp {
         const currentFans = this.matchData[`team${team}`].fans;
         const result = this.getMatchResult(team);
 
-        // AJOUT : Sauvegarder le résultat du dé
+        // Sauvegarder les fans initiaux la première fois
+        if (this.matchData[`team${team}`].initialFans === undefined) {
+            this.matchData[`team${team}`].initialFans = currentFans;
+        }
+
+        // Sauvegarder le résultat du dé
         this.matchData[`team${team}`].fansUpdateRoll = roll;
 
         let message = '';
@@ -6011,16 +6075,16 @@ class BloodBowlApp {
         }
 
         this.matchData[`team${team}`].fans = newFans;
-        // AJOUT : Sauvegarder le message de résultat
         this.matchData[`team${team}`].fansUpdateResult = message;
 
         document.getElementById(`fans${team}-result`).textContent = message;
 
         // Afficher le résumé
         const infoDiv = document.getElementById('fans-update-info');
-        infoDiv.style.display = 'block';
-        infoDiv.className = result === 'Gagnant' ? 'result-box success' : 'result-box warning';
-        infoDiv.innerHTML = `<p>Mise à jour des fans terminée</p>`;
+        if (infoDiv) {
+            infoDiv.style.display = 'block';
+            infoDiv.className = result === 'Gagnant' ? 'result-box success' : 'result-box warning';
+        }
 
         this.saveState();
     }
@@ -6041,20 +6105,65 @@ class BloodBowlApp {
 
     updateCostlyErrors(team) {
         const roll = parseInt(document.getElementById(`team${team}-errors-roll`).value) || 0;
-        const treasury = this.matchData[`team${team}`].treasury;
+        const treasury = this.calculateFinalTreasury(team).finalTreasury;  // Utiliser la trésorerie avant erreurs
         const resultDiv = document.getElementById(`team${team}-errors-result`);
 
         const errorTable = this.getCostlyErrorResult(treasury, roll);
 
+        // Initialiser l'objet erreur
+        if (!this.matchData[`team${team}`].costlyError) {
+            this.matchData[`team${team}`].costlyError = {};
+        }
+
         if (errorTable.type === 'none') {
             resultDiv.innerHTML = '<p class="success-text">✅ Crise évitée !</p>';
+            this.matchData[`team${team}`].costlyError = { type: 'none' };
         } else if (errorTable.type === 'minor') {
-            const loss = Utils.getRandomInt(1, 3) * 10000;
-            resultDiv.innerHTML = `<p class="warning-text">⚠️ Incident mineur : -${Utils.formatNumber(loss)} PO</p>`;
+            const d3Roll = Utils.getRandomInt(1, 3);
+            const loss = d3Roll * 10000;
+            resultDiv.innerHTML = `
+                <p class="warning-text">
+                    ⚠️ Incident mineur !<br>
+                    Jet D3 = ${d3Roll}<br>
+                    Perte : ${Utils.formatNumber(loss)} PO
+                </p>
+            `;
+            this.matchData[`team${team}`].costlyError = {
+                type: 'minor',
+                amount: loss,
+                d3Roll: d3Roll
+            };
         } else if (errorTable.type === 'major') {
-            resultDiv.innerHTML = `<p class="danger-text">🔥 Incident majeur : Trésorerie divisée par 2 !</p>`;
+            const newTreasury = Math.floor(treasury / 2);
+            const loss = treasury - newTreasury;
+            resultDiv.innerHTML = `
+                <p class="danger-text">
+                    🔥 Incident majeur !<br>
+                    Trésorerie divisée par 2<br>
+                    Perte : ${Utils.formatNumber(loss)} PO
+                </p>
+            `;
+            this.matchData[`team${team}`].costlyError = {
+                type: 'major'
+            };
         } else if (errorTable.type === 'catastrophe') {
-            resultDiv.innerHTML = `<p class="danger-text">💥 Catastrophe ! Ne garde que 2D6×10k PO</p>`;
+            const d6Roll1 = Utils.getRandomInt(1, 6);
+            const d6Roll2 = Utils.getRandomInt(1, 6);
+            const kept = (d6Roll1 + d6Roll2) * 10000;
+            const loss = Math.max(0, treasury - kept);
+            resultDiv.innerHTML = `
+                <p class="danger-text">
+                    💥 CATASTROPHE !<br>
+                    Jets 2D6 = ${d6Roll1} + ${d6Roll2} = ${d6Roll1 + d6Roll2}<br>
+                    Montant conservé : ${Utils.formatNumber(kept)} PO<br>
+                    Perte : ${Utils.formatNumber(loss)} PO
+                </p>
+            `;
+            this.matchData[`team${team}`].costlyError = {
+                type: 'catastrophe',
+                kept: kept,
+                d6Rolls: [d6Roll1, d6Roll2]
+            };
         }
 
         this.saveState();
@@ -6565,23 +6674,43 @@ class BloodBowlApp {
     }
 
     calculateFinalTreasury(team) {
+        // Trésorerie de base (depuis l'onglet Configuration)
         const baseTreasury = this.matchData[`team${team}`].treasury || 0;
+
+        // Gains du match
         const gains = this.calculateGains(team);
+
+        // Ventes de joueurs
         const playerSales = this.getPlayerSalesTotal(team);
+
+        // Coups de pouce payés avec la trésorerie
+        const treasurySpentOnInducements = this.matchData.inducements[`team${team}Treasury`] || 0;
+
+        // Achats de nouveaux joueurs
         const newPlayerPurchases = this.getPlayerPurchasesTotal(team);
 
-        // Récupérer la trésorerie dépensée pour les coups de pouce
-        let treasurySpentOnInducements = this.matchData[`team${team}`].treasurySpentOnInducements || 0;
+        // Calculer la trésorerie AVANT les erreurs coûteuses
+        const treasuryBeforeErrors = baseTreasury + gains + playerSales - treasurySpentOnInducements - newPlayerPurchases;
 
-        // Si pas encore définie mais qu'il y a des coups de pouce, calculer
-        if (treasurySpentOnInducements === 0 && this.hasInducements(team)) {
-            const spending = this.calculateInducementSpending(team);
-            treasurySpentOnInducements = spending.spentFromTreasury;
-            // Sauvegarder pour éviter de recalculer
-            this.matchData[`team${team}`].treasurySpentOnInducements = treasurySpentOnInducements;
+        // NOUVEAU : Prendre en compte les erreurs coûteuses
+        let costlyErrorLoss = 0;
+        const costlyError = this.matchData[`team${team}`].costlyError || {};
+
+        if (costlyError.type && costlyError.type !== 'none') {
+            // Si une erreur coûteuse a été définie
+            if (costlyError.type === 'minor' && costlyError.amount) {
+                costlyErrorLoss = costlyError.amount;
+            } else if (costlyError.type === 'major') {
+                // Incident majeur : perd la moitié
+                costlyErrorLoss = Math.floor(treasuryBeforeErrors / 2);
+            } else if (costlyError.type === 'catastrophe' && costlyError.kept) {
+                // Catastrophe : ne garde que le montant spécifié
+                costlyErrorLoss = Math.max(0, treasuryBeforeErrors - costlyError.kept);
+            }
         }
 
-        const finalTreasury = baseTreasury + gains + playerSales - treasurySpentOnInducements - newPlayerPurchases;
+        // Calculer le total final APRÈS les erreurs coûteuses
+        const finalTreasury = treasuryBeforeErrors - costlyErrorLoss;
 
         console.log(`Calcul trésorerie ${this.matchData[`team${team}`].name}:`);
         console.log(`   Trésorerie initiale: ${Utils.formatNumber(baseTreasury)} PO`);
@@ -6589,6 +6718,8 @@ class BloodBowlApp {
         console.log(`   + Ventes de joueurs: ${Utils.formatNumber(playerSales)} PO`);
         console.log(`   - Coups de pouce (trésorerie): ${Utils.formatNumber(treasurySpentOnInducements)} PO`);
         console.log(`   - Achats de joueurs: ${Utils.formatNumber(newPlayerPurchases)} PO`);
+        console.log(`   = Sous-total: ${Utils.formatNumber(treasuryBeforeErrors)} PO`);
+        console.log(`   - Erreurs coûteuses: ${Utils.formatNumber(costlyErrorLoss)} PO`);
         console.log(`   = TOTAL FINAL: ${Utils.formatNumber(finalTreasury)} PO`);
 
         return {
@@ -6597,6 +6728,7 @@ class BloodBowlApp {
             playerSales,
             treasurySpentOnInducements,
             newPlayerPurchases,
+            costlyErrorLoss,  // NOUVEAU
             finalTreasury
         };
     }
