@@ -5961,3 +5961,110 @@ body.transitioning {
         height: -webkit-fill-available;
     }
 }
+
+/* Styles pour les totaux de vente dans la section Vente de Joueurs */
+/* À ajouter dans css/styles.css */
+
+/* Total des ventes */
+.sales-total {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #dee2e6;
+}
+
+.total-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.total-amount {
+    font-size: 1.2em;
+}
+
+.total-amount.positive {
+    color: #28a745;
+}
+
+.total-amount.negative {
+    color: #dc3545;
+}
+
+/* Animation pour la mise à jour des totaux */
+.sales-total.updating {
+    animation: pulse 0.3s ease;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Amélioration visuelle des items de vente */
+.sold-player-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+}
+
+.sold-player-item:hover {
+    background: #e9ecef;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.sold-player-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.sold-player-value {
+    width: 120px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.sold-player-value:focus {
+    border-color: #28a745;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1);
+}
+
+/* Indicateur de mise à jour */
+.updating-indicator {
+    display: inline-block;
+    margin-left: 10px;
+    color: #ffc107;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Amélioration du feedback visuel */
+.sold-player-item.saving {
+    background: #fff3cd;
+    transition: background 0.3s ease;
+}
+
+.sold-player-item.saved {
+    background: #d4edda;
+    transition: background 0.3s ease;
+}

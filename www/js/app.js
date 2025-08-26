@@ -6268,11 +6268,17 @@ class BloodBowlApp {
     updateSoldPlayer(team, index, name) {
         this.matchData[`team${team}`].soldPlayers[index].name = name;
         this.saveState();
+
+        // AJOUT : Recharger la page pour mettre à jour tous les calculs
+        this.loadTab('postmatch');
     }
 
     updateSoldPlayerValue(team, index, value) {
         this.matchData[`team${team}`].soldPlayers[index].value = parseInt(value) || 0;
         this.saveState();
+
+        // AJOUT : Recharger la page pour mettre à jour tous les calculs
+        this.loadTab('postmatch');
     }
 
     removeSoldPlayer(team, index) {
