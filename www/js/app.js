@@ -859,9 +859,11 @@ class BloodBowlApp {
         const team1 = this.matchData.team1;
         const team2 = this.matchData.team2;
 
-        // CORRECTION : Utiliser les bonnes propriétés
-        const team1InitialFans = team1.fans || 1;  // Fans initiaux (configuration)
-        const team2InitialFans = team2.fans || 1;  // Fans initiaux (configuration)
+        // ✅ CORRECTION : Utiliser les bonnes propriétés
+        const team1InitialFans = team1.fans || 1;  // Fans initiaux (ne changent jamais)
+        const team2InitialFans = team2.fans || 1;  // Fans initiaux (ne changent jamais)
+
+        // Si finalFans existe, l'utiliser, sinon prendre les fans initiaux
         const team1FinalFans = team1.finalFans !== undefined ? team1.finalFans : team1InitialFans;
         const team2FinalFans = team2.finalFans !== undefined ? team2.finalFans : team2InitialFans;
 
@@ -6066,7 +6068,6 @@ class BloodBowlApp {
         const result = this.getMatchResult(team);
 
         // IMPORTANT : Utiliser les fans INITIAUX (depuis configuration)
-        // Ne PAS modifier this.matchData[`team${team}`].fans !
         const currentFans = this.matchData[`team${team}`].fans || 1;
 
         // Sauvegarder les fans initiaux la première fois (pour référence)
@@ -6100,9 +6101,9 @@ class BloodBowlApp {
             }
         }
 
-        // IMPORTANT : Sauvegarder dans une propriété SÉPARÉE
-        // Ne PAS écraser this.matchData[`team${team}`].fans !
-        this.matchData[`team${team}`].finalFans = newFans;
+        // ✅ CHANGEMENT CRITIQUE : NE PAS ÉCRASER fans, utiliser finalFans
+        this.matchData[`team${team}`].finalFans = newFans; // ✅ UTILISER finalFans À LA PLACE
+
         this.matchData[`team${team}`].fansUpdateResult = message;
 
         document.getElementById(`fans${team}-result`).textContent = message;
