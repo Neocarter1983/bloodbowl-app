@@ -361,12 +361,44 @@ class BloodBowlApp {
             this.currentTab = tabId;
             this.updateProgress(tabId);
 
-            // NOUVEAU: Scroll vers le haut de la page
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            // Alternative pour mobile si le smooth scroll ne fonctionne pas
+            // CORRECTION AMÉLIORÉE : Forcer le scroll vers le haut
+            // Méthode 1 : Scroll immédiat sans animation
+            window.scrollTo(0, 0);
             document.body.scrollTop = 0;
             document.documentElement.scrollTop = 0;
+
+            // Méthode 2 : Scroll avec un léger délai pour s'assurer que le DOM est prêt
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+
+                // Si on a un container spécifique qui scroll
+                const container = document.getElementById('app');
+                if (container) {
+                    container.scrollTop = 0;
+                }
+
+                // Pour mobile : forcer aussi le main-content à remonter
+                const mainContent = document.getElementById('main-content');
+                if (mainContent) {
+                    mainContent.scrollTop = 0;
+                }
+            }, 50);
+
+            // Méthode 3 : Scroll smooth après un délai plus long (pour l'animation)
+            setTimeout(() => {
+                try {
+                    window.scrollTo({
+                        top: 0,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                } catch (e) {
+                    // Fallback si smooth scroll n'est pas supporté
+                    window.scrollTo(0, 0);
+                }
+            }, 100);
 
             // Vibration tactile
             if (window.Utils && Utils.vibrate) {
@@ -379,6 +411,33 @@ class BloodBowlApp {
             console.error('❌ Erreur dans switchTab:', error);
             this.ensureCurrentTabSelected();
             return false;
+        }
+    }
+
+    scrollToTop() {
+        // Scroll instantané d'abord
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+
+        // Scroll tous les containers possibles
+        const containers = [
+            document.getElementById('app'),
+            document.getElementById('main-content'),
+            document.querySelector('.container'),
+            document.querySelector('.tab-content')
+        ];
+
+        containers.forEach(container => {
+            if (container) {
+                container.scrollTop = 0;
+            }
+        });
+
+        // Focus sur le header pour forcer le navigateur à remonter
+        const header = document.querySelector('.header');
+        if (header) {
+            header.scrollIntoView({ behavior: 'instant', block: 'start' });
         }
     }
 
@@ -504,6 +563,9 @@ class BloodBowlApp {
             this.updateProgress(tabId);
 
             console.log(`✅ Contenu ${tabId} chargé avec succès`);
+
+            // AJOUT : Forcer le scroll après le chargement du contenu
+            this.scrollToTop();
 
         } catch (error) {
             console.error(`❌ Erreur chargement onglet ${tabId}:`, error);
@@ -2519,6 +2581,11 @@ class BloodBowlApp {
             // Forcer le retour à l'onglet setup
             this.currentTab = 'setup'; // Forcer l'état avant switchTab
             this.switchTab('setup');
+
+            // AJOUT : Forcer le scroll après réinitialisation
+            setTimeout(() => {
+                this.scrollToTop();
+            }, 200);
 
             // Réactiver la validation après un délai
             setTimeout(() => {

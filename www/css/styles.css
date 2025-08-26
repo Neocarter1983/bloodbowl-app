@@ -5863,3 +5863,101 @@ html {
 .calculation-details {
     animation: fadeInSlide 0.3s ease;
 }
+
+/* Comportement de scroll smooth global */
+html {
+    scroll-behavior: smooth;
+    /* Empêcher le bounce scroll sur iOS */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Reset de position au changement d'onglet */
+.tab-content {
+    /* S'assurer que le contenu commence en haut */
+    position: relative;
+    top: 0;
+}
+
+/* Pour éviter les problèmes de scroll sur mobile */
+body {
+    /* Éviter le scroll horizontal accidentel */
+    overflow-x: hidden;
+    /* Position initiale */
+    position: relative;
+}
+
+/* Container principal */
+#app {
+    /* S'assurer que le container ne crée pas de scroll indésirable */
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Fix pour mobile - empêcher le scroll pendant les transitions */
+body.transitioning {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+/* Animation de transition améliorée */
+.tab-content {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Améliorer la visibilité du scroll sur mobile */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(26, 95, 63, 0.5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(26, 95, 63, 0.7);
+}
+
+/* Point d'ancrage pour le scroll to top */
+.header {
+    position: relative;
+    scroll-margin-top: 0;
+}
+
+/* Optimisation pour les performances */
+.tab-content * {
+    /* Éviter les reflows inutiles */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Fix pour Safari iOS */
+@supports (-webkit-touch-callout: none) {
+    body {
+        /* Hauteur fixe pour éviter les problèmes de scroll sur iOS */
+        height: 100vh;
+        height: -webkit-fill-available;
+    }
+
+    html {
+        height: -webkit-fill-available;
+    }
+}
