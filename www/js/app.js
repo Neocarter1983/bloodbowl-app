@@ -599,6 +599,7 @@ class BloodBowlApp {
 
                 <div class="form-actions">
                     <button class="btn btn-primary" onclick="app.switchTab('prematch')">⬅️ Retour Avant-Match</button>
+                    <button class="btn btn-secondary" onclick="app.resetMatch()">🔄 Nouveau Match</button>
                     <button class="btn btn-primary" onclick="app.switchTab('postmatch')">➡️ Terminer le Match</button>
                 </div>
             </div>
@@ -629,6 +630,7 @@ class BloodBowlApp {
 
                 <div class="form-actions">
                     <button class="btn btn-primary" onclick="app.switchTab('match')">⬅️ Retour au Match</button>
+                    <button class="btn btn-secondary" onclick="app.resetMatch()">🔄 Nouveau Match</button>
                     <button class="btn btn-primary" onclick="app.switchTab('summary')">➡️ Voir le Résumé</button>
                 </div>
             </div>
@@ -651,7 +653,6 @@ class BloodBowlApp {
 
                 <div class="form-actions">
                     <button class="btn btn-primary" onclick="app.switchTab('postmatch')">⬅️ Retour Après-Match</button>
-                    <button class="btn btn-success" onclick="app.printSummary()">🖨️ Imprimer</button>
                     <button class="btn btn-primary" onclick="app.resetMatch()">🔄 Nouveau Match</button>
                 </div>
             </div>
@@ -3136,6 +3137,7 @@ class BloodBowlApp {
                 <div id="vea-comparison" class="result-box" style="display: none;"></div>
 
                 <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="app.resetMatch()">🔄 Nouveau Match</button>
                     <button class="btn btn-primary btn-next-tab ${validation.canNavigate ? '' : 'disabled'}"
                             onclick="app.switchTab('prematch')"
                             ${validation.canNavigate ? '' : 'disabled'}>
@@ -3580,6 +3582,7 @@ class BloodBowlApp {
         html += `
             <div class="form-actions">
                     <button class="btn btn-primary" onclick="app.switchTab('setup')">⬅️ Retour Configuration</button>
+                    <button class="btn btn-secondary" onclick="app.resetMatch()">🔄 Nouveau Match</button>
                     <button class="btn btn-primary" onclick="app.switchTab('match')">➡️ Commencer le Match</button>
             </div>
             </div>

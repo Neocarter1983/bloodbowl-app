@@ -775,15 +775,34 @@ input:focus, select:focus, textarea:focus {
     background: #6c757d;
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
+    padding: 12px 24px;
+    border-radius: 8px;
     font-size: 14px;
-    transition: background 0.3s ease;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn-secondary:hover {
     background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Pour mobile */
+@media (max-width: 600px) {
+    .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* Labels dans les dice controls */
