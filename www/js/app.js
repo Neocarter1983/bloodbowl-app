@@ -5516,38 +5516,196 @@ class BloodBowlApp {
     }
 
     getFansUpdateSection() {
+        const team1 = this.matchData.team1;
+        const team2 = this.matchData.team2;
+
         return `
             <div class="step-section">
                 <div class="step-header">
                     <div class="step-number">9</div>
                     <div class="step-title">Mise à Jour des Fans Dévoués</div>
                 </div>
-                <div class="explanation-box">
-                    <p><strong>Gagnant :</strong> Lance 1D6. Si ≥ fans actuels → gagne 1D3 fans</p>
-                    <p><strong>Perdant :</strong> Lance 1D6. Si ≤ fans actuels → perd 1D3 fans</p>
-                    <p><strong>Match nul :</strong> Pas de changement</p>
+
+                <!-- Tableau récapitulatif des règles -->
+                <div class="fans-rules-table">
+                    <table class="rules-table">
+                        <thead>
+                            <tr>
+                                <th>Résultat</th>
+                                <th>Jet D6</th>
+                                <th>Condition</th>
+                                <th>Effet</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="winner-row">
+                                <td>🏆 <strong>Gagnant</strong></td>
+                                <td>🎲 1D6</td>
+                                <td>Si D6 ≥ Fans actuels</td>
+                                <td class="positive">+1D3 fans (max 6)</td>
+                            </tr>
+                            <tr class="loser-row">
+                                <td>😔 <strong>Perdant</strong></td>
+                                <td>🎲 1D6</td>
+                                <td>Si D6 ≤ Fans actuels</td>
+                                <td class="negative">-1D3 fans (min 1)</td>
+                            </tr>
+                            <tr class="draw-row">
+                                <td>🤝 <strong>Match nul</strong></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td class="neutral">Pas de changement</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="fans-update-controls">
-                    <div class="dice-controls">
-                        <span><strong>${this.matchData.team1.name || 'Équipe 1'}</strong>
-                        (${this.getMatchResult(1)}) - Fans actuels: ${this.matchData.team1.fans} :</span>
-                        <button class="dice-btn" onclick="app.rollFansUpdate(1)">🎲 Test Fans</button>
-                        <input type="number" class="dice-result" id="fans1-roll"
-                            value="${this.matchData.team1.fansUpdateRoll || ''}" min="1" max="6" onchange="app.updateFans(1)">
-                        <span id="fans1-result">${this.matchData.team1.fansUpdateResult || ''}</span>
+
+                <!-- Mise à jour par équipe -->
+                <div class="fans-update-teams">
+                    ${this.getTeamFansUpdateCard(1)}
+                    ${this.getTeamFansUpdateCard(2)}
+                </div>
+
+                <!-- Message de confirmation -->
+                <div id="fans-update-info" class="result-box" style="${(team1.fansUpdateRoll || team2.fansUpdateRoll) ? '' : 'display: none;'}">
+                    <p>✅ Mise à jour des fans terminée</p>
+                </div>
+            </div>
+        `;
+    }
+
+    getTeamFansUpdateCard(team) {
+        const teamData = this.matchData[`team${team}`];
+        const teamName = teamData.name || `Équipe ${team}`;
+        const currentFans = teamData.fans || 1;
+        const finalFans = teamData.finalFans !== undefined ? teamData.finalFans : currentFans;
+        const result = this.getMatchResult(team);
+        const roll = teamData.fansUpdateRoll || '';
+        const d3Roll = teamData.fansD3Roll || null;
+
+        // Déterminer la classe CSS selon le résultat
+        let resultClass = '';
+        let resultIcon = '';
+        let conditionText = '';
+
+        if (result === 'Gagnant') {
+            resultClass = 'winner';
+            resultIcon = '🏆';
+            conditionText = `Jet D6 ≥ ${currentFans} pour gagner des fans`;
+        } else if (result === 'Perdant') {
+            resultClass = 'loser';
+            resultIcon = '😔';
+            conditionText = `Jet D6 ≤ ${currentFans} pour perdre des fans`;
+        } else {
+            resultClass = 'draw';
+            resultIcon = '🤝';
+            conditionText = 'Match nul : pas de changement';
+        }
+
+        // Calcul du détail selon le résultat
+        let calculationDetail = '';
+        if (roll) {
+            if (result === 'Match nul') {
+                calculationDetail = `
+                    <div class="calculation-step neutral">
+                        <span>Match nul → Pas de changement</span>
                     </div>
-                    <div class="dice-controls">
-                        <span><strong>${this.matchData.team2.name || 'Équipe 2'}</strong>
-                        (${this.getMatchResult(2)}) - Fans actuels: ${this.matchData.team2.fans} :</span>
-                        <button class="dice-btn" onclick="app.rollFansUpdate(2)">🎲 Test Fans</button>
-                        <input type="number" class="dice-result" id="fans2-roll"
-                            value="${this.matchData.team2.fansUpdateRoll || ''}" min="1" max="6" onchange="app.updateFans(2)">
-                        <span id="fans2-result">${this.matchData.team2.fansUpdateResult || ''}</span>
+                `;
+            } else if (result === 'Gagnant') {
+                if (roll >= currentFans) {
+                    const gain = finalFans - currentFans;
+                    calculationDetail = `
+                        <div class="calculation-step">
+                            <span class="step-label">1️⃣ Test D6 :</span>
+                            <span class="step-value success">${roll} ≥ ${currentFans} ✅</span>
+                        </div>
+                        ${d3Roll ? `
+                        <div class="calculation-step">
+                            <span class="step-label">2️⃣ Gain D3 :</span>
+                            <span class="step-value">+${d3Roll} fan(s)</span>
+                        </div>` : ''}
+                        <div class="calculation-step result">
+                            <span class="step-label">📊 Résultat :</span>
+                            <span class="step-value positive">${currentFans} → ${finalFans} (+${gain})</span>
+                        </div>
+                    `;
+                } else {
+                    calculationDetail = `
+                        <div class="calculation-step">
+                            <span class="step-label">1️⃣ Test D6 :</span>
+                            <span class="step-value fail">${roll} < ${currentFans} ❌</span>
+                        </div>
+                        <div class="calculation-step result">
+                            <span class="step-label">📊 Résultat :</span>
+                            <span class="step-value neutral">Pas de gain (reste à ${currentFans})</span>
+                        </div>
+                    `;
+                }
+            } else { // Perdant
+                if (roll <= currentFans) {
+                    const loss = currentFans - finalFans;
+                    calculationDetail = `
+                        <div class="calculation-step">
+                            <span class="step-label">1️⃣ Test D6 :</span>
+                            <span class="step-value fail">${roll} ≤ ${currentFans} ❌</span>
+                        </div>
+                        ${d3Roll ? `
+                        <div class="calculation-step">
+                            <span class="step-label">2️⃣ Perte D3 :</span>
+                            <span class="step-value">-${d3Roll} fan(s)</span>
+                        </div>` : ''}
+                        <div class="calculation-step result">
+                            <span class="step-label">📊 Résultat :</span>
+                            <span class="step-value negative">${currentFans} → ${finalFans} (-${loss})</span>
+                        </div>
+                    `;
+                } else {
+                    calculationDetail = `
+                        <div class="calculation-step">
+                            <span class="step-label">1️⃣ Test D6 :</span>
+                            <span class="step-value success">${roll} > ${currentFans} ✅</span>
+                        </div>
+                        <div class="calculation-step result">
+                            <span class="step-label">📊 Résultat :</span>
+                            <span class="step-value neutral">Pas de perte (reste à ${currentFans})</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        return `
+            <div class="team-fans-card ${resultClass}">
+                <div class="fans-card-header">
+                    <h4>${resultIcon} ${teamName}</h4>
+                    <span class="match-result">${result}</span>
+                </div>
+
+                <div class="fans-current-status">
+                    <div class="status-item">
+                        <span class="label">Fans actuels :</span>
+                        <span class="value">${currentFans}</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Condition :</span>
+                        <span class="condition">${conditionText}</span>
                     </div>
                 </div>
-                <div id="fans-update-info" class="result-box" style="${(this.matchData.team1.fansUpdateRoll || this.matchData.team2.fansUpdateRoll) ? '' : 'display: none;'}">
-                    <p>Mise à jour des fans terminée</p>
+
+                <div class="fans-test-controls">
+                    <button class="dice-btn" onclick="app.rollFansUpdate(${team})">
+                        🎲 Lancer le test D6
+                    </button>
+                    <input type="number" class="dice-result" id="fans${team}-roll"
+                        value="${roll}" min="1" max="6"
+                        onchange="app.updateFans(${team})">
                 </div>
+
+                ${calculationDetail ? `
+                    <div class="calculation-details">
+                        ${calculationDetail}
+                    </div>
+                ` : ''}
             </div>
         `;
     }
@@ -6075,17 +6233,19 @@ class BloodBowlApp {
             this.matchData[`team${team}`].initialFans = currentFans;
         }
 
-        // Sauvegarder le résultat du dé
+        // Sauvegarder le résultat du dé D6
         this.matchData[`team${team}`].fansUpdateRoll = roll;
 
         let message = '';
-        let newFans = currentFans; // Commencer avec les fans initiaux
+        let newFans = currentFans;
+        let d3Roll = null; // Pour sauvegarder le jet D3
 
         if (result === 'Match nul') {
             message = 'Match nul : pas de changement';
         } else if (result === 'Gagnant') {
             if (roll >= currentFans) {
-                const gain = Utils.getRandomInt(1, 3);
+                d3Roll = Utils.getRandomInt(1, 3);
+                const gain = d3Roll;
                 newFans = Math.min(6, currentFans + gain);
                 message = `Gagne ${gain} fan(s) ! (${currentFans} → ${newFans})`;
             } else {
@@ -6093,7 +6253,8 @@ class BloodBowlApp {
             }
         } else { // Perdant
             if (roll <= currentFans) {
-                const loss = Utils.getRandomInt(1, 3);
+                d3Roll = Utils.getRandomInt(1, 3);
+                const loss = d3Roll;
                 newFans = Math.max(1, currentFans - loss);
                 message = `Perd ${loss} fan(s) ! (${currentFans} → ${newFans})`;
             } else {
@@ -6101,19 +6262,13 @@ class BloodBowlApp {
             }
         }
 
-        // ✅ CHANGEMENT CRITIQUE : NE PAS ÉCRASER fans, utiliser finalFans
-        this.matchData[`team${team}`].finalFans = newFans; // ✅ UTILISER finalFans À LA PLACE
-
+        // Sauvegarder TOUTES les informations du calcul
+        this.matchData[`team${team}`].finalFans = newFans;
         this.matchData[`team${team}`].fansUpdateResult = message;
+        this.matchData[`team${team}`].fansD3Roll = d3Roll; // NOUVEAU : sauvegarder le D3
 
-        document.getElementById(`fans${team}-result`).textContent = message;
-
-        // Afficher le résumé
-        const infoDiv = document.getElementById('fans-update-info');
-        if (infoDiv) {
-            infoDiv.style.display = 'block';
-            infoDiv.className = result === 'Gagnant' ? 'result-box success' : 'result-box warning';
-        }
+        // Rafraîchir l'affichage complet de la section
+        this.loadTab('postmatch');
 
         this.saveState();
     }
