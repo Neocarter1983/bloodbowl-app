@@ -6094,8 +6094,13 @@ class BloodBowlApp {
             cost: 0
         });
 
-        this.loadTab('postmatch');
         this.saveState();
+
+        // Recharger SEULEMENT la liste des achats pour cette équipe
+        const purchasesList = document.getElementById(`team${team}-purchases-list`);
+        if (purchasesList) {
+            purchasesList.innerHTML = this.getTeamPurchasesList(team);
+        }
     }
 
     updatePurchasedPlayer(team, index, field, value) {
@@ -6108,29 +6113,41 @@ class BloodBowlApp {
 
             // Vérifier si le nouveau total dépasse le budget
             if (newTotalPurchases > availableBudget) {
-                // Afficher un avertissement
                 const remainingBudget = availableBudget - (totalPurchases - previousCost);
                 alert(`⚠️ Budget insuffisant !\n\nBudget restant : ${Utils.formatNumber(remainingBudget)} PO\nCoût saisi : ${Utils.formatNumber(newCost)} PO\n\nVeuillez saisir un montant inférieur ou vendre des joueurs pour augmenter votre budget.`);
 
-                // Optionnel : remettre l'ancienne valeur
-                document.querySelector(`#team${team}-purchases-list input[type="number"]`).value = previousCost;
+                // Remettre l'ancienne valeur
+                const inputElement = event.target;
+                if (inputElement) {
+                    inputElement.value = previousCost;
+                }
                 return;
             }
 
             this.matchData[`team${team}`].purchasedPlayers[index][field] = newCost;
+
+            // Mise à jour SILENCIEUSE du budget uniquement
+            this.updateBudgetDisplay(team);
         } else {
             this.matchData[`team${team}`].purchasedPlayers[index][field] = value;
         }
 
-        // Recharger la section pour mettre à jour le budget restant
-        this.loadTab('postmatch');
         this.saveState();
+        // PAS de loadTab() - mise à jour silencieuse
     }
 
     removePurchasedPlayer(team, index) {
         this.matchData[`team${team}`].purchasedPlayers.splice(index, 1);
-        this.loadTab('postmatch');
         this.saveState();
+
+        // Recharger SEULEMENT la liste des achats pour cette équipe
+        const purchasesList = document.getElementById(`team${team}-purchases-list`);
+        if (purchasesList) {
+            purchasesList.innerHTML = this.getTeamPurchasesList(team);
+        }
+
+        // Mettre à jour le budget
+        this.updateBudgetDisplay(team);
     }
 
     // MÉTHODE POUR CALCULER LE TOTAL DES ACHATS
@@ -6229,26 +6246,42 @@ class BloodBowlApp {
         }
 
         const soldPlayers = this.matchData[`team${team}`].soldPlayers;
+        let html = '';
 
         if (soldPlayers.length === 0) {
-            return '<p class="help-text">Aucun joueur vendu</p>';
+            html = '<p class="help-text">Aucun joueur vendu</p>';
+        } else {
+            html = soldPlayers.map((player, index) => `
+                <div class="sold-player-item">
+                    <input type="text" class="sold-player-input"
+                        value="${player.name}"
+                        placeholder="Nom du joueur vendu"
+                        onchange="app.updateSoldPlayer(${team}, ${index}, this.value)">
+                    <input type="number" class="sold-player-value"
+                        value="${player.value || 0}"
+                        placeholder="Valeur"
+                        min="0" step="10000"
+                        onchange="app.updateSoldPlayerValue(${team}, ${index}, this.value)">
+                    <span>PO</span>
+                    <button class="btn-remove-player" onclick="app.removeSoldPlayer(${team}, ${index})">❌</button>
+                </div>
+            `).join('');
+
+            // Ajouter le total avec un ID spécifique pour les mises à jour
+            const total = this.getPlayerSalesTotal(team);
+            if (total > 0) {
+                html += `
+                    <div class="sales-total">
+                        <div class="total-display">
+                            <span>Total des ventes :</span>
+                            <span class="sales-total-amount positive">+${Utils.formatNumber(total)} PO</span>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
-        return soldPlayers.map((player, index) => `
-            <div class="sold-player-item">
-                <input type="text" class="sold-player-input"
-                    value="${player.name}"
-                    placeholder="Nom du joueur vendu"
-                    onchange="app.updateSoldPlayer(${team}, ${index}, this.value)">
-                <input type="number" class="sold-player-value"
-                    value="${player.value || 0}"
-                    placeholder="Valeur"
-                    min="0" step="10000"
-                    onchange="app.updateSoldPlayerValue(${team}, ${index}, this.value)">
-                <span>PO</span>
-                <button class="btn-remove-player" onclick="app.removeSoldPlayer(${team}, ${index})">❌</button>
-            </div>
-        `).join('');
+        return html;
     }
 
     addSoldPlayer(team) {
@@ -6261,30 +6294,142 @@ class BloodBowlApp {
             value: 0
         });
 
-        this.loadTab('postmatch');
         this.saveState();
+
+        // Recharger SEULEMENT la liste des ventes pour cette équipe
+        const salesList = document.getElementById(`team${team}-sales-list`);
+        if (salesList) {
+            salesList.innerHTML = this.getTeamSalesList(team);
+        }
     }
 
     updateSoldPlayer(team, index, name) {
         this.matchData[`team${team}`].soldPlayers[index].name = name;
         this.saveState();
-
-        // AJOUT : Recharger la page pour mettre à jour tous les calculs
-        this.loadTab('postmatch');
+        // PAS de loadTab() - mise à jour silencieuse
     }
 
     updateSoldPlayerValue(team, index, value) {
         this.matchData[`team${team}`].soldPlayers[index].value = parseInt(value) || 0;
         this.saveState();
 
-        // AJOUT : Recharger la page pour mettre à jour tous les calculs
-        this.loadTab('postmatch');
+        // Mise à jour SILENCIEUSE du total des ventes uniquement
+        this.updateSalesTotal(team);
+        // Mise à jour du budget disponible dans la section Achat
+        this.updateBudgetDisplay(team);
     }
 
     removeSoldPlayer(team, index) {
         this.matchData[`team${team}`].soldPlayers.splice(index, 1);
-        this.loadTab('postmatch');
         this.saveState();
+
+        // Recharger SEULEMENT la liste des ventes pour cette équipe
+        const salesList = document.getElementById(`team${team}-sales-list`);
+        if (salesList) {
+            salesList.innerHTML = this.getTeamSalesList(team);
+        }
+
+        // Mettre à jour le budget
+        this.updateBudgetDisplay(team);
+    }
+
+    updateSalesTotal(team) {
+        const salesTotal = this.getPlayerSalesTotal(team);
+
+        // Trouver l'élément de total dans la section des ventes
+        const salesSection = document.getElementById(`team${team}-sales-list`);
+        if (!salesSection) return;
+
+        // Chercher ou créer l'élément de total
+        let totalElement = salesSection.querySelector('.sales-total-amount');
+
+        if (!totalElement && salesTotal > 0) {
+            // Si l'élément n'existe pas et qu'il y a des ventes, le créer
+            let totalDiv = salesSection.querySelector('.sales-total');
+            if (!totalDiv) {
+                totalDiv = document.createElement('div');
+                totalDiv.className = 'sales-total';
+                totalDiv.innerHTML = `
+                    <div class="total-display">
+                        <span>Total des ventes :</span>
+                        <span class="sales-total-amount positive">+${Utils.formatNumber(salesTotal)} PO</span>
+                    </div>
+                `;
+                salesSection.appendChild(totalDiv);
+            }
+            totalElement = totalDiv.querySelector('.sales-total-amount');
+        }
+
+        if (totalElement) {
+            totalElement.textContent = `+${Utils.formatNumber(salesTotal)} PO`;
+
+            // Effet visuel de mise à jour
+            totalElement.style.transition = 'transform 0.2s ease';
+            totalElement.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                totalElement.style.transform = 'scale(1)';
+            }, 200);
+        }
+    }
+
+    updateBudgetDisplay(team) {
+        const budget = this.calculateAvailableBudget(team);
+
+        // Sélecteur plus robuste basé sur l'ID
+        const purchasesSection = document.querySelector(`#team${team}-purchases-list`);
+        if (!purchasesSection) return;
+
+        // Remonter au parent pour trouver le budget
+        const parentSection = purchasesSection.closest('.team-purchases-section');
+        if (!parentSection) return;
+
+        const budgetElement = parentSection.querySelector('.budget-amount');
+        if (budgetElement) {
+            budgetElement.className = `budget-amount ${budget < 0 ? 'negative' : ''}`;
+            budgetElement.textContent = `${Utils.formatNumber(budget)} PO`;
+
+            // Ajouter un effet visuel temporaire pour indiquer la mise à jour
+            budgetElement.style.transition = 'background-color 0.3s ease';
+            budgetElement.style.backgroundColor = '#ffffcc';
+            setTimeout(() => {
+                budgetElement.style.backgroundColor = '';
+            }, 300);
+        }
+
+        // Mettre à jour le breakdown
+        const breakdownElement = parentSection.querySelector('.budget-breakdown small');
+        if (breakdownElement) {
+            const treasury = this.matchData[`team${team}`].treasury || 0;
+            const gains = this.calculateGains(team);
+            const sales = this.getPlayerSalesTotal(team);
+            const treasurySpent = this.matchData[`team${team}`].treasurySpentOnInducements || 0;
+
+            let breakdown = `Trésorerie initiale (${Utils.formatNumber(treasury)})`;
+            breakdown += ` + Gains (${Utils.formatNumber(gains)})`;
+            breakdown += ` + Ventes (${Utils.formatNumber(sales)})`;
+            if (treasurySpent > 0) {
+                breakdown += ` - Coups de pouce (${Utils.formatNumber(treasurySpent)})`;
+            }
+
+            breakdownElement.textContent = breakdown;
+        }
+    }
+
+    updateDiceResult(sectionId, value) {
+        // Sauvegarder la valeur
+        this.saveState();
+
+        // Mettre à jour uniquement l'affichage du résultat
+        const resultElement = document.querySelector(`#${sectionId} .dice-result`);
+        if (resultElement) {
+            resultElement.textContent = value;
+
+            // Effet visuel
+            resultElement.classList.add('updated');
+            setTimeout(() => {
+                resultElement.classList.remove('updated');
+            }, 500);
+        }
     }
 
     // Gestion des fans

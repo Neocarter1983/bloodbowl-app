@@ -6068,3 +6068,190 @@ body.transitioning {
     background: #d4edda;
     transition: background 0.3s ease;
 }
+
+/* Animation de mise à jour */
+.updated {
+    animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        background-color: #ffffcc;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Transitions pour les montants */
+.budget-amount {
+    transition: all 0.3s ease;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.budget-amount.updating {
+    background-color: #ffffcc !important;
+}
+
+.sales-total-amount {
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+/* Feedback visuel sur les inputs lors de la sauvegarde */
+.sold-player-input:focus,
+.sold-player-value:focus,
+.purchased-player-input:focus,
+.purchased-player-value:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1);
+}
+
+/* Indicateur de sauvegarde automatique */
+.auto-save-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.auto-save-indicator.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Amélioration du feedback sur mobile */
+@media (max-width: 768px) {
+    /* Désactiver le zoom sur focus des inputs sur iOS */
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+        font-size: 16px !important; /* Empêche le zoom sur iOS */
+    }
+
+    /* Garder le focus visible sans déclencher de scroll */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Éviter le scroll horizontal sur mobile */
+    .sold-player-item,
+    .purchased-player-item {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Style pour indiquer qu'une valeur a été mise à jour */
+.value-updated {
+    position: relative;
+}
+
+.value-updated::after {
+    content: '✓';
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #28a745;
+    font-weight: bold;
+    animation: fadeInOut 2s ease;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Empêcher le rechargement visuel lors des mises à jour */
+.no-reload {
+    min-height: 100px; /* Garder une hauteur minimale pour éviter les sauts */
+}
+
+.sales-list,
+.purchases-list {
+    min-height: 60px;
+    transition: min-height 0.3s ease;
+}
+
+/* Désactiver temporairement les transitions pendant le chargement initial */
+body.loading * {
+    transition: none !important;
+}
+
+/* Amélioration de l'accessibilité */
+.sold-player-item:focus-within,
+.purchased-player-item:focus-within {
+    background-color: #f0f8ff;
+    outline: 2px solid #2196f3;
+    outline-offset: 2px;
+}
+
+/* Indicateur de calcul en cours */
+.calculating {
+    position: relative;
+    opacity: 0.7;
+}
+
+.calculating::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        transparent 100%);
+    animation: shimmer 1s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Fix pour éviter le scroll to top sur mobile lors du focus */
+html {
+    scroll-behavior: smooth;
+    /* Mais pas lors des mises à jour de champs */
+}
+
+html.updating-field {
+    scroll-behavior: auto;
+}
+
+/* Amélioration visuelle des totaux */
+.sales-total,
+.purchases-total {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 10px 0;
+    border-top: 2px solid #dee2e6;
+    margin-top: 10px;
+}
