@@ -6096,7 +6096,7 @@ class BloodBowlApp {
 
         this.saveState();
 
-        // Recharger SEULEMENT la liste des achats pour cette équipe
+        // Recharger SEULEMENT la liste des achats
         const purchasesList = document.getElementById(`team${team}-purchases-list`);
         if (purchasesList) {
             purchasesList.innerHTML = this.getTeamPurchasesList(team);
@@ -6111,36 +6111,33 @@ class BloodBowlApp {
             const previousCost = this.matchData[`team${team}`].purchasedPlayers[index].cost || 0;
             const newTotalPurchases = totalPurchases - previousCost + newCost;
 
-            // Vérifier si le nouveau total dépasse le budget
             if (newTotalPurchases > availableBudget) {
                 const remainingBudget = availableBudget - (totalPurchases - previousCost);
-                alert(`⚠️ Budget insuffisant !\n\nBudget restant : ${Utils.formatNumber(remainingBudget)} PO\nCoût saisi : ${Utils.formatNumber(newCost)} PO\n\nVeuillez saisir un montant inférieur ou vendre des joueurs pour augmenter votre budget.`);
+                alert(`⚠️ Budget insuffisant !\n\nBudget restant : ${Utils.formatNumber(remainingBudget)} PO\nCoût saisi : ${Utils.formatNumber(newCost)} PO`);
 
                 // Remettre l'ancienne valeur
-                const inputElement = event.target;
-                if (inputElement) {
-                    inputElement.value = previousCost;
+                if (event && event.target) {
+                    event.target.value = previousCost;
                 }
                 return;
             }
 
             this.matchData[`team${team}`].purchasedPlayers[index][field] = newCost;
 
-            // Mise à jour SILENCIEUSE du budget uniquement
+            // Mise à jour SILENCIEUSE du budget
             this.updateBudgetDisplay(team);
         } else {
             this.matchData[`team${team}`].purchasedPlayers[index][field] = value;
         }
 
         this.saveState();
-        // PAS de loadTab() - mise à jour silencieuse
     }
 
     removePurchasedPlayer(team, index) {
         this.matchData[`team${team}`].purchasedPlayers.splice(index, 1);
         this.saveState();
 
-        // Recharger SEULEMENT la liste des achats pour cette équipe
+        // Recharger SEULEMENT la liste des achats
         const purchasesList = document.getElementById(`team${team}-purchases-list`);
         if (purchasesList) {
             purchasesList.innerHTML = this.getTeamPurchasesList(team);
@@ -6296,7 +6293,7 @@ class BloodBowlApp {
 
         this.saveState();
 
-        // Recharger SEULEMENT la liste des ventes pour cette équipe
+        // Recharger SEULEMENT la liste des ventes
         const salesList = document.getElementById(`team${team}-sales-list`);
         if (salesList) {
             salesList.innerHTML = this.getTeamSalesList(team);
@@ -6323,7 +6320,7 @@ class BloodBowlApp {
         this.matchData[`team${team}`].soldPlayers.splice(index, 1);
         this.saveState();
 
-        // Recharger SEULEMENT la liste des ventes pour cette équipe
+        // Recharger SEULEMENT la liste des ventes
         const salesList = document.getElementById(`team${team}-sales-list`);
         if (salesList) {
             salesList.innerHTML = this.getTeamSalesList(team);
@@ -6335,16 +6332,13 @@ class BloodBowlApp {
 
     updateSalesTotal(team) {
         const salesTotal = this.getPlayerSalesTotal(team);
-
-        // Trouver l'élément de total dans la section des ventes
         const salesSection = document.getElementById(`team${team}-sales-list`);
         if (!salesSection) return;
 
-        // Chercher ou créer l'élément de total
         let totalElement = salesSection.querySelector('.sales-total-amount');
 
         if (!totalElement && salesTotal > 0) {
-            // Si l'élément n'existe pas et qu'il y a des ventes, le créer
+            // Créer l'élément s'il n'existe pas
             let totalDiv = salesSection.querySelector('.sales-total');
             if (!totalDiv) {
                 totalDiv = document.createElement('div');
@@ -6362,24 +6356,18 @@ class BloodBowlApp {
 
         if (totalElement) {
             totalElement.textContent = `+${Utils.formatNumber(salesTotal)} PO`;
-
-            // Effet visuel de mise à jour
-            totalElement.style.transition = 'transform 0.2s ease';
-            totalElement.style.transform = 'scale(1.1)';
-            setTimeout(() => {
-                totalElement.style.transform = 'scale(1)';
-            }, 200);
+            totalElement.classList.add('updated');
+            setTimeout(() => totalElement.classList.remove('updated'), 300);
         }
     }
 
     updateBudgetDisplay(team) {
         const budget = this.calculateAvailableBudget(team);
 
-        // Sélecteur plus robuste basé sur l'ID
-        const purchasesSection = document.querySelector(`#team${team}-purchases-list`);
+        // Sélecteur basé sur l'ID parent
+        const purchasesSection = document.getElementById(`team${team}-purchases-list`);
         if (!purchasesSection) return;
 
-        // Remonter au parent pour trouver le budget
         const parentSection = purchasesSection.closest('.team-purchases-section');
         if (!parentSection) return;
 
@@ -6388,12 +6376,9 @@ class BloodBowlApp {
             budgetElement.className = `budget-amount ${budget < 0 ? 'negative' : ''}`;
             budgetElement.textContent = `${Utils.formatNumber(budget)} PO`;
 
-            // Ajouter un effet visuel temporaire pour indiquer la mise à jour
-            budgetElement.style.transition = 'background-color 0.3s ease';
-            budgetElement.style.backgroundColor = '#ffffcc';
-            setTimeout(() => {
-                budgetElement.style.backgroundColor = '';
-            }, 300);
+            // Effet visuel temporaire
+            budgetElement.classList.add('updated');
+            setTimeout(() => budgetElement.classList.remove('updated'), 300);
         }
 
         // Mettre à jour le breakdown
@@ -6436,7 +6421,6 @@ class BloodBowlApp {
     rollFansUpdate(team) {
         const roll = Utils.getRandomInt(1, 6);
         document.getElementById(`fans${team}-roll`).value = roll;
-        // Sauvegarder le résultat du dé
         this.matchData[`team${team}`].fansUpdateRoll = roll;
         this.updateFans(team);
         this.saveState();
@@ -6445,21 +6429,18 @@ class BloodBowlApp {
     updateFans(team) {
         const roll = parseInt(document.getElementById(`fans${team}-roll`).value) || 0;
         const result = this.getMatchResult(team);
-
-        // IMPORTANT : Utiliser les fans INITIAUX (depuis configuration)
         const currentFans = this.matchData[`team${team}`].fans || 1;
 
-        // Sauvegarder les fans initiaux la première fois (pour référence)
+        // Sauvegarder les fans initiaux la première fois
         if (this.matchData[`team${team}`].initialFans === undefined) {
             this.matchData[`team${team}`].initialFans = currentFans;
         }
 
-        // Sauvegarder le résultat du dé D6
         this.matchData[`team${team}`].fansUpdateRoll = roll;
 
         let message = '';
         let newFans = currentFans;
-        let d3Roll = null; // Pour sauvegarder le jet D3
+        let d3Roll = null;
 
         if (result === 'Match nul') {
             message = 'Match nul : pas de changement';
@@ -6483,13 +6464,32 @@ class BloodBowlApp {
             }
         }
 
-        // Sauvegarder TOUTES les informations du calcul
+        // Sauvegarder les données
         this.matchData[`team${team}`].finalFans = newFans;
         this.matchData[`team${team}`].fansUpdateResult = message;
-        this.matchData[`team${team}`].fansD3Roll = d3Roll; // NOUVEAU : sauvegarder le D3
+        this.matchData[`team${team}`].fansD3Roll = d3Roll;
 
-        // Rafraîchir l'affichage complet de la section
-        this.loadTab('postmatch');
+        // MISE À JOUR SILENCIEUSE de l'affichage uniquement
+        const resultDiv = document.getElementById(`fans${team}-result`);
+        if (resultDiv) {
+            resultDiv.innerHTML = `
+                <div class="fans-result ${newFans > currentFans ? 'positive' : newFans < currentFans ? 'negative' : 'neutral'}">
+                    ${message}
+                    ${d3Roll ? `<br><small>Jet D3 = ${d3Roll}</small>` : ''}
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+
+            // Animation de feedback
+            resultDiv.classList.add('updated');
+            setTimeout(() => resultDiv.classList.remove('updated'), 500);
+        }
+
+        // Afficher le message de confirmation global
+        const infoBox = document.getElementById('fans-update-info');
+        if (infoBox) {
+            infoBox.style.display = 'block';
+        }
 
         this.saveState();
     }
@@ -6497,8 +6497,10 @@ class BloodBowlApp {
     // Gestion de la trésorerie et erreurs coûteuses
     updateTreasury(team, value) {
         this.matchData[`team${team}`].treasury = parseInt(value) || 0;
-        this.loadTab('postmatch'); // Rafraîchir pour afficher/masquer le test
         this.saveState();
+
+        // Mise à jour silencieuse de l'affichage du test d'erreurs
+        this.updateErrorsTestVisibility(team);
     }
 
     rollCostlyErrors(team) {
@@ -6510,68 +6512,104 @@ class BloodBowlApp {
 
     updateCostlyErrors(team) {
         const roll = parseInt(document.getElementById(`team${team}-errors-roll`).value) || 0;
-        const treasury = this.calculateFinalTreasury(team).finalTreasury;  // Utiliser la trésorerie avant erreurs
+        const treasury = this.calculateFinalTreasury(team).finalTreasury;
         const resultDiv = document.getElementById(`team${team}-errors-result`);
 
         const errorTable = this.getCostlyErrorResult(treasury, roll);
 
-        // Initialiser l'objet erreur
         if (!this.matchData[`team${team}`].costlyError) {
             this.matchData[`team${team}`].costlyError = {};
         }
 
+        let resultHTML = '';
+
         if (errorTable.type === 'none') {
-            resultDiv.innerHTML = '<p class="success-text">✅ Crise évitée !</p>';
-            this.matchData[`team${team}`].costlyError = { type: 'none' };
+            resultHTML = '<p class="success-text">✅ Crise évitée !</p>';
+            this.matchData[`team${team}`].costlyError = { type: 'none', roll: roll };
         } else if (errorTable.type === 'minor') {
             const d3Roll = Utils.getRandomInt(1, 3);
             const loss = d3Roll * 10000;
-            resultDiv.innerHTML = `
+            resultHTML = `
                 <p class="warning-text">
                     ⚠️ Incident mineur !<br>
+                    Jet D6 = ${roll}<br>
                     Jet D3 = ${d3Roll}<br>
-                    Perte : ${Utils.formatNumber(loss)} PO
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(Math.max(0, treasury - loss))} PO
                 </p>
             `;
             this.matchData[`team${team}`].costlyError = {
                 type: 'minor',
                 amount: loss,
+                roll: roll,
                 d3Roll: d3Roll
             };
         } else if (errorTable.type === 'major') {
-            const newTreasury = Math.floor(treasury / 2);
-            const loss = treasury - newTreasury;
-            resultDiv.innerHTML = `
+            const loss = Math.floor(treasury / 2);
+            const newTreasury = treasury - loss;
+            resultHTML = `
                 <p class="danger-text">
                     🔥 Incident majeur !<br>
+                    Jet D6 = ${roll}<br>
                     Trésorerie divisée par 2<br>
-                    Perte : ${Utils.formatNumber(loss)} PO
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(newTreasury)} PO
                 </p>
             `;
             this.matchData[`team${team}`].costlyError = {
-                type: 'major'
+                type: 'major',
+                amount: loss,
+                roll: roll
             };
         } else if (errorTable.type === 'catastrophe') {
             const d6Roll1 = Utils.getRandomInt(1, 6);
             const d6Roll2 = Utils.getRandomInt(1, 6);
             const kept = (d6Roll1 + d6Roll2) * 10000;
             const loss = Math.max(0, treasury - kept);
-            resultDiv.innerHTML = `
+            resultHTML = `
                 <p class="danger-text">
                     💥 CATASTROPHE !<br>
+                    Jet D6 = ${roll}<br>
                     Jets 2D6 = ${d6Roll1} + ${d6Roll2} = ${d6Roll1 + d6Roll2}<br>
                     Montant conservé : ${Utils.formatNumber(kept)} PO<br>
-                    Perte : ${Utils.formatNumber(loss)} PO
+                    Perte : ${Utils.formatNumber(loss)} PO<br>
+                    Nouvelle trésorerie : ${Utils.formatNumber(Math.min(treasury, kept))} PO
                 </p>
             `;
             this.matchData[`team${team}`].costlyError = {
                 type: 'catastrophe',
                 kept: kept,
+                roll: roll,
                 d6Rolls: [d6Roll1, d6Roll2]
             };
         }
 
+        // MISE À JOUR SILENCIEUSE de l'affichage uniquement
+        if (resultDiv) {
+            resultDiv.innerHTML = resultHTML;
+            resultDiv.style.display = 'block';
+
+            // Animation de feedback
+            resultDiv.classList.add('updated');
+            setTimeout(() => resultDiv.classList.remove('updated'), 500);
+        }
+
         this.saveState();
+    }
+
+    updateErrorsTestVisibility(team) {
+        const finalTreasury = this.calculateFinalTreasury(team).finalTreasury;
+        const testSection = document.querySelector(`#team${team}-errors-test`);
+
+        if (testSection) {
+            if (finalTreasury >= 200000) {
+                testSection.style.display = 'block';
+                // Animation d'apparition
+                testSection.classList.add('fade-in');
+            } else {
+                testSection.style.display = 'none';
+            }
+        }
     }
 
     getCostlyErrorResult(treasury, roll) {

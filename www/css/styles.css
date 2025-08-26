@@ -6255,3 +6255,298 @@ html.updating-field {
     border-top: 2px solid #dee2e6;
     margin-top: 10px;
 }
+
+/* ===== ANIMATIONS DE MISE À JOUR ===== */
+
+/* Animation générale pour les éléments mis à jour */
+.updated {
+    animation: highlightUpdate 0.5s ease;
+}
+
+@keyframes highlightUpdate {
+    0% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+    25% {
+        background-color: #ffffcc;
+        transform: scale(1.02);
+    }
+    75% {
+        background-color: #ffffcc;
+        transform: scale(1.02);
+    }
+    100% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+/* Animation fade-in pour les éléments qui apparaissent */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== STYLES POUR LES RÉSULTATS DE FANS ===== */
+
+.fans-result {
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.fans-result.positive {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #28a745;
+    color: #155724;
+}
+
+.fans-result.negative {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border: 1px solid #dc3545;
+    color: #721c24;
+}
+
+.fans-result.neutral {
+    background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
+    border: 1px solid #6c757d;
+    color: #383d41;
+}
+
+.fans-result small {
+    display: block;
+    margin-top: 5px;
+    opacity: 0.8;
+    font-size: 0.85em;
+}
+
+/* ===== STYLES POUR LES ERREURS COÛTEUSES ===== */
+
+#team1-errors-result,
+#team2-errors-result {
+    transition: all 0.3s ease;
+    min-height: 20px;
+}
+
+.success-text {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.warning-text {
+    color: #856404;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.danger-text {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* ===== STYLES POUR LES TOTAUX ===== */
+
+.sales-total,
+.purchases-total {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 15px;
+    border-top: 2px solid #dee2e6;
+}
+
+.total-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.sales-total-amount,
+.budget-amount {
+    transition: all 0.3s ease;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.sales-total-amount.positive {
+    color: #28a745;
+}
+
+.budget-amount.negative {
+    color: #dc3545;
+    background-color: #f8d7da;
+}
+
+/* ===== EMPÊCHER LE ZOOM SUR MOBILE ===== */
+
+@media (max-width: 768px) {
+    /* Empêcher le zoom automatique sur iOS lors du focus */
+    input[type="text"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="email"],
+    select,
+    textarea {
+        font-size: 16px !important;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    /* Garder le focus visible sans scroll */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        position: relative;
+        z-index: 10;
+        /* Pas de transform qui pourrait causer un scroll */
+    }
+}
+
+/* ===== STABILITÉ DE LA MISE EN PAGE ===== */
+
+/* Hauteurs minimales pour éviter les sauts */
+.sales-list,
+.purchases-list {
+    min-height: 60px;
+    transition: min-height 0.3s ease;
+}
+
+.team-errors-test {
+    transition: all 0.3s ease;
+}
+
+/* Conteneurs avec hauteur fixe pour éviter les changements de layout */
+.fans-update-card {
+    min-height: 150px;
+}
+
+.errors-test-content {
+    min-height: 100px;
+}
+
+/* ===== INDICATEURS DE CHARGEMENT ===== */
+
+/* Classe pour indiquer qu'un calcul est en cours */
+.calculating {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.calculating::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        transparent 100%);
+    animation: shimmer 1s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ===== FEEDBACK VISUEL SUR LES INPUTS ===== */
+
+/* Inputs lors de la modification */
+input:focus.saving {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
+}
+
+input.saved {
+    border-color: #28a745;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+    transition: all 0.3s ease;
+}
+
+/* ===== AMÉLIORATION DE L'ACCESSIBILITÉ ===== */
+
+/* Focus visible pour l'accessibilité */
+.dice-btn:focus,
+.btn-secondary:focus,
+.btn-remove-player:focus {
+    outline: 2px solid #2196f3;
+    outline-offset: 2px;
+}
+
+/* Meilleur contraste pour les textes */
+.help-text {
+    color: #495057;
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* ===== OPTIMISATIONS POUR MOBILE ===== */
+
+@media (max-width: 768px) {
+    /* Boutons plus grands pour le tactile */
+    .dice-btn,
+    .btn-secondary {
+        min-height: 44px;
+        padding: 12px 20px;
+    }
+
+    /* Espacement pour éviter les clics accidentels */
+    .sold-player-item,
+    .purchased-player-item {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    /* Inputs plus grands sur mobile */
+    .sold-player-input,
+    .sold-player-value,
+    .purchased-player-input,
+    .purchased-player-value {
+        min-height: 40px;
+        padding: 10px;
+    }
+}
+
+/* ===== CORRECTION DU SCROLL BEHAVIOR ===== */
+
+/* Désactiver le smooth scroll pendant les mises à jour */
+html.updating-fields {
+    scroll-behavior: auto !important;
+}
+
+/* Classe à ajouter temporairement lors des mises à jour */
+body.no-scroll {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
