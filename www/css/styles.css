@@ -6550,3 +6550,227 @@ body.no-scroll {
     position: fixed;
     width: 100%;
 }
+
+/* === AJOUTER CES STYLES DANS styles.css === */
+
+/* Animation de mise à jour pour feedback visuel */
+@keyframes updateFlash {
+    0% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(40, 167, 69, 0.1);
+        transform: scale(1.02);
+    }
+    100% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+.updated {
+    animation: updateFlash 0.5s ease;
+}
+
+/* Animation de flash pour les valeurs numériques */
+@keyframes valueUpdate {
+    0% {
+        background-color: transparent;
+        color: inherit;
+    }
+    50% {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: var(--primary-color);
+        font-weight: bold;
+    }
+    100% {
+        background-color: transparent;
+        color: inherit;
+    }
+}
+
+.calc-value.updated,
+.budget-amount.updated,
+.sales-total-amount.updated {
+    animation: valueUpdate 0.5s ease;
+}
+
+/* Style spécifique pour les résultats d'erreurs coûteuses */
+#team1-errors-result,
+#team2-errors-result {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+#team1-errors-result.updated,
+#team2-errors-result.updated {
+    animation: updateFlash 0.5s ease;
+}
+
+/* Animation pour les inputs de dés */
+.dice-result {
+    transition: background-color 0.3s ease;
+}
+
+/* Feedback visuel pour les sections qui se mettent à jour */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation pour les détails de calcul des fans */
+.fans-calculation-details {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.fans-calculation-details.updated {
+    animation: slideInUpdate 0.4s ease;
+}
+
+@keyframes slideInUpdate {
+    0% {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    50% {
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+        background-color: #f8f9fa;
+    }
+}
+
+/* Styles pour les étapes de calcul */
+.calculation-step {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    margin: 4px 0;
+    background: white;
+    border-radius: 4px;
+}
+
+.calculation-step.result {
+    margin-top: 8px;
+    background: linear-gradient(90deg, rgba(26, 95, 63, 0.05) 0%, rgba(45, 143, 95, 0.05) 100%);
+    border: 1px solid var(--primary-color);
+    font-weight: 600;
+}
+
+.step-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.step-value {
+    color: #333;
+    font-weight: 500;
+}
+
+.step-value.positive {
+    color: var(--success-color);
+}
+
+.step-value.negative {
+    color: var(--danger-color);
+}
+
+.step-value.neutral {
+    color: #666;
+}
+
+/* Animation pour les lignes de calcul de trésorerie */
+.calc-line {
+    transition: all 0.3s ease;
+}
+
+.calc-line.updated {
+    animation: highlightLine 0.6s ease;
+}
+
+@keyframes highlightLine {
+    0% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(255, 235, 59, 0.3);
+        padding-left: 20px;
+    }
+    100% {
+        background-color: transparent;
+        padding-left: 12px;
+    }
+}
+
+/* Transition douce pour l'affichage/masquage des zones */
+.error-test-zone,
+.no-test-required {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.error-test-zone.fade-in,
+.no-test-required.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Amélioration du feedback visuel pour les boutons */
+.dice-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Surbrillance temporaire pour les éléments mis à jour */
+.highlight-update {
+    position: relative;
+}
+
+.highlight-update::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg,
+        transparent,
+        rgba(40, 167, 69, 0.3),
+        transparent
+    );
+    border-radius: inherit;
+    opacity: 0;
+    animation: highlightPulse 0.6s ease;
+    pointer-events: none;
+}
+
+@keyframes highlightPulse {
+    0% {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
+}

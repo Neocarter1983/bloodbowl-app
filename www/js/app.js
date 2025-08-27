@@ -96,6 +96,21 @@ if (typeof AppConfig === 'undefined') {
     };
 }
 
+// FONCTION UTILITAIRE : Sélecteur avec :contains pour JavaScript
+// Ajouter cette fonction si elle n'existe pas déjà
+if (!document.querySelector.contains) {
+    document.querySelectorAll.contains = function(text) {
+        const elements = document.querySelectorAll('*');
+        return Array.from(elements).filter(el => el.textContent.includes(text));
+    };
+}
+
+// Pour trouver un élément contenant du texte spécifique
+function findElementContainingText(selector, text) {
+    const elements = document.querySelectorAll(selector);
+    return Array.from(elements).find(el => el.textContent.includes(text));
+}
+
 class BloodBowlApp {
     constructor() {
         this.currentTab = 'setup';
@@ -6088,6 +6103,15 @@ class BloodBowlApp {
             this.matchData[`team${team}`].purchasedPlayers = [];
         }
 
+        // Vérifier le budget disponible
+        const budget = this.calculateAvailableBudget(team);
+        const currentTotal = this.getPlayerPurchasesTotal(team);
+
+        if (budget - currentTotal <= 0) {
+            alert(`⚠️ Budget insuffisant !\nBudget restant : ${Utils.formatNumber(budget - currentTotal)} PO`);
+            return;
+        }
+
         this.matchData[`team${team}`].purchasedPlayers.push({
             name: '',
             position: '',
@@ -6096,11 +6120,8 @@ class BloodBowlApp {
 
         this.saveState();
 
-        // Recharger SEULEMENT la liste des achats
-        const purchasesList = document.getElementById(`team${team}-purchases-list`);
-        if (purchasesList) {
-            purchasesList.innerHTML = this.getTeamPurchasesList(team);
-        }
+        // Mise à jour dynamique
+        this.updatePurchasesDisplay(team);
     }
 
     updatePurchasedPlayer(team, index, field, value) {
@@ -6124,8 +6145,9 @@ class BloodBowlApp {
 
             this.matchData[`team${team}`].purchasedPlayers[index][field] = newCost;
 
-            // Mise à jour SILENCIEUSE du budget
+            // Mise à jour dynamique du budget et des erreurs
             this.updateBudgetDisplay(team);
+            this.updateErrorsDisplay(team);
         } else {
             this.matchData[`team${team}`].purchasedPlayers[index][field] = value;
         }
@@ -6133,18 +6155,41 @@ class BloodBowlApp {
         this.saveState();
     }
 
+    // FONCTION HELPER pour sélectionner avec du texte
+    getElementContainingText(parentSelector, text) {
+        const parent = document.querySelector(parentSelector);
+        if (!parent) return null;
+
+        const walker = document.createTreeWalker(
+            parent,
+            NodeFilter.SHOW_ELEMENT,
+            {
+                acceptNode: function(node) {
+                    if (node.textContent && node.textContent.includes(text)) {
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                    return NodeFilter.FILTER_SKIP;
+                }
+            }
+        );
+
+        let node;
+        while (node = walker.nextNode()) {
+            if (node.textContent.includes(text)) {
+                return node;
+            }
+        }
+        return null;
+    }
+
     removePurchasedPlayer(team, index) {
         this.matchData[`team${team}`].purchasedPlayers.splice(index, 1);
         this.saveState();
 
-        // Recharger SEULEMENT la liste des achats
-        const purchasesList = document.getElementById(`team${team}-purchases-list`);
-        if (purchasesList) {
-            purchasesList.innerHTML = this.getTeamPurchasesList(team);
-        }
-
-        // Mettre à jour le budget
+        // Mise à jour dynamique
+        this.updatePurchasesDisplay(team);
         this.updateBudgetDisplay(team);
+        this.updateErrorsDisplay(team);
     }
 
     // MÉTHODE POUR CALCULER LE TOTAL DES ACHATS
@@ -6293,11 +6338,8 @@ class BloodBowlApp {
 
         this.saveState();
 
-        // Recharger SEULEMENT la liste des ventes
-        const salesList = document.getElementById(`team${team}-sales-list`);
-        if (salesList) {
-            salesList.innerHTML = this.getTeamSalesList(team);
-        }
+        // Mise à jour dynamique
+        this.updateSalesDisplay(team);
     }
 
     updateSoldPlayer(team, index, name) {
@@ -6310,24 +6352,32 @@ class BloodBowlApp {
         this.matchData[`team${team}`].soldPlayers[index].value = parseInt(value) || 0;
         this.saveState();
 
-        // Mise à jour SILENCIEUSE du total des ventes uniquement
-        this.updateSalesTotal(team);
-        // Mise à jour du budget disponible dans la section Achat
+        // Mise à jour dynamique du total des ventes
+        const salesList = document.getElementById(`team${team}-sales-list`);
+        if (salesList) {
+            const totalElement = salesList.querySelector('.sales-total-amount');
+            if (totalElement) {
+                const total = this.getPlayerSalesTotal(team);
+                totalElement.textContent = total > 0 ? `+${Utils.formatNumber(total)} PO` : '0 PO';
+                totalElement.className = 'sales-total-amount ' + (total > 0 ? 'positive' : '');
+
+                // Animation
+                totalElement.classList.add('updated');
+                setTimeout(() => totalElement.classList.remove('updated'), 500);
+            }
+        }
+
+        // Mettre à jour le budget et les erreurs
         this.updateBudgetDisplay(team);
+        this.updateErrorsDisplay(team);
     }
 
     removeSoldPlayer(team, index) {
         this.matchData[`team${team}`].soldPlayers.splice(index, 1);
         this.saveState();
 
-        // Recharger SEULEMENT la liste des ventes
-        const salesList = document.getElementById(`team${team}-sales-list`);
-        if (salesList) {
-            salesList.innerHTML = this.getTeamSalesList(team);
-        }
-
-        // Mettre à jour le budget
-        this.updateBudgetDisplay(team);
+        // Mise à jour dynamique
+        this.updateSalesDisplay(team);
     }
 
     updateSalesTotal(team) {
@@ -6363,26 +6413,22 @@ class BloodBowlApp {
 
     updateBudgetDisplay(team) {
         const budget = this.calculateAvailableBudget(team);
+        const totalPurchases = this.getPlayerPurchasesTotal(team);
+        const remainingBudget = budget - totalPurchases;
 
-        // Sélecteur basé sur l'ID parent
-        const purchasesSection = document.getElementById(`team${team}-purchases-list`);
-        if (!purchasesSection) return;
-
-        const parentSection = purchasesSection.closest('.team-purchases-section');
-        if (!parentSection) return;
-
-        const budgetElement = parentSection.querySelector('.budget-amount');
+        // Mettre à jour le montant du budget
+        const budgetElement = document.querySelector(`#team${team}-purchases-list`)?.parentElement?.querySelector('.budget-amount');
         if (budgetElement) {
-            budgetElement.className = `budget-amount ${budget < 0 ? 'negative' : ''}`;
-            budgetElement.textContent = `${Utils.formatNumber(budget)} PO`;
+            budgetElement.textContent = `${Utils.formatNumber(remainingBudget)} PO`;
+            budgetElement.className = `budget-amount ${remainingBudget < 0 ? 'negative' : ''}`;
 
-            // Effet visuel temporaire
+            // Animation
             budgetElement.classList.add('updated');
-            setTimeout(() => budgetElement.classList.remove('updated'), 300);
+            setTimeout(() => budgetElement.classList.remove('updated'), 500);
         }
 
         // Mettre à jour le breakdown
-        const breakdownElement = parentSection.querySelector('.budget-breakdown small');
+        const breakdownElement = document.querySelector(`#team${team}-purchases-list`)?.parentElement?.querySelector('.budget-breakdown small');
         if (breakdownElement) {
             const treasury = this.matchData[`team${team}`].treasury || 0;
             const gains = this.calculateGains(team);
@@ -6397,6 +6443,113 @@ class BloodBowlApp {
             }
 
             breakdownElement.textContent = breakdown;
+        }
+    }
+
+    updateTreasuryCalculations(team) {
+        const treasuryCalc = this.calculateFinalTreasury(team);
+        const treasuryBeforeErrors = treasuryCalc.baseTreasury +
+                                     treasuryCalc.gains +
+                                     treasuryCalc.playerSales -
+                                     treasuryCalc.treasurySpentOnInducements -
+                                     treasuryCalc.newPlayerPurchases;
+
+        const teamName = this.matchData[`team${team}`].name || `Équipe ${team}`;
+
+        // Trouver la section de l'équipe par son ID unique
+        const errorSection = document.getElementById(`team${team}-errors-section`);
+        if (!errorSection) return;
+
+        // Mettre à jour la trésorerie initiale
+        const baseLine = errorSection.querySelector('.calc-line:first-child .calc-value');
+        if (baseLine) {
+            baseLine.textContent = `${Utils.formatNumber(treasuryCalc.baseTreasury)} PO`;
+        }
+
+        // Mettre à jour les gains
+        const gainsLine = errorSection.querySelector('.calc-line.positive:nth-of-type(1) .calc-value');
+        if (gainsLine) {
+            gainsLine.textContent = `+${Utils.formatNumber(treasuryCalc.gains)} PO`;
+        }
+
+        // Mettre à jour ou créer la ligne des ventes si nécessaire
+        if (treasuryCalc.playerSales > 0) {
+            let salesLine = errorSection.querySelector('.calc-line.positive .calc-label:contains("Ventes")');
+            if (!salesLine) {
+                // Créer la ligne si elle n'existe pas
+                const gainsLineElement = errorSection.querySelector('.calc-line.positive');
+                if (gainsLineElement) {
+                    const newSalesLine = document.createElement('div');
+                    newSalesLine.className = 'calc-line positive';
+                    newSalesLine.innerHTML = `
+                        <span class="calc-label">+ Ventes de joueurs :</span>
+                        <span class="calc-value">+${Utils.formatNumber(treasuryCalc.playerSales)} PO</span>
+                    `;
+                    gainsLineElement.insertAdjacentElement('afterend', newSalesLine);
+                }
+            } else {
+                const valueElement = salesLine.parentElement.querySelector('.calc-value');
+                if (valueElement) {
+                    valueElement.textContent = `+${Utils.formatNumber(treasuryCalc.playerSales)} PO`;
+                }
+            }
+        }
+
+        // Mettre à jour le total
+        const totalLine = errorSection.querySelector('.calc-line.total .calc-value');
+        if (totalLine) {
+            totalLine.textContent = `${Utils.formatNumber(treasuryBeforeErrors)} PO`;
+            totalLine.className = `calc-value ${treasuryBeforeErrors < 0 ? 'negative' : ''}`;
+
+            // Animation
+            totalLine.classList.add('updated');
+            setTimeout(() => totalLine.classList.remove('updated'), 500);
+        }
+
+        // Afficher/masquer la zone de test d'erreurs
+        const testZone = errorSection.querySelector('.error-test-zone');
+        const noTestZone = errorSection.querySelector('.no-test-required');
+
+        if (treasuryBeforeErrors >= 100000) {
+            if (testZone) {
+                testZone.style.display = 'block';
+                testZone.classList.add('fade-in');
+            }
+            if (noTestZone) noTestZone.style.display = 'none';
+        } else {
+            if (testZone) testZone.style.display = 'none';
+            if (noTestZone) {
+                noTestZone.style.display = 'block';
+                noTestZone.classList.add('fade-in');
+            }
+        }
+    }
+
+    updateErrorsDisplay(team) {
+        // Recalculer la trésorerie
+        const treasuryCalc = this.calculateFinalTreasury(team);
+        const treasuryBeforeErrors = treasuryCalc.baseTreasury +
+                                     treasuryCalc.gains +
+                                     treasuryCalc.playerSales -
+                                     treasuryCalc.treasurySpentOnInducements -
+                                     treasuryCalc.newPlayerPurchases;
+
+        // Sauvegarder pour utilisation future
+        this.matchData[`team${team}`].calculatedFinalTreasury = treasuryBeforeErrors;
+
+        // Mettre à jour l'affichage du calcul de trésorerie
+        this.updateTreasuryCalculations(team);
+
+        // Afficher/masquer la zone de test selon le montant
+        const testZone = document.querySelector(`#team${team}-errors-section .error-test-zone`);
+        const noTestZone = document.querySelector(`#team${team}-errors-section .no-test-required`);
+
+        if (treasuryBeforeErrors >= 100000) {
+            if (testZone) testZone.style.display = 'block';
+            if (noTestZone) noTestZone.style.display = 'none';
+        } else {
+            if (testZone) testZone.style.display = 'none';
+            if (noTestZone) noTestZone.style.display = 'block';
         }
     }
 
@@ -6420,10 +6573,27 @@ class BloodBowlApp {
     // Gestion des fans
     rollFansUpdate(team) {
         const roll = Utils.getRandomInt(1, 6);
-        document.getElementById(`fans${team}-roll`).value = roll;
-        this.matchData[`team${team}`].fansUpdateRoll = roll;
-        this.updateFans(team);
-        this.saveState();
+        const rollInput = document.getElementById(`fans${team}-roll`);
+
+        if (rollInput) {
+            // Animation visuelle du dé
+            rollInput.style.backgroundColor = '#fffacd';
+            rollInput.value = roll;
+
+            // Mettre à jour les données
+            this.matchData[`team${team}`].fansUpdateRoll = roll;
+            this.updateFans(team);
+
+            // Remettre la couleur normale après l'animation
+            setTimeout(() => {
+                rollInput.style.backgroundColor = '';
+            }, 500);
+        }
+
+        // Feedback tactile
+        if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(50);
+        }
     }
 
     updateFans(team) {
@@ -6464,33 +6634,13 @@ class BloodBowlApp {
             }
         }
 
-        // Sauvegarder les données
+        // Sauvegarder TOUTES les informations du calcul
         this.matchData[`team${team}`].finalFans = newFans;
         this.matchData[`team${team}`].fansUpdateResult = message;
         this.matchData[`team${team}`].fansD3Roll = d3Roll;
 
-        // MISE À JOUR SILENCIEUSE de l'affichage uniquement
-        const resultDiv = document.getElementById(`fans${team}-result`);
-        if (resultDiv) {
-            resultDiv.innerHTML = `
-                <div class="fans-result ${newFans > currentFans ? 'positive' : newFans < currentFans ? 'negative' : 'neutral'}">
-                    ${message}
-                    ${d3Roll ? `<br><small>Jet D3 = ${d3Roll}</small>` : ''}
-                </div>
-            `;
-            resultDiv.style.display = 'block';
-
-            // Animation de feedback
-            resultDiv.classList.add('updated');
-            setTimeout(() => resultDiv.classList.remove('updated'), 500);
-        }
-
-        // Afficher le message de confirmation global
-        const infoBox = document.getElementById('fans-update-info');
-        if (infoBox) {
-            infoBox.style.display = 'block';
-        }
-
+        // MISE À JOUR DYNAMIQUE au lieu de loadTab
+        this.updateFansDisplay(team);
         this.saveState();
     }
 
@@ -7202,7 +7352,7 @@ class BloodBowlApp {
         this.matchData[`team${team}`].calculatedFinalTreasury = treasuryBeforeErrors;
 
         return `
-            <div class="team-errors-section">
+            <div id="team${team}-errors-section" class="team-errors-section">
                 <h5>${teamName}</h5>
 
                 <!-- Détail du calcul de la trésorerie AVANT erreurs coûteuses -->
@@ -7459,6 +7609,164 @@ class BloodBowlApp {
         if (!this.matchData.team2.initialTreasury) {
             this.matchData.team2.initialTreasury = this.matchData.team2.treasury || 0;
         }
+    }
+
+    updatePurchasesDisplay(team) {
+        const purchasesList = document.getElementById(`team${team}-purchases-list`);
+        if (!purchasesList) return;
+
+        // Régénérer le contenu de la liste
+        purchasesList.innerHTML = this.getTeamPurchasesList(team);
+
+        // Mettre à jour la section des erreurs coûteuses
+        this.updateErrorsDisplay(team);
+    }
+
+    updateDynamicElements(sections = []) {
+        // Si pas de sections spécifiées, tout mettre à jour
+        if (sections.length === 0) {
+            sections = ['fans', 'sales', 'purchases', 'errors', 'treasury'];
+        }
+
+        sections.forEach(section => {
+            switch(section) {
+                case 'fans':
+                    this.updateFansDisplay(1);
+                    this.updateFansDisplay(2);
+                    break;
+                case 'sales':
+                    this.updateSalesDisplay(1);
+                    this.updateSalesDisplay(2);
+                    break;
+                case 'purchases':
+                    this.updatePurchasesDisplay(1);
+                    this.updatePurchasesDisplay(2);
+                    break;
+                case 'errors':
+                    this.updateErrorsDisplay(1);
+                    this.updateErrorsDisplay(2);
+                    break;
+                case 'treasury':
+                    this.updateTreasuryCalculations(1);
+                    this.updateTreasuryCalculations(2);
+                    break;
+            }
+        });
+    }
+
+    updateSalesDisplay(team) {
+        const salesList = document.getElementById(`team${team}-sales-list`);
+        if (!salesList) return;
+
+        // Régénérer le contenu de la liste
+        salesList.innerHTML = this.getTeamSalesList(team);
+
+        // Mettre à jour les budgets qui dépendent des ventes
+        this.updateBudgetDisplay(team);
+
+        // Mettre à jour la section des erreurs coûteuses
+        this.updateErrorsDisplay(team);
+    }
+
+    updateFansDisplay(team) {
+        const fansCard = document.querySelector(`#team${team}-fans-card`);
+        if (!fansCard) return;
+
+        const result = this.getMatchResult(team);
+        const currentFans = this.matchData[`team${team}`].fans || 1;
+        const roll = this.matchData[`team${team}`].fansUpdateRoll || 0;
+        const message = this.matchData[`team${team}`].fansUpdateResult || '';
+        const finalFans = this.matchData[`team${team}`].finalFans || currentFans;
+        const d3Roll = this.matchData[`team${team}`].fansD3Roll || null;
+
+        // Mettre à jour le statut actuel
+        const statusValue = fansCard.querySelector('.fans-current-status .value');
+        if (statusValue) {
+            statusValue.textContent = currentFans;
+        }
+
+        // Mettre à jour le résultat si un jet a été fait
+        if (roll > 0) {
+            let calculationHTML = `<div class="fans-calculation-details">`;
+
+            if (result === 'Match nul') {
+                calculationHTML += `
+                    <div class="calculation-step result">
+                        <span class="step-label">📊 Résultat :</span>
+                        <span class="step-value neutral">Match nul : pas de changement</span>
+                    </div>
+                `;
+            } else if (result === 'Gagnant') {
+                calculationHTML += `
+                    <div class="calculation-step">
+                        <span class="step-label">1️⃣ Test D6 :</span>
+                        <span class="step-value">${roll} ${roll >= currentFans ? '≥' : '<'} ${currentFans}</span>
+                    </div>
+                `;
+                if (roll >= currentFans && d3Roll) {
+                    calculationHTML += `
+                        <div class="calculation-step">
+                            <span class="step-label">2️⃣ Gain D3 :</span>
+                            <span class="step-value">+${d3Roll} fan(s)</span>
+                        </div>
+                    `;
+                }
+                calculationHTML += `
+                    <div class="calculation-step result">
+                        <span class="step-label">📊 Résultat :</span>
+                        <span class="step-value ${finalFans > currentFans ? 'positive' : 'neutral'}">
+                            ${currentFans} → ${finalFans} ${finalFans > currentFans ? `(+${finalFans - currentFans})` : '(pas de gain)'}
+                        </span>
+                    </div>
+                `;
+            } else { // Perdant
+                calculationHTML += `
+                    <div class="calculation-step">
+                        <span class="step-label">1️⃣ Test D6 :</span>
+                        <span class="step-value">${roll} ${roll <= currentFans ? '≤' : '>'} ${currentFans}</span>
+                    </div>
+                `;
+                if (roll <= currentFans && d3Roll) {
+                    calculationHTML += `
+                        <div class="calculation-step">
+                            <span class="step-label">2️⃣ Perte D3 :</span>
+                            <span class="step-value">-${d3Roll} fan(s)</span>
+                        </div>
+                    `;
+                }
+                calculationHTML += `
+                    <div class="calculation-step result">
+                        <span class="step-label">📊 Résultat :</span>
+                        <span class="step-value ${finalFans < currentFans ? 'negative' : 'neutral'}">
+                            ${currentFans} → ${finalFans} ${finalFans < currentFans ? `(-${currentFans - finalFans})` : '(pas de perte)'}
+                        </span>
+                    </div>
+                `;
+            }
+
+            calculationHTML += `</div>`;
+
+            // Trouver ou créer la zone de résultats
+            let resultDiv = fansCard.querySelector('.fans-calculation-details');
+            if (!resultDiv) {
+                const controlsDiv = fansCard.querySelector('.fans-test-controls');
+                if (controlsDiv) {
+                    controlsDiv.insertAdjacentHTML('afterend', calculationHTML);
+                }
+            } else {
+                resultDiv.outerHTML = calculationHTML;
+            }
+
+            // Animation de mise à jour
+            const newResultDiv = fansCard.querySelector('.fans-calculation-details');
+            if (newResultDiv) {
+                newResultDiv.classList.add('updated');
+                setTimeout(() => newResultDiv.classList.remove('updated'), 500);
+            }
+        }
+
+        // Mettre à jour les fans finaux dans matchData
+        this.matchData[`team${team}`].finalFans = finalFans;
     }
 
 }
