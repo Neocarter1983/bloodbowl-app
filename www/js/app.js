@@ -7268,9 +7268,26 @@ class BloodBowlApp {
 
     rollCostlyErrorsWithFinalTreasury(team) {
         const roll = Utils.getRandomInt(1, 6);
-        document.getElementById(`team${team}-errors-roll`).value = roll;
-        this.updateCostlyErrorsWithFinalTreasury(team);
-        this.saveState();
+        const rollInput = document.getElementById(`team${team}-errors-roll`);
+
+        if (rollInput) {
+            // Animation visuelle du dé
+            rollInput.style.backgroundColor = '#fffacd';
+            rollInput.value = roll;
+
+            // Appeler la mise à jour SANS rechargement
+            this.updateCostlyErrorsWithFinalTreasury(team);
+
+            // Remettre la couleur normale après l'animation
+            setTimeout(() => {
+                rollInput.style.backgroundColor = '';
+            }, 500);
+        }
+
+        // Feedback tactile si disponible
+        if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(50);
+        }
     }
 
     updateCostlyErrorsWithFinalTreasury(team) {
@@ -7352,9 +7369,35 @@ class BloodBowlApp {
             };
         }
 
-        // Forcer le recalcul de la trésorerie finale et rafraîchir l'affichage
+        // CORRECTION IMPORTANTE : Ne PAS recharger l'onglet !
+        // Au lieu de loadTab('postmatch'), on met à jour uniquement ce qui est nécessaire
+
+        // Animation de feedback visuel
+        if (resultDiv) {
+            resultDiv.style.display = 'block';
+            resultDiv.classList.add('updated');
+            setTimeout(() => resultDiv.classList.remove('updated'), 500);
+        }
+
+        // Sauvegarder l'état
         this.saveState();
-        this.loadTab('postmatch');
+
+        // Optionnel : Mettre à jour d'autres éléments si nécessaire
+        // Par exemple, mettre à jour le résumé financier dans l'onglet Résumé
+        this.updateFinancialSummaryIfNeeded(team);
+    }
+
+    updateFinancialSummaryIfNeeded(team) {
+        // Mettre à jour uniquement les éléments financiers affichés sans recharger
+        const summaryElement = document.querySelector(`#team${team}-financial-summary`);
+        if (summaryElement) {
+            const treasury = this.calculateFinalTreasury(team);
+            const finalAmount = document.querySelector(`#team${team}-final-treasury`);
+            if (finalAmount) {
+                finalAmount.textContent = Utils.formatNumber(treasury.finalTreasury) + ' PO';
+                finalAmount.className = treasury.finalTreasury < 0 ? 'negative' : '';
+            }
+        }
     }
 
     getCostlyErrorResultDisplay(team) {
