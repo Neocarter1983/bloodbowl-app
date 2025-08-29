@@ -1,212 +1,374 @@
-/* css/print.css - Styles dédiés pour l'impression */
+/* CSS AMÉLIORÉ POUR L'IMPRESSION - À mettre à jour dans www/css/print.css */
 
 @media print {
-    /* Page setup */
     @page {
         size: A4;
         margin: 15mm;
     }
 
-    /* Reset général */
+    /* Reset général pour l'impression */
     * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        box-shadow: none !important;
+        text-shadow: none !important;
     }
 
-    /* Masquer les éléments non pertinents */
-    .sticky-wrapper,
-    .tabs,
-    .progress-indicator,
-    .btn,
-    .btn-primary,
-    .btn-secondary,
+    body {
+        font-size: 10pt !important;
+        line-height: 1.3 !important;
+        color: #000 !important;
+        background: white !important;
+    }
+
+    /* Masquer les éléments non nécessaires à l'impression */
+    .nav-tabs,
     .form-actions,
+    .btn,
+    .explanation-box,
+    .help-text,
     .export-section,
-    .dice-btn,
-    .dice-controls button,
-    .timer-controls,
-    .score-controls,
-    .manual-save-btn,
-    input[type="number"],
-    input[type="text"],
-    select,
-    .action-checkbox {
+    .progress-indicator,
+    .header,
+    .sticky-wrapper,
+    .export-btn {
         display: none !important;
     }
 
-    /* Body et container */
-    body {
+    /* Optimisation des titres */
+    h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+        margin-top: 8px !important;
+        margin-bottom: 6px !important;
+    }
+
+    h2 {
+        font-size: 14pt !important;
+        color: #1a5f3f !important;
+        border-bottom: 2px solid #1a5f3f !important;
+        padding-bottom: 3px !important;
+    }
+
+    h3 {
+        font-size: 12pt !important;
+        color: #1a5f3f !important;
+        border-bottom: 1px solid #1a5f3f !important;
+        padding-bottom: 2px !important;
+    }
+
+    /* Optimisation des sections */
+    .summary-section,
+    .section {
+        page-break-inside: avoid;
+        margin-bottom: 8px !important;
+        padding: 8px !important;
+        border: 1px solid #ddd !important;
+        border-radius: 4px !important;
         background: white !important;
-        font-size: 11pt;
-        line-height: 1.4;
+    }
+
+    /* Grilles responsives pour l'impression */
+    .teams-comparison-grid,
+    .two-column,
+    .players-performance-grid,
+    .financial-comparison {
+        display: flex !important;
+        gap: 10px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .teams-comparison-grid > *,
+    .two-column > *,
+    .players-performance-grid > *,
+    .financial-comparison > * {
+        flex: 1 !important;
+    }
+
+    /* Cartes d'équipe optimisées */
+    .team-setup-card,
+    .team-box {
+        border: 1px solid #333 !important;
+        margin-bottom: 6px !important;
+        page-break-inside: avoid;
+        padding: 8px !important;
+        background: white !important;
+    }
+
+    .team-header {
+        background: #f0f0f0 !important;
+        color: #000 !important;
+        font-weight: bold !important;
+        padding: 4px !important;
+        margin-bottom: 6px !important;
+        border-bottom: 1px solid #333 !important;
+    }
+
+    /* Informations d'équipe en colonnes */
+    .team-info,
+    .info-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px !important;
+        font-size: 9pt !important;
+    }
+
+    .info-row,
+    .info-item {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 2px 0 !important;
+        border-bottom: 1px dotted #ccc !important;
+    }
+
+    .info-row span:first-child,
+    .info-label {
+        font-weight: normal !important;
+        color: #666 !important;
+    }
+
+    .info-row span:last-child,
+    .info-value {
+        font-weight: bold !important;
         color: #000 !important;
     }
 
-    .container {
-        max-width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    /* Titre principal */
-    .section-title {
-        font-size: 18pt !important;
-        color: #1a5f3f !important;
-        text-align: center;
-        margin: 20px 0 !important;
-        page-break-after: avoid;
-        border-bottom: 2px solid #1a5f3f;
-        padding-bottom: 10px;
-    }
-
-    /* Sections */
-    .tab-content {
-        box-shadow: none !important;
-        padding: 0 !important;
-        background: white !important;
-        page-break-inside: avoid;
-    }
-
-    .step-section,
-    .match-result-section,
-    .match-stats-section,
-    .teams-summary-section,
-    .financial-summary-section {
-        page-break-inside: avoid;
-        margin-bottom: 20px !important;
-        padding: 15px !important;
-        border: 1px solid #ddd !important;
-    }
-
-    /* Headers de sections */
-    h2, h3 {
-        color: #1a5f3f !important;
-        page-break-after: avoid;
-        margin-top: 15px !important;
-    }
-
-    /* Score display */
-    .final-score-display {
-        justify-content: space-around !important;
-        margin: 20px 0 !important;
-    }
-
-    .team-final-score {
-        border: 2px solid #000 !important;
-        padding: 15px !important;
-        background: white !important;
-    }
-
-    .team-final-score.winner {
-        background: #e8f5e9 !important;
-        border-width: 3px !important;
-        border-color: #28a745 !important;
-    }
-
-    /* Tables */
-    .player-table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-        margin: 15px 0 !important;
-        font-size: 10pt;
-    }
-
-    .player-table th,
-    .player-table td {
-        border: 1px solid #000 !important;
-        padding: 5px !important;
+    /* Score final optimisé */
+    .final-score-box,
+    .score-section {
         text-align: center !important;
-    }
-
-    .player-table th {
-        background: #e0e0e0 !important;
-        font-weight: bold !important;
-    }
-
-    /* Afficher les valeurs des inputs */
-    .dice-result::after {
-        content: attr(value);
-        font-weight: bold;
-        padding: 5px;
-    }
-
-    /* MVP */
-    .mvp-display,
-    .mvp-summary {
-        background: #fff3cd !important;
-        border: 2px solid #ffc107 !important;
         padding: 10px !important;
-        text-align: center !important;
-        margin: 15px 0 !important;
-    }
-
-    /* Info boxes */
-    .summary-header,
-    .financial-grid,
-    .teams-grid {
-        display: block !important;
-    }
-
-    .summary-header-item,
-    .financial-item,
-    .team-summary-box {
-        border: 1px solid #ddd !important;
-        padding: 10px !important;
+        border: 2px solid #1a5f3f !important;
+        background: #f8f9fa !important;
         margin-bottom: 10px !important;
         page-break-inside: avoid;
     }
 
-    /* Labels et valeurs */
-    .label {
+    .final-score-display,
+    .score-display {
+        font-size: 16pt !important;
         font-weight: bold !important;
+        color: #1a5f3f !important;
+        margin-bottom: 5px !important;
+    }
+
+    /* Joueurs en format compact */
+    .players-compact,
+    .team-players {
+        margin-top: 6px !important;
+        padding-top: 6px !important;
+        border-top: 1px solid #ddd !important;
+    }
+
+    .player-row {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 1px 0 !important;
+        font-size: 8pt !important;
+        border-bottom: 1px dotted #eee !important;
+    }
+
+    .player-name {
+        flex: 1 !important;
+        font-weight: 500 !important;
+    }
+
+    .player-actions {
+        display: flex !important;
+        gap: 2px !important;
+    }
+
+    .action-badge {
+        background: #333 !important;
+        color: white !important;
+        padding: 1px 2px !important;
+        border-radius: 2px !important;
+        font-size: 7pt !important;
+        font-weight: bold !important;
+    }
+
+    .player-xp {
+        font-weight: bold !important;
+        color: #1a5f3f !important;
+        margin-left: 5px !important;
+        min-width: 25px !important;
+        text-align: right !important;
+    }
+
+    /* Tableau de joueurs traditionnel (si utilisé) */
+    .players-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 8pt !important;
+        margin-top: 5px !important;
+    }
+
+    .players-table th,
+    .players-table td {
+        border: 1px solid #333 !important;
+        padding: 2px !important;
+        text-align: center !important;
+    }
+
+    .players-table th {
+        background: #f0f0f0 !important;
+        font-weight: bold !important;
+        font-size: 7pt !important;
+    }
+
+    .players-table td:first-child {
+        text-align: left !important;
+    }
+
+    /* Résumé financier */
+    .financial-summary-bar,
+    .financial-summary {
+        background: #f8f9fa !important;
+        border: 1px solid #333 !important;
+        padding: 8px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .financial-row,
+    .summary-item {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 2px 0 !important;
+        font-size: 9pt !important;
+    }
+
+    .financial-row.total {
+        border-top: 1px solid #333 !important;
+        margin-top: 4px !important;
+        padding-top: 4px !important;
+        font-weight: bold !important;
+    }
+
+    .financial-row.positive .financial-value,
+    .amount.positive {
+        color: #000 !important;
+    }
+
+    .financial-row.negative .financial-value,
+    .amount.negative {
         color: #666 !important;
     }
 
-    .value {
+    /* MVP */
+    .mvp-box,
+    .mvp-display {
+        background: #f0f0f0 !important;
+        border: 2px solid #333 !important;
+        padding: 6px !important;
+        text-align: center !important;
+        margin-bottom: 8px !important;
+        font-weight: bold !important;
+    }
+
+    /* Météo et événements */
+    .weather-info,
+    .match-events {
+        background: #f8f9fa !important;
+        border-left: 3px solid #333 !important;
+        padding: 6px !important;
+        font-size: 9pt !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Statistiques compactes */
+    .compact-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 5px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .stat-box {
+        text-align: center !important;
+        border: 1px solid #333 !important;
+        padding: 4px !important;
+        background: white !important;
+    }
+
+    .stat-label {
+        font-size: 8pt !important;
+        color: #666 !important;
+        margin-bottom: 2px !important;
+    }
+
+    .stat-value {
+        font-size: 11pt !important;
         font-weight: bold !important;
         color: #000 !important;
     }
 
-    /* Masquer les éléments vides */
-    .explanation-box,
-    .help-text {
-        display: none !important;
+    /* Prévenir les coupures malheureuses */
+    .mvp-box,
+    .score-section,
+    .team-box,
+    .financial-summary,
+    .stat-box {
+        page-break-inside: avoid !important;
     }
 
     /* Footer d'impression */
-    .tab-content::after {
-        content: "Ligue des Rava'Jeux - Blood Bowl Sevens";
-        display: block;
-        text-align: center;
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid #ccc;
-        color: #666;
-        font-size: 10pt;
-    }
-
-    /* Forcer les sauts de page appropriés */
-    .summary-header {
-        page-break-after: avoid;
-    }
-
-    .match-result-section {
-        page-break-before: auto;
-        page-break-after: avoid;
-    }
-
-    /* Améliorer la lisibilité */
-    .financial-row {
-        padding: 8px 0 !important;
-        border-bottom: 1px dotted #ccc !important;
-    }
-
-    .financial-row.total {
-        border-top: 2px solid #1a5f3f !important;
-        border-bottom: none !important;
-        font-weight: bold !important;
-        margin-top: 10px !important;
+    .footer {
+        margin-top: 15px !important;
         padding-top: 10px !important;
+        border-top: 1px solid #333 !important;
+        text-align: center !important;
+        font-size: 8pt !important;
+        color: #666 !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Masquer les éléments spécifiques non nécessaires */
+    .purchased-players-detail,
+    .explanation-text,
+    .help-tooltip,
+    .debug-info {
+        display: none !important;
+    }
+
+    /* Amélioration des contrastes pour l'impression */
+    .summary-label,
+    .info-label {
+        color: #333 !important;
+    }
+
+    .summary-value,
+    .info-value {
+        color: #000 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Optimisation pour les imprimantes noir et blanc */
+    @media print and (monochrome) {
+        .action-badge {
+            background: #666 !important;
+            color: white !important;
+            border: 1px solid #000 !important;
+        }
+
+        .team-header {
+            background: #e0e0e0 !important;
+            border: 1px solid #000 !important;
+        }
+
+        .score-section,
+        .mvp-box {
+            background: #f5f5f5 !important;
+            border: 2px solid #000 !important;
+        }
+    }
+
+    /* Réduction de l'espacement pour maximiser le contenu */
+    p, div, span {
+        margin-bottom: 0 !important;
+    }
+
+    .section:last-child,
+    .summary-section:last-child {
+        margin-bottom: 0 !important;
     }
 }
